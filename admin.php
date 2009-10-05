@@ -214,8 +214,10 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 				sprintf($this->lang[$lang_key], $ID, $opts['new_id']));
 
 				//Delete the orginal file.
-				//saveWikiText($ID, '', $this->lang['pm_movedto'].$opts['new_id']);
-				if (@file_exists(wikiFN($opts['new_id']))) @unlink(wikiFN($ID));
+				if (@file_exists(wikiFN($opts['new_id']))) {
+//						@unlink(wikiFN($ID));
+						saveWikiText($ID, '', $this->lang['pm_movedto'].$opts['new_id']);
+				}
 
 				//Loop through backlinks
 				$brackets = null;
@@ -450,11 +452,18 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 		foreach($matches as $match){
 			//get ID from link and discard most non wikilinks
 			list($mid) = split('[\|#]',$match[1],2);
+			// some URL schema prefix ([[prefix://]])
 			if(preg_match('#^\w+://#', $mid)) continue;
 			//        if(preg_match('#^(https?|telnet|gopher|file|wais|ftp|ed2k|irc)://#',$mid)) continue;
+			// inter-wiki link 
 			if(preg_match('#\w+>#',$mid)) continue;
+			// baselink ([[/some_link]])
 			if(preg_match('#^/#', $mid)) continue;
-			if(strpos($mid,'@') !== FALSE) continue;  //discard email addresses
+			// email addresses
+			if(strpos($mid,'@') !== FALSE) continue;
+			// FIXME ignore local headings [[#some_heading]]
+			if(preg_match('#^\##', $mid)) continue;
+			
 			$mns = getNS($mid);
 			$lnk = $mid;
 
