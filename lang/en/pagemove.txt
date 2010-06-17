@@ -1,6 +1,6 @@
 ====== Pagemove ======
 
-This plugin allows you to move and/or rename the current document within the following restrictions.
+This plugin allows you to move and/or rename the current document or move and/or rename the current namespace within the following restrictions.
 
   * You cannot move the start page.
   * You must have edit permission for the document and any documents that point to it (backlinks).

@@ -12,8 +12,8 @@ $lang['direction']  = 'ltr';
  
 // for admin plugins, the menu prompt to be displayed in the admin menu
 // if set here, the plugin doesn't need to override the getMenuText() method
-$lang['menu'] = 'Page Move/Rename...';
-$lang['desc'] = 'Page Move/Rename Plugin';
+$lang['menu'] = 'Page/Namespace Move/Rename...';
+$lang['desc'] = 'Page/Namespace Move/Rename Plugin';
 
 $lang['pm_notexist']    = 'This topic does not exist yet';
 $lang['pm_notstart']    = 'The Start page cannot be moved or renamed';
@@ -35,6 +35,14 @@ $lang['pm_filelocked']  = 'This file is locked - ';
 $lang['pm_fileslocked'] = 'These files are locked - ';
 $lang['pm_linkchange']  = 'Links to %s changed to %s';
 $lang['pm_newname']     = 'New document name :';
-$lang['pm_targetns']    = 'Select Target Namespace :';
+$lang['pm_newnsname']   = 'Use new Name for Namespace:';
+$lang['pm_targetns']    = 'Select new Namespace :';
+$lang['pm_newtargetns'] = 'Create a new Namespace';
+$lang['pm_movepage']	= 'Move page';
+$lang['pm_movens']		= 'Move Namespace';
+$lang['pm_previewpage']	= ' get moved to ';
+$lang['pm_previewns']	= 'All pages and namespaces in the namespace %s: get moved in the namespace';
+$lang['pm_delete']		= 'Deleted by PageMove plugin';
+$lang['pm_preview']		= 'Preview';
 $lang['pm_submit']      = 'Submit';
 ?>
