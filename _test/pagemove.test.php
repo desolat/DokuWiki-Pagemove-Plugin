@@ -38,6 +38,8 @@ EOT;
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
 [[ftp://somewhere.com|ftp://somewhere.com]]
 [[http://somewhere.com|http://somewhere.com]]
 
@@ -101,7 +103,9 @@ EOT;
 	    $newContent = rawWiki($this->backlinkId);
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:new_page|$this->movedId]]
-[[.current_ns:new_page|.current_ns:test_page]]
+[[parent_ns:current_ns:new_page|.current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
 [[ftp://somewhere.com|ftp://somewhere.com]]
 [[http://somewhere.com|http://somewhere.com]]
 

@@ -522,16 +522,18 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         if (checklock($ID)) {
         	$this->locked_files[] = $ID;
         }
-        // Check we have edit rights on the backlinks and they are not locked
-        $backlinks = array();
-        $this->_pm_search($backlinks, $conf['datadir'], '_pm_search_backlinks', $opts);
 
-        foreach($backlinks as $backlink=>$links) {
-            if (auth_quickaclcheck($backlink) < AUTH_EDIT) {
+        // get all backlink information
+        $backlinksById = array();
+        $this->_pm_search($backlinksById, $conf['datadir'], '_pm_search_backlinks', $opts);
+
+        // Check we have edit rights on the backlinks and they are not locked
+        foreach($backlinksById as $backlinkingId=>$backlinks) {
+            if (auth_quickaclcheck($backlinkingId) < AUTH_EDIT) {
 	            $this->have_rights = false;
             }
-            if (checklock($backlink)) {
-           		$this->locked_files[] = $backlink;
+            if (checklock($backlinkingId)) {
+           		$this->locked_files[] = $backlinkingId;
             }
         }
 
@@ -638,17 +640,14 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         $summary = sprintf($this->lang[$lang_key], $ID, $opts['new_id']);
         saveWikiText($opts['new_id'], $this->text, $summary);
 
-
         // Delete the orginal file
-        //saveWikiText($ID, '', $this->lang['pm_movedto'].$opts['new_id']);
-        //if (@file_exists(wikiFN($opts['new_id']))) @unlink(wikiFN($ID));
         if (@file_exists(wikiFN($opts['new_id']))) {
         	saveWikiText($ID, '', $this->lang['pm_delete'] );
         }
 
         // Loop through backlinks
-        foreach($backlinks as $backlink => $links) {
-            $this->_pm_updatebacklinks($backlink, $links, $opts, $brackets);
+        foreach($backlinksById as $backlinkingId => $backlinks) {
+            $this->_pm_updatebacklinks($backlinkingId, $backlinks, $opts, $brackets);
         }
 
         // Move the old revisions
@@ -659,6 +658,9 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
     /**
      * Modify the links in a backlink.
+     *
+     * @param id Page ID of the backlinking page
+     * @param links Array of page names on this page.
      *
      * @author  Gary Owen <gary@isection.co.uk>
      */
@@ -677,49 +679,55 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
         // Form new document ID for this backlink
         $matches = array();
-        // Document is in same namespace as backlink
+        // new page is in same namespace as backlink
         if ( $bns == $opts['newns'] ) {
-            $nid = '';
+            $replacementNamespace = '';
         }
-        // Document is in sub-namespace of backlink
+        // new page is in sub-namespace of backlink
         elseif ( preg_match('#^$bns:(.*)$#', $opts['newns'], $matches) ) {
-            $nid = '.:'.$matches[1].':';
+            $replacementNamespace = '.:'.$matches[1].':';
         }
-        // Use absolute reference
+        // not same or sub namespace: use absolute reference
         else {
-            $nid = $opts['newns'].':';
+            $replacementNamespace = $opts['newns'].':';
         }
+        $replacementPagename = (($cleanname == cleanID($link) || $opts['movens'] == true) ? $link : $opts['newname']);
 
-        // Form an array of possible old document id
         // FIXME stupid: for each page get original backlink and its replacement
         $matches = array();
+        // get an array of: backlinks => replacement
         $oid = array();
         if ( $bns == $opts['ns'] ) {
-        	// Document was in same namespace as backlink
+        	// old page was in same namespace as backlink
             foreach ( $links as $link ) {
                 // don't modify backlinks which link to the root directory e.g. [[:start]]
-                // so check if exist the page in the namespace, when not don't modify
+                // so check if the page exists in the namespace, if not don't modify
                 if ( page_exists($opts['newns'].':'.$link) ||  page_exists($opts['ns'].':'.$link)) {
-                    $oid[$link] = $nid.(($cleanname == cleanID($link) || $opts['movens'] == true) ? $link : $opts['newname']);
-                    $oid['.:'.$link] = $nid.(($cleanname == cleanID($link) || $opts['movens'] == true) ? $link : $opts['newname']);
+                    $oid[$link] = $replacementNamespace.$replacementPagename;
+                    $oid['.:'.$link] = $replacementNamespace.$replacementPagename;
+                    $oid['.'.$link] = $replacementNamespace.$replacementPagename;
                 }
             }
         }
         if ( preg_match('#^'.$bns.':(.*)$#', $opts['ns'], $matches) ) {
-        	// Document was in sub-namespace of backlink
-            foreach ( $links as $link ) {
-                $oid['.:'.$matches[1].':'.$link] = $nid.(($cleanname == cleanID($link) || $opts['movens'] == true) ? $link : $opts['newname']);
-            }
+        	// old page was in sub namespace of backlink namespace
+        	foreach ( $links as $link ) {
+                $oid['.:'.$matches[1].':'.$link] = $replacementNamespace.$replacementPagename;
+                $oid['.'.$matches[1].':'.$link] = $replacementNamespace.$replacementPagename;
+        	}
         }
-        if ( preg_match('#^'.$opts['ns'].':(.*)$#', $bns , $matches) && $opts['movens'] == false ) { //Document was in upper-namespace of backlink
+        if ( preg_match('#^'.$opts['ns'].':(.*)$#', $bns , $matches) && $opts['movens'] == false ) {
+            // old page was in upper namespace of backlink
             foreach ( $links as $link ) {
-                $oid['..:'.$link] = $nid.(($cleanname == cleanID($link) ) ? $link : $opts['newname']);
+                $oid['..:'.$link] = $replacementNamespace.(($cleanname == cleanID($link) ) ? $link : $opts['newname']);
+                $oid['..'.$link] = $replacementNamespace.(($cleanname == cleanID($link) ) ? $link : $opts['newname']);
+                $oid['.:..:'.$link] = $replacementNamespace.(($cleanname == cleanID($link) ) ? $link : $opts['newname']);
             }
         }
         // Use absolute reference
         foreach ( $links as $link ) {
-            $oid[$opts['ns'].':'.$link] = $nid.(($cleanname == cleanID($link) || $opts['movens'] == true) ? $link : $opts['newname']);
-            $oid['.:' . $opts['ns'].':'.$link] = $nid.(($cleanname == cleanID($link)  || $opts['movens'] == true) ? $link : $opts['newname']);
+            $oid[$opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
+            $oid['.:' . $opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
         }
 
         // Make the changes
@@ -931,26 +939,28 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         preg_match_all('#\[\[(.+?)\]\]#si', $text, $matches, PREG_SET_ORDER);
         foreach($matches as $match) {
             // get ID from link and discard most non wikilinks
-            list($matchId) = split('[\|#]', $match[1], 2);
+            list($matchLink) = split('[\|#]', $match[1], 2);
             // all URLs with a scheme
-            if(preg_match('#^\w+://#', $matchId)) continue;
-//            if(preg_match('#^(https?|telnet|gopher|file|wais|ftp|ed2k|irc)://#',$matchId)) continue;
+            if(preg_match('#^\w+://#', $matchLink)) continue;
+//            if(preg_match('#^(https?|telnet|gopher|file|wais|ftp|ed2k|irc)://#',$matchLink)) continue;
             // baselinks
-            if(preg_match('#^/#', $matchId)) continue;
+            if(preg_match('#^/#', $matchLink)) continue;
             // inter-wiki links
-            if(preg_match('#\w+>#', $matchId)) continue;
+            if(preg_match('#\w+>#', $matchLink)) continue;
             // email addresses
-            if(strpos($matchId, '@') !== FALSE) continue;
+            if(strpos($matchLink, '@') !== FALSE) continue;
 
-            // FIXME return original link and its replacement
+            // get the ID the link refers to by cleaning and resolving it
+            $matchId = cleanID($matchLink);
             resolve_pageid($cns, $matchId, $exists);
 
             // only collect IDs not in collected $data already
-            if (cleanID($matchId) == $absSearchedId
-                && (! array_key_exists($cid, $data)
+            if ($matchId == $absSearchedId                 // matching link refers to the searched ID
+                && (! array_key_exists($cid, $data)        // not in $data already
                     || empty($data[$cid])
-                    || ! in_array(noNS($matchId), $data[$cid]))) {
-                $data[$cid][] = noNS($matchId);
+                    || ! in_array(noNS($matchLink), $data[$cid]))) {
+                // @fixme return original link and its replacement
+                $data[$cid][] = noNS($matchLink);
             }
         }
     }
