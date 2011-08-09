@@ -537,11 +537,6 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             }
         }
 
-        if ( cleanID($opts['newname']) == '' ) {
-            $this->errors[] = $this->lang['pm_badname'];
-            return;
-        }
-
         // Assemble fill document name and path
         $opts['new_id'] = cleanID($opts['newns'].':'.$opts['newname']);
         $opts['new_path'] = wikiFN($opts['new_id']);
@@ -664,18 +659,18 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      *
      * @author  Gary Owen <gary@isection.co.uk>
      */
-    function _pm_updatebacklinks($id, $links, $opts, &$brackets) {
+    function _pm_updatebacklinks($backlinkingId, $links, $opts, &$brackets) {
         global $ID;
 
         // Get namespace of document we are editing
-        $bns = getNS($id);
+        $bns = getNS($backlinkingId);
 
         // Create a clean version of the new name
         $cleanname = cleanID($opts['newname']);
 
         // Open backlink
-        lock($id);
-        $text = io_readFile(wikiFN($id),True);
+        lock($backlinkingId);
+        $text = io_readFile(wikiFN($backlinkingId),True);
 
         // Form new document ID for this backlink
         $matches = array();
@@ -684,7 +679,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             $replacementNamespace = '';
         }
         // new page is in sub-namespace of backlink
-        elseif ( preg_match('#^$bns:(.*)$#', $opts['newns'], $matches) ) {
+        elseif ( preg_match('#^'.$bns.':(.*)$#', $opts['newns'], $matches) ) {
             $replacementNamespace = '.:'.$matches[1].':';
         }
         // not same or sub namespace: use absolute reference
@@ -700,13 +695,9 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         if ( $bns == $opts['ns'] ) {
         	// old page was in same namespace as backlink
             foreach ( $links as $link ) {
-                // don't modify backlinks which link to the root directory e.g. [[:start]]
-                // so check if the page exists in the namespace, if not don't modify
-                if ( page_exists($opts['newns'].':'.$link) ||  page_exists($opts['ns'].':'.$link)) {
-                    $oid[$link] = $replacementNamespace.$replacementPagename;
-                    $oid['.:'.$link] = $replacementNamespace.$replacementPagename;
-                    $oid['.'.$link] = $replacementNamespace.$replacementPagename;
-                }
+                $oid[$link] = $replacementNamespace.$replacementPagename;
+                $oid['.:'.$link] = $replacementNamespace.$replacementPagename;
+                $oid['.'.$link] = $replacementNamespace.$replacementPagename;
             }
         }
         if ( preg_match('#^'.$bns.':(.*)$#', $opts['ns'], $matches) ) {
@@ -724,18 +715,47 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
                 $oid['.:..:'.$link] = $replacementNamespace.(($cleanname == cleanID($link) ) ? $link : $opts['newname']);
             }
         }
-        // Use absolute reference
+        // replace all other links (absolute
         foreach ( $links as $link ) {
+            // absolute links
             $oid[$opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
-            $oid['.:' . $opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
+            //$oid['.:'.$opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
+
+            // check backwards relative links
+            $relLink = $link;
+            $relDots = '..';
+            $backlinkingNamespaceCount = count(explode(':', $bns));
+            $oldNamespaces = explode(':', $opts['ns'], $backlinkingNamespaceCount);
+            $oldNamespaceCount = count($oldNamespaces);
+            if ($backlinkingNamespaceCount > $oldNamespaceCount) {
+                $levelDiff = $backlinkingNamespaceCount - $oldNamespaces;
+                for ($i = 0; $i < $levelDiff; $i++) {
+                    $relDots .= ':..';
+                }
+            }
+
+            foreach (array_reverse($oldNamespaces) as $nextUpperNs) {
+                $relLink = $nextUpperNs.':'.$relLink;
+                foreach (array($relDots.$relLink, $relDots.':'.$relLink) as $dottedRelLink) {
+                    $absLink=$dottedRelLink;
+                    resolve_pageid($bns, $absLink, $exists);
+                    if ($absLink == $ID) {
+                        $oid[$dottedRelLink] = $replacementNamespace.$replacementPagename;
+                    }
+                }
+                $relDots = '..:'.$relDots;
+            }
+
+            //$oid['..:'.$opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
+            //$oid['..'.$opts['ns'].':'.$link] = $replacementNamespace.$replacementPagename;
         }
 
         // Make the changes
         $this->_pm_updatelinks($text, $oid);
 
         // Save backlink and release lock
-        saveWikiText($id, $text, sprintf($this->lang['pm_linkchange'], $ID, $opts['new_id']));
-        unlock($id);
+        saveWikiText($backlinkingId, $text, sprintf($this->lang['pm_linkchange'], $ID, $opts['new_id']));
+        unlock($backlinkingId);
     }
 
     /**
@@ -953,14 +973,15 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             // get the ID the link refers to by cleaning and resolving it
             $matchId = cleanID($matchLink);
             resolve_pageid($cns, $matchId, $exists);
+            $matchPagename = ltrim(noNS($matchId), '.:');
 
             // only collect IDs not in collected $data already
             if ($matchId == $absSearchedId                 // matching link refers to the searched ID
                 && (! array_key_exists($cid, $data)        // not in $data already
                     || empty($data[$cid])
-                    || ! in_array(noNS($matchLink), $data[$cid]))) {
+                    || ! in_array($matchPagename, $data[$cid]))) {
                 // @fixme return original link and its replacement
-                $data[$cid][] = noNS($matchLink);
+                $data[$cid][] = $matchPagename;
             }
         }
     }

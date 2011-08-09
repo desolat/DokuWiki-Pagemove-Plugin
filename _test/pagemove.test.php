@@ -9,7 +9,9 @@ require_once(DOKU_INC.'lib/plugins/pagemove/admin.php');
 class PagemovePageTest extends Doku_UnitTestCase {
 
     var $movedId = 'parent_ns:current_ns:test_page';
-    var $backlinkId = 'parent_ns:some_page';
+    var $parentBacklinkingId = 'parent_ns:some_page';
+    var $currentNsBacklinkingId = 'parent_ns:current_ns:some_page';
+    var $otherBacklinkingId = 'level0:level1:other_backlinking_page';
 
     function setUp() {
         global $ID;
@@ -38,6 +40,8 @@ EOT;
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
+[[.:current_ns:test_page|.:current_ns:test_page]]
+[[..parent_ns:current_ns:test_page|..parent_ns:current_ns:test_page]]
 [[test_page|test_page]]
 [[new_page|new_page]]
 [[ftp://somewhere.com|ftp://somewhere.com]]
@@ -56,8 +60,60 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-        saveWikiText($this->backlinkId, $text, $summary);
+        saveWikiText($this->parentBacklinkingId, $text, $summary);
 
+        $text = <<<EOT
+[[$this->movedId|$this->movedId]]
+[[..current_ns:test_page|..current_ns:test_page]]
+[[..:current_ns:test_page|..:current_ns:test_page]]
+[[test_page|test_page]]
+[[.test_page|.test_page]]
+[[.:test_page|.:test_page]]
+[[..test_page|..test_page]]
+[[..:test_page|..:test_page]]
+[[.:..:test_page|.:..:test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+        saveWikiText($this->currentNsBacklinkingId, $text, $summary);
+
+        $text = <<<EOT
+[[$this->movedId|$this->movedId]]
+[[.current_ns:test_page|.current_ns:test_page]]
+[[.:current_ns:test_page|.:current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+        saveWikiText($this->otherBacklinkingId, $text, $summary);
         $this->pagemove = new admin_plugin_pagemove();
     }
 
@@ -100,10 +156,12 @@ EOT;
 EOT;
 	    $this->assertEqual($expectedContent, $newContent);
 
-	    $newContent = rawWiki($this->backlinkId);
+	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
-[[parent_ns:current_ns:new_page|$this->movedId]]
-[[parent_ns:current_ns:new_page|.current_ns:test_page]]
+[[.:current_ns:new_page|$this->movedId]]
+[[.:current_ns:new_page|.current_ns:test_page]]
+[[.:current_ns:new_page|.:current_ns:test_page]]
+[[.:current_ns:new_page|..parent_ns:current_ns:test_page]]
 [[test_page|test_page]]
 [[new_page|new_page]]
 [[ftp://somewhere.com|ftp://somewhere.com]]
@@ -124,6 +182,60 @@ EOT;
 EOT;
 	    $this->assertEqual($expectedContent, $newContent);
 
+	    $newContent = rawWiki($this->currentNsBacklinkingId);
+	    $expectedContent = <<<EOT
+[[new_page|$this->movedId]]
+[[new_page|..current_ns:test_page]]
+[[new_page|..:current_ns:test_page]]
+[[new_page|test_page]]
+[[new_page|.test_page]]
+[[new_page|.:test_page]]
+[[..test_page|..test_page]]
+[[..:test_page|..:test_page]]
+[[.:..:test_page|.:..:test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
+
+	    $newContent = rawWiki($this->otherBacklinkingId);
+	    $expectedContent = <<<EOT
+[[parent_ns:current_ns:new_page|$this->movedId]]
+[[.current_ns:test_page|.current_ns:test_page]]
+[[.:current_ns:test_page|.:current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
 	}
 
 
@@ -154,6 +266,87 @@ EOT;
 [[parent_ns:start|..:..:parent_ns:]]
 [[parent_ns:new_page|parent_ns:new_page]]
 [[parent_ns:new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
+
+	    $newContent = rawWiki($this->parentBacklinkingId);
+	    $expectedContent = <<<EOT
+[[.:parallel_ns:new_page|$this->movedId]]
+[[.:parallel_ns:new_page|.current_ns:test_page]]
+[[.:parallel_ns:new_page|.:current_ns:test_page]]
+[[.:parallel_ns:new_page|..parent_ns:current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
+
+	    $newContent = rawWiki($this->currentNsBacklinkingId);
+	    $expectedContent = <<<EOT
+[[parent_ns:parallel_ns:new_page|$this->movedId]]
+[[parent_ns:parallel_ns:new_page|..current_ns:test_page]]
+[[parent_ns:parallel_ns:new_page|..:current_ns:test_page]]
+[[parent_ns:parallel_ns:new_page|test_page]]
+[[parent_ns:parallel_ns:new_page|.test_page]]
+[[parent_ns:parallel_ns:new_page|.:test_page]]
+[[..test_page|..test_page]]
+[[..:test_page|..:test_page]]
+[[.:..:test_page|.:..:test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
+
+	    $newContent = rawWiki($this->otherBacklinkingId);
+	    $expectedContent = <<<EOT
+[[parent_ns:parallel_ns:new_page|$this->movedId]]
+[[.current_ns:test_page|.current_ns:test_page]]
+[[.:current_ns:test_page|.:current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
 	    $this->assertEqual($expectedContent, $newContent);
@@ -190,13 +383,97 @@ EOT;
 [[/start|/start]]
 EOT;
 	    $this->assertEqual($expectedContent, $newContent);
+
+	    // page is moved to same NS as backlinking page (parent_ns)
+	    $newContent = rawWiki($this->parentBacklinkingId);
+	    $expectedContent = <<<EOT
+[[new_page|$this->movedId]]
+[[new_page|.current_ns:test_page]]
+[[new_page|.:current_ns:test_page]]
+[[new_page|..parent_ns:current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
+
+	    $newContent = rawWiki($this->currentNsBacklinkingId);
+	    $expectedContent = <<<EOT
+[[parent_ns:new_page|$this->movedId]]
+[[parent_ns:new_page|..current_ns:test_page]]
+[[parent_ns:new_page|..:current_ns:test_page]]
+[[parent_ns:new_page|test_page]]
+[[parent_ns:new_page|.test_page]]
+[[parent_ns:new_page|.:test_page]]
+[[..test_page|..test_page]]
+[[..:test_page|..:test_page]]
+[[.:..:test_page|.:..:test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
+
+	    $newContent = rawWiki($this->otherBacklinkingId);
+	    $expectedContent = <<<EOT
+[[parent_ns:new_page|$this->movedId]]
+[[.current_ns:test_page|.current_ns:test_page]]
+[[.:current_ns:test_page|.:current_ns:test_page]]
+[[test_page|test_page]]
+[[new_page|new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+	    $this->assertEqual($expectedContent, $newContent);
 	}
 
 
 	function tearDown() {
 	    saveWikiText($this->movedId, '', 'removed');
 	    saveWikiText($this->movedToId, '', 'removed');
-	    saveWikiText($this->backlinkId, '', 'removed');
+	    saveWikiText($this->parentBacklinkingId, '', 'removed');
+	    saveWikiText($this->currentNsBacklinkingId, '', 'removed');
+	    saveWikiText($this->otherBacklinkingId, '', 'removed');
 	}
 
 }
