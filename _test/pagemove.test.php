@@ -12,6 +12,10 @@ class PagemovePageTest extends Doku_UnitTestCase {
     var $parentBacklinkingId = 'parent_ns:some_page';
     var $currentNsBacklinkingId = 'parent_ns:current_ns:some_page';
     var $otherBacklinkingId = 'level0:level1:other_backlinking_page';
+    var $subNsPage = 'parent_ns:current_ns:sub_ns:some_page';
+
+    // @todo Move page to an ID which already exists
+    // @todo Check backlinks of a sub-namespace page (moving same, up, down, different)
 
     function setUp() {
         global $ID;
@@ -114,6 +118,35 @@ EOT;
 [[/start|/start]]
 EOT;
         saveWikiText($this->otherBacklinkingId, $text, $summary);
+
+        $text = <<<EOT
+[[$this->movedId|$this->movedId]]
+[[..:..current_ns:test_page|..:..current_ns:test_page]]
+[[..:..:current_ns:test_page|..:..:current_ns:test_page]]
+[[test_page|test_page]]
+[[..:test_page|..:test_page]]
+[[..:test_page|..:test_page]]
+[[.:..:test_page|.:..:test_page]]
+[[new_page|new_page]]
+[[..:new_page|..:new_page]]
+[[ftp://somewhere.com|ftp://somewhere.com]]
+[[http://somewhere.com|http://somewhere.com]]
+
+[[start|start]]
+[[parallel_page|parallel_page]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
+[[..:..:|..:..:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
+[[/start|/start]]
+EOT;
+        saveWikiText($this->subNsPage, $text, $summary);
+
         $this->pagemove = new admin_plugin_pagemove();
     }
 
@@ -131,6 +164,7 @@ EOT;
 	    $newPagename = 'new_page';
 
 	    $opts = array();
+	    $opts['page_ns'] = 'page';
 	    $opts['ns']   = getNS($ID);
         $opts['name'] = noNS($ID);
         $opts['newns'] = $opts['ns'];
@@ -245,6 +279,7 @@ EOT;
 	    $newPagename = 'new_page';
 
 	    $opts = array();
+	    $opts['page_ns'] = 'page';
 	    $opts['ns']   = getNS($ID);
 	    $opts['name'] = noNS($ID);
 	    $opts['newns'] = 'parent_ns:parallel_ns';
@@ -359,14 +394,16 @@ EOT;
 	    $newPagename = 'new_page';
 
 	    $opts = array();
+	    $opts['page_ns'] = 'page';
 	    $opts['ns']   = getNS($ID);
 	    $opts['name'] = noNS($ID);
 	    $opts['newns'] = 'parent_ns';
 	    $opts['newname'] = $newPagename;
+	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
+
 	    $this->pagemove->_pm_move_page($opts);
 
-	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $newContent = rawWiki($newId);
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:start|start]]
@@ -468,12 +505,28 @@ EOT;
 	}
 
 
+	function test_move_ns_in_same_ns() {
+	    global $ID;
+
+	    $newNamespace = 'new_ns';
+
+	    $opts = array();
+	    $opts['page_ns'] = 'ns';
+	    $opts['newns'] = 'parent_ns'.':'.$newNamespace;
+	    $opts['newname'] = $newPagename;
+	    $this->movedToId = $opts['newns'].':'.$newPagename;
+
+	    //$this->pagemove->_pm_move_recursive($opts);
+
+	}
+
 	function tearDown() {
 	    saveWikiText($this->movedId, '', 'removed');
 	    saveWikiText($this->movedToId, '', 'removed');
 	    saveWikiText($this->parentBacklinkingId, '', 'removed');
 	    saveWikiText($this->currentNsBacklinkingId, '', 'removed');
 	    saveWikiText($this->otherBacklinkingId, '', 'removed');
+	    saveWikiText($this->subNsPage, '', 'removed');
 	}
 
 }
