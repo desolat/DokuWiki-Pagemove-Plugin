@@ -281,7 +281,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         }
 
         // was a form send?
-        if (! in_array('page_ns', $_REQUEST)) {
+        if (! array_key_exists('page_ns', $_REQUEST)) {
             return;
         }
 
