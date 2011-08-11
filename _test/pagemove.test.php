@@ -43,6 +43,7 @@ EOT;
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
+[[:$this->movedId|:$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
 [[.:current_ns:test_page|.:current_ns:test_page]]
 [[..parent_ns:current_ns:test_page|..parent_ns:current_ns:test_page]]
@@ -68,6 +69,7 @@ EOT;
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
+[[:$this->movedId|:$this->movedId]]
 [[..current_ns:test_page|..current_ns:test_page]]
 [[..:current_ns:test_page|..:current_ns:test_page]]
 [[test_page|test_page]]
@@ -97,6 +99,7 @@ EOT;
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
+[[:$this->movedId|:$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
 [[.:current_ns:test_page|.:current_ns:test_page]]
 [[test_page|test_page]]
@@ -121,6 +124,7 @@ EOT;
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
+[[:$this->movedId|:$this->movedId]]
 [[..:..current_ns:test_page|..:..current_ns:test_page]]
 [[..:..:current_ns:test_page|..:..:current_ns:test_page]]
 [[test_page|test_page]]
@@ -193,6 +197,7 @@ EOT;
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
 [[.:current_ns:new_page|$this->movedId]]
+[[.:current_ns:new_page|:$this->movedId]]
 [[.:current_ns:new_page|.current_ns:test_page]]
 [[.:current_ns:new_page|.:current_ns:test_page]]
 [[.:current_ns:new_page|..parent_ns:current_ns:test_page]]
@@ -219,6 +224,7 @@ EOT;
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
 [[new_page|$this->movedId]]
+[[new_page|:$this->movedId]]
 [[new_page|..current_ns:test_page]]
 [[new_page|..:current_ns:test_page]]
 [[new_page|test_page]]
@@ -249,6 +255,7 @@ EOT;
 	    $newContent = rawWiki($this->otherBacklinkingId);
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:new_page|$this->movedId]]
+[[$newId|:$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
 [[.:current_ns:test_page|.:current_ns:test_page]]
 [[test_page|test_page]]
@@ -308,6 +315,7 @@ EOT;
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
 [[.:parallel_ns:new_page|$this->movedId]]
+[[.:parallel_ns:new_page|:$this->movedId]]
 [[.:parallel_ns:new_page|.current_ns:test_page]]
 [[.:parallel_ns:new_page|.:current_ns:test_page]]
 [[.:parallel_ns:new_page|..parent_ns:current_ns:test_page]]
@@ -334,6 +342,7 @@ EOT;
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
 [[parent_ns:parallel_ns:new_page|$this->movedId]]
+[[$newId|:$this->movedId]]
 [[parent_ns:parallel_ns:new_page|..current_ns:test_page]]
 [[parent_ns:parallel_ns:new_page|..:current_ns:test_page]]
 [[parent_ns:parallel_ns:new_page|test_page]]
@@ -364,6 +373,7 @@ EOT;
 	    $newContent = rawWiki($this->otherBacklinkingId);
 	    $expectedContent = <<<EOT
 [[parent_ns:parallel_ns:new_page|$this->movedId]]
+[[$newId|:$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
 [[.:current_ns:test_page|.:current_ns:test_page]]
 [[test_page|test_page]]
@@ -425,6 +435,7 @@ EOT;
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
 [[new_page|$this->movedId]]
+[[new_page|:$this->movedId]]
 [[new_page|.current_ns:test_page]]
 [[new_page|.:current_ns:test_page]]
 [[new_page|..parent_ns:current_ns:test_page]]
@@ -451,6 +462,7 @@ EOT;
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
 [[parent_ns:new_page|$this->movedId]]
+[[$newId|:$this->movedId]]
 [[parent_ns:new_page|..current_ns:test_page]]
 [[parent_ns:new_page|..:current_ns:test_page]]
 [[parent_ns:new_page|test_page]]
@@ -481,6 +493,7 @@ EOT;
 	    $newContent = rawWiki($this->otherBacklinkingId);
 	    $expectedContent = <<<EOT
 [[parent_ns:new_page|$this->movedId]]
+[[$newId|:$this->movedId]]
 [[.current_ns:test_page|.current_ns:test_page]]
 [[.:current_ns:test_page|.:current_ns:test_page]]
 [[test_page|test_page]]
