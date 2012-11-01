@@ -1,23 +1,24 @@
 <?php
-require_once(DOKU_INC.'_test/lib/unittest.php');
 
-require_once(DOKU_INC.'inc/init.php');
-require_once(DOKU_INC.'inc/plugin.php');
-require_once(DOKU_INC.'inc/common.php');
-require_once(DOKU_INC.'lib/plugins/pagemove/admin.php');
+/**
+ * Test cases for the pagemove plugin
+ */
+class PagemovePageTest extends DokuWikiTest {
 
-class PagemovePageTest extends Doku_UnitTestCase {
-
+    var $movedToId = '';
     var $movedId = 'parent_ns:current_ns:test_page';
     var $parentBacklinkingId = 'parent_ns:some_page';
     var $currentNsBacklinkingId = 'parent_ns:current_ns:some_page';
     var $otherBacklinkingId = 'level0:level1:other_backlinking_page';
     var $subNsPage = 'parent_ns:current_ns:sub_ns:some_page';
+    /** @var admin_plugin_pagemove $pagemove */
+    private $pagemove = NULL;
 
     // @todo Move page to an ID which already exists
     // @todo Check backlinks of a sub-namespace page (moving same, up, down, different)
 
     function setUp() {
+        $this->pluginsEnabled[] = 'pagemove';
         global $ID;
         global $INFO;
 
@@ -40,6 +41,9 @@ EOT;
         $summary = 'Test';
         saveWikiText($this->movedId, $text, $summary);
         $INFO = pageinfo();
+
+        $references = array_keys(p_get_metadata($this->movedId, 'relation references', METADATA_RENDER_UNLIMITED));
+        idx_get_indexer()->addMetaKeys($this->movedId, 'relation_references', $references);
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
@@ -66,6 +70,8 @@ EOT;
 [[/start|/start]]
 EOT;
         saveWikiText($this->parentBacklinkingId, $text, $summary);
+        $references = array_keys(p_get_metadata($this->parentBacklinkingId, 'relation references', METADATA_RENDER_UNLIMITED));
+        idx_get_indexer()->addMetaKeys($this->parentBacklinkingId, 'relation_references', $references);
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
@@ -96,6 +102,8 @@ EOT;
 [[/start|/start]]
 EOT;
         saveWikiText($this->currentNsBacklinkingId, $text, $summary);
+        $references = array_keys(p_get_metadata($this->currentNsBacklinkingId, 'relation references', METADATA_RENDER_UNLIMITED));
+        idx_get_indexer()->addMetaKeys($this->currentNsBacklinkingId, 'relation_references', $references);
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
@@ -121,6 +129,8 @@ EOT;
 [[/start|/start]]
 EOT;
         saveWikiText($this->otherBacklinkingId, $text, $summary);
+        $references = array_keys(p_get_metadata($this->otherBacklinkingId, 'relation references', METADATA_RENDER_UNLIMITED));
+        idx_get_indexer()->addMetaKeys($this->otherBacklinkingId, 'relation_references', $references);
 
         $text = <<<EOT
 [[$this->movedId|$this->movedId]]
@@ -150,8 +160,11 @@ EOT;
 [[/start|/start]]
 EOT;
         saveWikiText($this->subNsPage, $text, $summary);
+        $references = array_keys(p_get_metadata($this->subNsPage, 'relation references', METADATA_RENDER_UNLIMITED));
+        idx_get_indexer()->addMetaKeys($this->subNsPage, 'relation_references', $references);
 
         $this->pagemove = new admin_plugin_pagemove();
+        parent::setUp();
     }
 
 #	function testPagemove() {
@@ -181,18 +194,18 @@ EOT;
 	    $expectedContent = <<<EOT
 [[start|start]]
 [[parallel_page|parallel_page]]
-[[start|.:]]
-[[start|..current_ns:]]
-[[start|..:current_ns:]]
-[[parent_ns:parallel_ns:start|..parallel_ns:]]
-[[parent_ns:parallel_ns:start|..:parallel_ns:]]
+[[.:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
 [[..:..:|..:..:]]
-[[parent_ns:start|..:..:parent_ns:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
 [[parent_ns:new_page|parent_ns:new_page]]
-[[parent_ns:new_page|parent_ns/new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -219,7 +232,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -250,7 +263,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->otherBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -276,7 +289,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 	}
 
 
@@ -299,18 +312,18 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:start|start]]
 [[parent_ns:current_ns:parallel_page|parallel_page]]
-[[parent_ns:current_ns:start|.:]]
-[[parent_ns:current_ns:start|..current_ns:]]
-[[parent_ns:current_ns:start|..:current_ns:]]
-[[start|..parallel_ns:]]
-[[start|..:parallel_ns:]]
+[[parent_ns:current_ns:|.:]]
+[[..current_ns:|..current_ns:]]
+[[..:current_ns:|..:current_ns:]]
+[[..parallel_ns:|..parallel_ns:]]
+[[..:parallel_ns:|..:parallel_ns:]]
 [[..:..:|..:..:]]
-[[parent_ns:start|..:..:parent_ns:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
 [[parent_ns:new_page|parent_ns:new_page]]
-[[parent_ns:new_page|parent_ns/new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -337,7 +350,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -368,7 +381,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->otherBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -394,7 +407,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 	}
 
 
@@ -418,18 +431,18 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:start|start]]
 [[parent_ns:current_ns:parallel_page|parallel_page]]
-[[parent_ns:current_ns:start|.:]]
-[[parent_ns:current_ns:start|..current_ns:]]
-[[parent_ns:current_ns:start|..:current_ns:]]
-[[parent_ns:parallel_ns:start|..parallel_ns:]]
-[[parent_ns:parallel_ns:start|..:parallel_ns:]]
-[[..:..:|..:..:]]
+[[parent_ns:current_ns:|.:]]
+[[parent_ns:current_ns:|..current_ns:]]
+[[parent_ns:current_ns:|..:current_ns:]]
+[[parent_ns:parallel_ns:|..parallel_ns:]]
+[[parent_ns:parallel_ns:|..:parallel_ns:]]
+[[:|..:..:]]
 [[start|..:..:parent_ns:]]
-[[new_page|parent_ns:new_page]]
-[[new_page|parent_ns/new_page]]
+[[parent_ns:new_page|parent_ns:new_page]]
+[[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    // page is moved to same NS as backlinking page (parent_ns)
 	    $newContent = rawWiki($this->parentBacklinkingId);
@@ -457,7 +470,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -488,7 +501,7 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 
 	    $newContent = rawWiki($this->otherBacklinkingId);
 	    $expectedContent = <<<EOT
@@ -514,14 +527,14 @@ EOT;
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
 EOT;
-	    $this->assertEqual($expectedContent, $newContent);
+	    $this->assertEquals($expectedContent, $newContent);
 	}
 
 
 	function test_move_ns_in_same_ns() {
-	    global $ID;
 
 	    $newNamespace = 'new_ns';
+        $newPagename = '';
 
 	    $opts = array();
 	    $opts['page_ns'] = 'ns';
@@ -533,15 +546,5 @@ EOT;
 
 	}
 
-	function tearDown() {
-	    saveWikiText($this->movedId, '', 'removed');
-	    saveWikiText($this->movedToId, '', 'removed');
-	    saveWikiText($this->parentBacklinkingId, '', 'removed');
-	    saveWikiText($this->currentNsBacklinkingId, '', 'removed');
-	    saveWikiText($this->otherBacklinkingId, '', 'removed');
-	    saveWikiText($this->subNsPage, '', 'removed');
-	}
-
 }
 
-?>

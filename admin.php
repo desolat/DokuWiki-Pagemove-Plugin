@@ -16,9 +16,6 @@ if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'admin.php';
 
-require_once(DOKU_INC.'inc/search.php');
-
-
 class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
     var $show_form = true;
@@ -26,11 +23,10 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
     var $locked_files = array();
     var $errors = array();
     var $opts = array();
-    var $text = '';
     var $idsToDelete = array();
 
 
-    function getMenuSort() { return FIXME; }
+    function getMenuSort() { return 1000; }
     function forAdminOnly() { return false; }
 
     /**
@@ -81,6 +77,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      * @author  Gary Owen <gary@isection.co.uk>
      */
     function html() {
+        global $ID;
         global $lang;
 
         ptln('<!-- Pagemove Plugin start -->');
@@ -111,7 +108,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         }
         else {
             // display the moved/renamed page
-            ptln( $this->render($this->text) );
+            p_wiki_xhtml($ID);
         }
         ptln('<!-- Pagemove Plugin end -->');
     }
@@ -236,7 +233,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
     function _pm_form_create_list_ns($ns) {
         global $conf;
 
-        $namesp = array( 0 => '' );     //Include root
+        $namesp = array( 0 => array('id' => '') );     //Include root
         search($namesp, $conf['datadir'], 'search_namespaces', array());
         sort($namesp);
         foreach($namesp as $row) {
@@ -310,24 +307,8 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
                 $this->opts['newns'] = $_REQUEST['ns'].':'.$this->opts['newnsname'];
             }
 
-            // check the NS if a recursion is needed
-            // @fixme Is this still needed?
-            $pagelist = array();
-            $needrecursion = false;
-            $nsRelPath = utf8_encodeFN(str_replace(':', '/', $this->opts['ns']));
-            search($items, $conf['datadir'], 'search_index', '', $nsRelPath);
-            foreach ($items as $item) {
-                if ($item['type'] == 'd') {
-                    $needrecursion = true;
-                    break;
-                }
-            }
-
             $nsRelPath = utf8_encodeFN(str_replace(':', '/', $this->opts['ns']));
             $this->_pm_move_recursive($nsRelPath, $this->opts);
-
-            $newNsAbsPath = $conf['datadir'].'/'.str_replace(':', '/', $this->opts['newns']);
-            $this->_pm_disable_cache($newNsAbsPath);
         }
         elseif( $this->opts['page_ns'] == 'page' ) {
             if( $_REQUEST['pagename'] == '' ) {
@@ -369,8 +350,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             // @todo if the namespace is now empty, delete it
 
             // Set things up to display the new page.
-            io_saveFile($conf['cachedir'].'/purgefile', time());
-            $ID = $opts['new_id'];
+            $ID = $this->opts['new_id'];
             $ACT = 'show';
             $INFO = pageinfo();
             $this->show_form = false;
@@ -395,31 +375,6 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
 
     /**
-     * touch every file which was moved, because of cached backlinks inside of moved namespace
-     *
-     * @author Arno Puschmann 2010-01-29
-     * @param $pathToSearch
-     * @return unknown_type
-     */
-    function _pm_disable_cache($pathToSearch) {
-        $files = scandir($pathToSearch);
-        if( !empty($files) ) {
-	        foreach($files as $file) {
-	            if( $file == '.' || $file == '..' ) continue;
-	            if( is_dir($pathToSearch.'/'.$file) ) {
-	                $this->_pm_disable_cache($pathToSearch.'/'.$file);
-	            }
-	            else {
-	            	if( preg_match('#\.txt$#', $file) ) {
-		                touch($pathToSearch.'/'.$file, time()+1);
-	            	}
-	            }
-	        }
-        }
-    }
-
-
-    /**
      *
      * @author Bastian Wolf
      * @param $pathToSearch
@@ -431,7 +386,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         global $conf;
 
         $pagelist = array();
-        search($pagelist, $conf['datadir'], 'search_index', '', $pathToSearch);
+        search($pagelist, $conf['datadir'], 'search_index', array(), $pathToSearch);
 
         foreach ($pagelist as $page) {
             if ($page['type'] == 'd') {
@@ -501,20 +456,6 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         	$this->locked_files[] = $ID;
         }
 
-        // get all backlink information
-        $backlinksById = array();
-        $this->_pm_search($backlinksById, $conf['datadir'], '_pm_search_backlinks', $opts);
-
-        // Check we have edit rights on the backlinks and they are not locked
-        foreach($backlinksById as $backlinkingId=>$backlinks) {
-            if (auth_quickaclcheck($backlinkingId) < AUTH_EDIT) {
-	            $this->have_rights = false;
-            }
-            if (checklock($backlinkingId)) {
-           		$this->locked_files[] = $backlinkingId;
-            }
-        }
-
         // Assemble fill document name and path
         $opts['new_id'] = cleanID($opts['newns'].':'.$opts['newname']);
         $opts['new_path'] = wikiFN($opts['new_id']);
@@ -539,296 +480,89 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
          * End of init (checks)
          */
 
-        // Open the old document and change forward links
-        lock($ID);
-        $this->text = io_readFile(wikiFN($ID), True);
+        $page_meta  = p_get_metadata($ID, 'plugin_pagemove', METADATA_DONT_RENDER);
+        if (!$page_meta) $page_meta = array();
+        if (!isset($page_meta['old_ids'])) $page_meta['old_ids'] = array();
+        $page_meta['old_ids'][$ID] = time();
 
-        // Get an array of forward links from the document
-        $forward = $this->_pm_getforwardlinks($ID);
+        // ft_backlinks() is not used here, as it does a hidden page and acl check but we really need all pages
+        $affected_pages = idx_get_indexer()->lookupKey('relation_references', array_keys($page_meta['old_ids']));
 
-        // Change the forward links
-        foreach($forward as $lnk => $lid) {
-            // Get namespace of target document
-            $tns = getNS($lid);
-            $tname = noNS($lid);
-            // Form new document ID for the target
+        $data = array('opts' => &$opts, 'old_ids' => $page_meta['old_ids'], 'affected_pages' => &$affected_pages);
+        // give plugins the option to add their own meta files to the list of files that need to be moved
+        // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
+        // and to add other pages to the affected pages
+        // note that old_ids is in the form 'id' => timestamp of move and affected_pages is indexed by these ids
+        $event = new Doku_Event('PAGEMOVE_PAGE_RENAME', $data);
+        if ($event->advise_before()) {
+            // Open the old document and change forward links
+            lock($ID);
+            $text = rawWiki($ID);
 
-            $matches = array();
-            if ( $tns == $opts['newns'] ) {
-            	// Document is in same namespace as target
-                $this->_pm_updatelinks($this->text, array($lnk => $tname));
+            /** @var helper_plugin_pagemove $helper */
+            $helper = $this->loadHelper('pagemove', true);
+            if (is_null($helper)) return;
+
+            $text = $helper->rewrite_content($text, $ID, array($ID => $opts['new_id']));
+
+            // Move the Subscriptions & Indexes
+            $this->_pm_movemeta('metadir', '/^'.$opts['name'].'\.\w*?$/', $opts);
+
+            // Save the updated document in its new location
+            if ($opts['ns'] == $opts['newns']) {
+                $lang_key = 'pm_renamed';
             }
-            elseif ( preg_match('#^'.$opts['newns'].':(.*:)$#', $tns, $matches) ) {
-            	// Target is in a sub-namespace
-                $this->_pm_updatelinks($this->text, array($lnk => '.:'.$matches[1].':'.$tname));
-            }
-            elseif ( $tns == "" ) {
-            	// Target is in root namespace
-                $this->_pm_updatelinks($this->text, array($lnk => $lid ));
+            elseif ( $opts['name'] == $opts['newname'] ) {
+                $lang_key = 'pm_moved';
             }
             else {
-                $this->_pm_updatelinks($this->text, array($lnk => $lid ));
+                $lang_key = 'pm_move_rename';
             }
-        }
+            $summary = sprintf($this->lang[$lang_key], $ID, $opts['new_id']);
+            saveWikiText($opts['new_id'], $text, $summary);
 
-        if ( $opts['ns'] != $opts['newns'] ) {
-        	// Change media links when moving between namespaces
-            $media = $this->_pm_getmedialinks($ID);
-            foreach($media as $lnk => $lid) {
-                $tns = getNS($lid);
-                $tname = noNS($lid);
-                // Form new document id for the target
-                $matches = array();
-                if ( $tns == $opts['newns'] ) {
-                	// Document is in same namespace as target
-                    $this->_pm_updatemedialinks($this->text, $lnk, $tname );
-                }
-                elseif ( preg_match('#^'.$opts['newns'].':(.*:)$#', $tns, $matches) ) {
-                	// Target is in a sub-namespace
-                    $this->_pm_updatemedialinks($this->text, $lnk, '.:'.$matches[1].':'.$tname );
-                }
-                elseif ( $tns == "" ) {
-                	// Target is in root namespace
-                    $this->_pm_updatemedialinks($this->text, $lnk, ':'.$lid );
-                }
-                else {
-                    $this->_pm_updatemedialinks($this->text, $lnk, $lid );
-                }
+            // Delete the orginal file
+            if (@file_exists(wikiFN($opts['new_id']))) {
+                saveWikiText($ID, '', $this->lang['pm_delete'] );
             }
-        }
 
-        // Move the Subscriptions & Indexes
-        $this->_pm_movemeta('metadir', '/^'.$opts['name'].'\.\w*?$/', $opts);
+            // Move the old revisions
+            $this->_pm_movemeta('olddir', '/^'.$ID.'\.[0-9]{10}\.txt(\.gz)?$/', $opts);
 
-        // Save the updated document in its new location
-        if ($opts['ns'] == $opts['newns']) {
-            $lang_key = 'pm_renamed';
-        }
-        elseif ( $opts['name'] == $opts['newname'] ) {
-            $lang_key = 'pm_moved';
-        }
-        else {
-            $lang_key = 'pm_move_rename';
-        }
-        $summary = sprintf($this->lang[$lang_key], $ID, $opts['new_id']);
-        saveWikiText($opts['new_id'], $this->text, $summary);
+            asort($page_meta['old_ids']);
 
-        // Delete the orginal file
-        if (@file_exists(wikiFN($opts['new_id']))) {
-        	saveWikiText($ID, '', $this->lang['pm_delete'] );
-        }
-
-        // Loop through backlinks
-        foreach($backlinksById as $backlinkingId => $backlinks) {
-            $this->_pm_updatebacklinks($backlinkingId, $backlinks, $opts, $brackets);
-        }
-
-        // Move the old revisions
-        $this->_pm_movemeta('olddir', '/^'.$opts['name'].'\.[0-9]{10}\.txt(\.gz)?$/', $opts);
-
-    }
-
-
-    /**
-     * Modify the links in a backlink.
-     *
-     * @param id Page ID of the backlinking page
-     * @param links Array of page names on this page.
-     *
-     * @author  Gary Owen <gary@isection.co.uk>
-     */
-    function _pm_updatebacklinks($backlinkingId, $links, $opts, &$brackets) {
-        global $ID;
-
-        // Get namespace of document we are editing
-        $bns = getNS($backlinkingId);
-
-        // Create a clean version of the new name
-        $cleanname = cleanID($opts['newname']);
-
-        // Open backlink
-        lock($backlinkingId);
-        $text = io_readFile(wikiFN($backlinkingId),True);
-
-        // Form new document ID for this backlink
-        $matches = array();
-        // new page is in same namespace as backlink
-        if ( $bns == $opts['newns'] ) {
-            $replacementNamespace = '';
-        }
-        // new page is in sub-namespace of backlink
-        elseif ( preg_match('#^'.$bns.':(.*)$#', $opts['newns'], $matches) ) {
-            $replacementNamespace = '.:'.$matches[1].':';
-        }
-        // not same or sub namespace: use absolute reference
-        else {
-            $replacementNamespace = $opts['newns'].':';
-        }
-
-        // @fixme stupid: for each page get original backlink and its replacement
-        $matches = array();
-        // get an array of: backlinks => replacement
-        $oid = array();
-        if ( $bns == $opts['ns'] ) {
-        	// old page was in same namespace as backlink
-            foreach ( $links as $link ) {
-                $oid[$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-                $oid['.:'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-                $oid['.'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-            }
-        }
-        if ( preg_match('#^'.$bns.':(.*)$#', $opts['ns'], $matches) ) {
-        	// old page was in sub namespace of backlink namespace
-        	foreach ( $links as $link ) {
-                $oid['.:'.$matches[1].':'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-                $oid['.'.$matches[1].':'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-        	}
-        }
-        if ( preg_match('#^'.$opts['ns'].':(.*)$#', $bns , $matches) && $opts['page_ns'] == 'page' ) {
-            // old page was in upper namespace of backlink
-            foreach ( $links as $link ) {
-                $oid['..:'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-                $oid['..'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-                $oid['.:..:'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-            }
-        }
-        // replace all other links
-        foreach ( $links as $link ) {
-            // absolute links
-            $oid[$opts['ns'].':'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-            //$oid['.:'.$opts['ns'].':'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-
-            // check backwards relative links
-            $relLink = $link;
-            $relDots = '..';
-            $backlinkingNamespaceCount = count(explode(':', $bns));
-            $oldNamespaces = explode(':', $opts['ns'], $backlinkingNamespaceCount);
-            $oldNamespaceCount = count($oldNamespaces);
-            if ($backlinkingNamespaceCount > $oldNamespaceCount) {
-                $levelDiff = $backlinkingNamespaceCount - $oldNamespaceCount;
-                for ($i = 0; $i < $levelDiff; $i++) {
-                    $relDots .= ':..';
+            // additional pages that should be considered because they were affected by moves from previous names
+            // if the page has been rendered in the meantime and but the new links aren't in the index yet the
+            // page might need information about a more recent rename even though it is not listed for this more recent link
+            $additional_pages = array();
+            foreach ($page_meta['old_ids'] as $page_id => $time) {
+                if (!isset($affected_pages[$page_id])) {
+                    $affected_pages[$page_id] = $additional_pages;
+                } else {
+                    $affected_pages[$page_id] = array_unique(array_merge($affected_pages[$page_id], $additional_pages));
+                }
+                foreach ($affected_pages[$page_id] as $id) {
+                    if (!page_exists($id, '', false) || $id == $page_id || $id == $opts['new_id']) continue;
+                    // if the page has been modified since the rename of the old page, the link in the new page is most
+                    // probably intentionally to the old page and shouldn't be changed
+                    if (filemtime(wikiFN($id, '', false)) > $time) continue;
+                    $additional_pages[] = $id;
+                    // we are only interested in persistent metadata, so no need to render anything.
+                    $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+                    if (!$meta) $meta = array('moves' => array());
+                    if (!isset($meta['moves'])) $meta['moves'] = array();
+                    $meta['moves'][$page_id] = $opts['new_id'];
+                    // remove redundant moves (can happen when a page is moved back to its old id)
+                    if ($page_id == $opts['new_id']) unset($meta['moves'][$page_id]);
+                    if (empty($meta['moves'])) unset($meta['moves']);
+                    p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
                 }
             }
 
-            foreach (array_reverse($oldNamespaces) as $nextUpperNs) {
-                $relLink = $nextUpperNs.':'.$relLink;
-                foreach (array($relDots.$relLink, $relDots.':'.$relLink) as $dottedRelLink) {
-                    $absLink=$dottedRelLink;
-                    resolve_pageid($bns, $absLink, $exists);
-                    if ($absLink == $ID) {
-                        $oid[$dottedRelLink] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-                    }
-                }
-                $relDots = '..:'.$relDots;
-            }
-
-            //$oid['..:'.$opts['ns'].':'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
-            //$oid['..'.$opts['ns'].':'.$link] = $replacementNamespace.(($cleanname == cleanID($link)) ? $link : $opts['newname']);
+            p_set_metadata($opts['new_id'], array('plugin_pagemove' => $page_meta), false, true);
         }
 
-        // Make the changes
-        $this->_pm_updatelinks($text, $oid);
-
-        // Save backlink and release lock
-        saveWikiText($backlinkingId, $text, sprintf($this->lang['pm_linkchange'], $ID, $opts['new_id']));
-        unlock($backlinkingId);
-    }
-
-    /**
-     * modify the links using the pairs in $links
-     *
-     * @author  Gary Owen <gary@isection.co.uk>
-     */
-    function _pm_updatelinks(&$text, $links) {
-        foreach( $links as $old => $new ) {
-            $text = preg_replace( '#\[\[:?' . $old . '((\]\])|[\|\#])#i', '[[' . $new . '\1', $text);
-        }
-    }
-
-    /**
-     * modify the medialinks from namepspace $old to namespace $new
-     *
-     * @author  Gary Owen <gary@isection.co.uk>
-     */
-    function _pm_updatemedialinks(&$text, $old, $new) {
-        // Question marks in media links need some extra handling
-        $text = preg_replace('#\{\{' . $old . '([\?\|]|(\}\}))#i', '{{' . $new . '\1', $text);
-    }
-
-    /**
-     * Get forward links in a given page which need to be changed.
-     *
-     * Not changed: local sections, absolute links
-     * Changed need to be
-     *
-     * @author  Gary Owen <gary@isection.co.uk>
-     */
-    function _pm_getforwardlinks($id) {
-        $data = array();
-        $text = io_readfile(wikiFN($id));
-
-        // match all links
-        // FIXME may be incorrect because of code blocks
-        // TODO CamelCase isn't supported, too
-        preg_match_all('#\[\[(.+?)\]\]#si', $text, $matches, PREG_SET_ORDER);
-        foreach($matches as $match) {
-            // ignore local headings [[#some_heading]]
-            if ( preg_match('/^#/', $match[1])) continue;
-
-            // get ID from link and discard most non wikilinks
-            list($mid) = split('[\|#]', $match[1], 2);
-            // ignore links with URL schema prefix ([[prefix://]])
-            if(preg_match('#^\w+://#', $mid)) continue;
-            //          if(preg_match('#^(https?|telnet|gopher|file|wais|ftp|ed2k|irc)://#',$mid)) continue;
-            // inter-wiki link
-            if(preg_match('#\w+>#', $mid)) continue;
-            // baselink ([[/some_link]])
-            if(preg_match('#^/#', $mid)) continue;
-            // email addresses
-            if(strpos($mid, '@') !== FALSE) continue;
-            // ignore absolute links
-            if( strpos($mid, ':') === 0 ) continue;
-
-            $absoluteMatchId = $mid;
-            $exists = FALSE;
-            resolve_pageid(getNS($id), $absoluteMatchId, $exists);
-            if($absoluteMatchId != FALSE) {
-                $data[$mid] = $absoluteMatchId;
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Get media links in a given page
-     *
-     * @author  Gary Owen <gary@isection.co.uk>
-     */
-    function _pm_getmedialinks($id) {
-        $data = array();
-        $text = io_readfile(wikiFN($id));
-        // match all links
-        // FIXME may be incorrect because of code blocks
-        // TODO CamelCase isn't supported, too
-        preg_match_all('#{{(.[^>]+?)}}#si', $text, $matches, PREG_SET_ORDER);
-        foreach($matches as $match) {
-            // get ID from link and discard most non wikilinks
-            list($mid) = split('(\?|\|)', $match[1], 2);
-            $mns = getNS($mid);
-            $lnk = $mid;
-
-            // namespace starting with "." - prepend current namespace
-            if(strpos($mns, '.')===0) {
-                $mid = getNS($id).':'.substr($mid, 1);
-            }
-            elseif($mns === FALSE){
-                // no namespace in link? add current
-                $mid = getNS($id) . ':' . $mid;
-            }
-            $data[$lnk] = preg_replace('#:+#', ':', $mid);
-        }
-        return $data;
+        $event->advise_after();
     }
 
     /**
@@ -855,111 +589,6 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
                 }
             }
             closedir($dh);
-        }
-    }
-
-
-    /**
-     * recurse directory
-     *
-     * This function recurses into a given base directory
-     * and calls the supplied function for each file and directory
-     *
-     * @author  Andreas Gohr <andi@splitbrain.org>
-     * @param array $data Found data is collected
-     * @param string $base Directory to be searched in
-     * @param string $func Name of real search function
-     * @param array $opts Options to the search functions
-     * @param string $dir Current relative directory
-     * @param integer $lvl Level of recursion
-     */
-    function _pm_search(&$data, $base, $func, $opts, $dir='' ,$lvl=1) {
-        $dirs   = array();
-        $files  = array();
-
-        // read in directories and files
-        $dh = @opendir($base.'/'.$dir);
-        if(!$dh) return;
-        while(($file = readdir($dh)) !== false) {
-        	// skip hidden files and upper dirs
-            if(preg_match('/^\./',$file)) continue;
-            if(is_dir($base.'/'.$dir.'/'.$file)) {
-                $dirs[] = $dir.'/'.$file;
-                continue;
-            }
-            $files[] = $dir.'/'.$file;
-        }
-        closedir($dh);
-        sort($files);
-        sort($dirs);
-
-        // give directories to userfunction then recurse
-        foreach($dirs as $dir) {
-            if ($this->$func($data, $base, $dir, 'd', $lvl, $opts)) {
-                $this->_pm_search($data, $base, $func, $opts, $dir, $lvl+1);
-            }
-        }
-        // now handle the files
-        foreach($files as $file) {
-            $this->$func($data, $base, $file, 'f', $lvl, $opts);
-        }
-    }
-
-    /**
-     * Search for backlinks to a given page
-     *
-     * $opts['ns']    namespace of the page
-     * $opts['name']  name of the page without namespace
-     *
-     * @author  Andreas Gohr <andi@splitbrain.org>
-     * @author  Gary Owen <gary@isection.co.uk>
-     */
-    function _pm_search_backlinks(&$data, $base, $file, $type, $lvl, $opts) {
-        // we do nothing with directories
-        if($type == 'd') return true;
-        // only search txt files
-        if(!preg_match('#\.txt$#', $file)) return true;
-
-        $text = io_readfile($base.'/'.$file);
-        // absolute search ID
-//         $absSearchedId = cleanID($opts['ns'].':'.$opts['name']);
-        $absSearchedId = $opts['name'];
-        resolve_pageid($opts['ns'], $absSearchedId, $exists);
-
-        // construct current namespace
-        $cid = pathID($file);
-        $cns = getNS($cid);
-
-        // match all links
-        // FIXME may be incorrect because of code blocks
-        // FIXME CamelCase isn't supported, too
-        preg_match_all('#\[\[(.+?)\]\]#si', $text, $matches, PREG_SET_ORDER);
-        foreach($matches as $match) {
-            // get ID from link and discard most non wikilinks
-            list($matchLink) = split('[\|#]', $match[1], 2);
-            // all URLs with a scheme
-            if(preg_match('#^\w+://#', $matchLink)) continue;
-//            if(preg_match('#^(https?|telnet|gopher|file|wais|ftp|ed2k|irc)://#',$matchLink)) continue;
-            // baselinks
-            if(preg_match('#^/#', $matchLink)) continue;
-            // inter-wiki links
-            if(preg_match('#\w+>#', $matchLink)) continue;
-            // email addresses
-            if(strpos($matchLink, '@') !== FALSE) continue;
-
-            // get the ID the link refers to by cleaning and resolving it
-            $matchId = cleanID($matchLink);
-            resolve_pageid($cns, $matchId, $exists);
-            $matchPagename = ltrim(noNS($matchId), '.:');
-
-            // only collect IDs not in collected $data already
-            if ($matchId == $absSearchedId                 // matching link refers to the searched ID
-                && (! array_key_exists($cid, $data)        // not in $data already
-                    || empty($data[$cid])
-                    || ! in_array($matchPagename, $data[$cid]))) {
-                // @fixme return original link and its replacement
-                $data[$cid][] = $matchPagename;
-            }
         }
     }
 }
