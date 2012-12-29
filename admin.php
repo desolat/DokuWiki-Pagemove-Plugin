@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin : Pagemove
- * Version : 0.10 (2010-06-17)
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author     Michael Hamann <michael@content-space.de>
  * @author     Gary Owen,
  */
 
@@ -14,28 +14,25 @@ if (!defined('DOKU_LF')) define('DOKU_LF', "\n");
 if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
-require_once DOKU_PLUGIN.'admin.php';
-
+/**
+ * Admin component of the pagemove plugin. Provides the user interface.
+ */
 class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
-    var $show_form = true;
-    var $have_rights = true;
-    var $locked_files = array();
-    var $errors = array();
     var $opts = array();
-    var $idsToDelete = array();
-
-
-    function getMenuSort() { return 1000; }
-    function forAdminOnly() { return false; }
 
     /**
-     * function constructor
+     * Get the sort number that defines the position in the admin menu.
+     *
+     * @return int The sort number
      */
-    function admin_plugin_pagemove(){
-        // enable direct access to language strings
-        $this->setupLocale();
-    }
+    function getMenuSort() { return 1000; }
+
+    /**
+     * If this admin plugin is for admins only
+     * @return bool false
+     */
+    function forAdminOnly() { return false; }
 
     /**
      * return some info
