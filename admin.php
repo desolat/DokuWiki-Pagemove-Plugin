@@ -41,14 +41,9 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      * return some info
      */
     function getInfo(){
-        return array(
-        'author' => 'Gary Owen, Arno Puschmann, Christoph Jähnigen',
-        'email'  => 'pagemove@gmail.com',
-        'date'   => '2011-08-11',
-        'name'   => 'Pagemove',
-        'desc'   => $this->lang['desc'],
-        'url'    => 'http://www.dokuwiki.org/plugin:pagemove',
-        );
+        $result = parent::getInfo();
+        $result['desc'] = $this->getLang('desc');
+        return $result;
     }
 
     /**
