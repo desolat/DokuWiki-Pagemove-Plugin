@@ -51,17 +51,13 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      */
     function getMenuText() {
         global $INFO;
-        global $ID;
-        global $conf;
 
         if( !$INFO['exists'] )
-            return $this->lang['menu'].' ('.$this->lang['pm_notexist'].')';
-        elseif( $ID == $conf['start'] )
-            return $this->lang['menu'].' ('.$this->lang['pm_notstart'].')';
+            return $this->getLang('menu').' ('.$this->getLang('pm_notexist').')';
         elseif( !$INFO['writable'] )
-            return $this->lang['menu'].' ('.$this->lang['pm_notwrite'].')';
+            return $this->getLang('menu').' ('.$this->getLang('pm_notwrite').')';
         else
-            return $this->lang['menu'];
+            return $this->getLang('menu');
     }
 
 
@@ -72,39 +68,9 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      * @author  Gary Owen <gary@isection.co.uk>
      */
     function html() {
-        global $ID;
-        global $lang;
-
         ptln('<!-- Pagemove Plugin start -->');
-        if( $this->show_form ) {
-            ptln( $this->locale_xhtml('pagemove') );
-            //We didn't get here from submit.
-            if( $this->have_rights && count($this->locked_files) == 0 ) {
-                $this->_pm_form();
-            }
-            else {
-                ptln( '<p><strong>' );
-                if ( !$this->have_rights ) {
-                    ptln( $this->errors[0].'<br>' );
-                }
-                $c = count($this->locked_files);
-                if ( $c == 1 ) {
-                    ptln( $this->lang['pm_filelocked'].$this->locked_files[0].'<br>'.$this->lang['pm_tryagain'] );
-                }
-                elseif ( $c > 1 ) {
-                    ptln( $this->lang['pm_fileslocked'] );
-                    for ( $i = 0 ; $i < $c ; $i++ ) {
-                    	ptln ( ($i > 0 ? ', ' : '').$this->locked_files[$i] );
-                    }
-                    ptln( '<br>'.$this->lang['pm_tryagain'] );
-                }
-                ptln ( '</strong></p>' );
-            }
-        }
-        else {
-            // display the moved/renamed page
-            p_wiki_xhtml($ID);
-        }
+        ptln( $this->locale_xhtml('pagemove') );
+        $this->_pm_form();
         ptln('<!-- Pagemove Plugin end -->');
     }
 
@@ -115,273 +81,148 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      */
     function _pm_form() {
         global $ID;
-        global $lang;
-        global $conf;
 
         $ns = getNS($ID);
-        $name = noNS($ID);
 
-        ptln('  <div align="center">');
-        ptln('  <script language="Javascript">');
-        ptln('      function setradio( group, choice ) {');
-        ptln('        for ( i = 0 ; i < group.length ; i++ ) {');
-        ptln('          if ( group[i].value == choice )');
-        ptln('            group[i].checked = true;');
-        ptln('        }');
-        ptln('      }');
-        ptln('  </script>');
-        ptln('  <form name="frm" action="'.wl($ID).'" method="post">');
-        // output hidden values to ensure dokuwiki will return back to this plugin
-        ptln('    <input type="hidden" name="do"   value="admin" />');
-        ptln('    <input type="hidden" name="page" value="'.$this->getPluginName().'" />');
-        ptln('    <input type="hidden" name="id" value="'.$ID.'" />');
-        ptln('  <fieldset id="fieldset_page">');
-        ptln('  <legend><input type="radio" name="page_ns" id="page_ns_0" value="page" CHECKED> '. $this->lang['pm_movepage'] .'</legend>');
-        ptln('    <table border="0" id="table_page">');
+        $ns_select_data = $this->build_namespace_select_content($ns);
 
-        //Show any errors
-        if (count($this->errors) > 0) {
-            ptln ('<tr><td bgcolor="red" colspan="3">');
-            foreach($this->errors as $error) {
-	            ptln ($error.'<br>');
-            }
-            ptln ('</td></tr>');
-        }
-        //create a list of namespaces
-       	ptln( '      <tr><td align="right" nowrap><label><span>'.$this->lang['pm_targetns'].'</span></label></td>');
-        ptln( '        <td width="25"><input type="radio" name="nsr" id="nsr_0" value="<old>" '.($_REQUEST['nsr'] != '<new>' ? 'CHECKED' : '').'></td>');
-        ptln( '        <td><select name="ns_for_page" id="nsr_select" onChange="setradio(document.frm.nsr, \'<old>\');setradio(document.frm.page_ns, \'page\');">');
-        $this->_pm_form_create_list_ns($ns);
+        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'pagemove__form'));
+        $form->addHidden('page', $this->getPluginName());
+        $form->addHidden('id', $ID);
+        $form->addHidden('move_type', 'page');
+        $form->startFieldset($this->getLang('pm_movepage'));
+        $form->addElement(form_makeMenuField('ns_for_page', $ns_select_data, $this->opts['ns_for_page'], $this->getLang('pm_targetns'), '', 'block'));
+        $form->addElement(form_makeTextField('newns', $this->opts['newns'], $this->getLang('pm_newtargetns'), '', 'block'));
+        $form->addElement(form_makeTextField('newname', $this->opts['newname'], $this->getLang('pm_newname'), '', 'block'));
+        $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_submit')));
+        $form->endFieldset();
+        $form->printForm();
 
-        ptln( "        </select></td>\n      </tr><tr>");
-
-        ptln( '        <td align="right" nowrap><label><span>'.$this->lang['pm_newtargetns'].'</span></label></td>');
-        ptln( '        <td width="25"><input type="radio" name="nsr" id="nsr_1" value="<new>" '.($_REQUEST['nsr'] == '<new>' ? 'CHECKED' : '').'></td>');
-        ptln( '        <td align="left" nowrap><input type="text" name="newns" id="newns" value="'.formtext($this->opts['newns']).'" class="edit" onClick="setradio(document.frm.nsr, \'<new>\');setradio(document.frm.page_ns, \'page\');" /></td>');
-        ptln( '      </tr>');
-        ptln( '      <tr>');
-        ptln( '        <td align="right" nowrap><label><span>'.$this->lang['pm_newname'].'</span></label></td>');
-        ptln('		   <td width="25"></td>'); //<input type="radio" name="pageradio" value="<page>" '.($_REQUEST['pageradio']!= '<namespace>' ? 'CHECKED' : '').'>
-        ptln( '        <td align="left" nowrap><input type="text" name="pagename" id="pagename" value="'.formtext(isset($this->opts['newname']) ? $this->opts['newname'] : $name).'" class="edit" onClick="setradio(document.frm.page_ns, \'page\');" /></td>');
-        ptln( '      </tr>');
-        ptln( '      </tr>');
-        ptln( '      </tr>');
-        ptln( '    </table>');
-        ptln( '  </fieldset>');
-
-        ptln('  <br>');
-        ptln('  <fieldset id="fieldset_ns" >');
-        ptln('  <legend><input type="radio" name="page_ns" id="page_ns_1" value="ns"> '. $this->lang['pm_movens'] .'</legend>');
-        ptln('    <table border="0" id="table_ns">');
-        ptln( '      <tr><td align="right" nowrap><label><span>'.$this->lang['pm_targetns'].'</span></label></td>');
-        ptln( '        <td><select name="ns" id="ns_select" onChange="setradio(document.frm.page_ns, \'ns\');">');
-        $this->_pm_form_create_list_ns($ns);
-        ptln( "        </select></td>\n      </tr>");
-        ptln( '      <tr>');
-        ptln( '        <td align="right" nowrap><label><span>'.$this->lang['pm_newnsname'].'</span></label></td>');
-        ptln( '        <td align="left" nowrap><input type="text" name="namespacename" id="namespacename" value="'.formtext(isset($this->opts['newnsname']) ? $this->opts['newnsname'] : $this->opts['nsname']).'" class="edit" onClick="setradio(document.frm.page_ns, \'ns\');" /></td>');
-        ptln( '      </tr>');
-        ptln( '    </table>');
-        ptln('  </fieldset>');
-        ptln( '<br><center><input type="submit" value="'.formtext($this->lang['pm_submit']).'" class="button" /><input type="button" value="'.$this->lang['pm_preview'].'" class="button" onClick="Javascript:preview();"/></center>');
-        ptln( '</form>');
-
-        ptln('<font id="preview_output"></font>');
-
-        ptln('  <script language="Javascript">');
-        ptln(" table_page_width = document.getElementById('table_page').offsetWidth;");
-        ptln(" table_ns_width = document.getElementById('table_ns').offsetWidth;");
-        ptln(" max_width = Math.max(table_page_width,table_ns_width)+'px';");
-        ptln(" document.getElementById('fieldset_page').style.width = max_width;");
-        ptln(" document.getElementById('fieldset_ns').style.width   = max_width;");
-
-        ptln("function preview(){");
-        ptln("if(document.getElementById('page_ns_0').checked == true)");
-        ptln("{");
-        ptln("	if(document.getElementById('nsr_0').checked == true)");
-        ptln("	{");
-        ptln("		preview_text = \"".$ID . $this->lang['pm_previewpage']. "  \" + document.getElementById('nsr_select').value +  (document.getElementById('nsr_select').value==':'? '' : ':') + document.getElementById('pagename').value;");
-        ptln("	}");
-        ptln("	else");
-        ptln("	{");
-        ptln("		preview_text = \"".$ID . $this->lang['pm_previewpage']. "  \" + document.getElementById('newns').value + ':' + document.getElementById('pagename').value;");
-        ptln("	}");
-        ptln("}");
-        ptln("else{");
-        ptln("	preview_text = \"". sprintf($this->lang['pm_previewns'], $ns). "  \" + document.getElementById('ns_select').value + (document.getElementById('ns_select').value==':'? '' : ':') + document.getElementById('namespacename').value;");
-        ptln("}");
-        ptln("document.getElementById('preview_output').innerHTML = preview_text;");
-        ptln("");
-        ptln("}");
-        ptln("  </script>");
-
-        ptln( '</div>');
+        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'pagemove__form'));
+        $form->addHidden('page', $this->getPluginName());
+        $form->addHidden('id', $ID);
+        $form->addHidden('move_type', 'namespace');
+        $form->startFieldset($this->getLang('pm_movens'));
+        $form->addElement(form_makeMenuField('targetns', $ns_select_data, $this->opts['targetns'], $this->getLang('pm_targetns'), '', 'block'));
+        $form->addElement(form_makeTextField('newnsname', $this->opts['newnsname'], $this->getLang('pm_newnsname'), '', 'block'));
+        $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_submit')));
+        $form->endFieldset();
+        $form->printForm();
     }
 
 
     /**
      * create a list of namespaces for the html form
      *
+     * @author  Michael Hamann <michael@content-space.de>
      * @author  Gary Owen <gary@isection.co.uk>
      * @author  Arno Puschmann (bin out of _pm_form)
      */
-    function _pm_form_create_list_ns($ns) {
+    private function build_namespace_select_content($ns) {
         global $conf;
+
+        $result = array();
 
         $namesp = array( 0 => array('id' => '') );     //Include root
         search($namesp, $conf['datadir'], 'search_namespaces', array());
         sort($namesp);
         foreach($namesp as $row) {
             if ( auth_quickaclcheck($row['id'].':*') >= AUTH_CREATE || $row['id'] == $ns ) {
-                ptln ( '          <option value="'.
-                ($row['id'] ? $row['id'] : ':').
-                ($_REQUEST['ns'] ?
-                (($row['id'] ? $row['id'] : ":") == $_REQUEST['ns'] ? '" SELECTED>' : '">') :
-                ($row['id'] == $ns ? '" SELECTED>' : '">') ).
-                ($row['id'] ? $row['id'].':' : ": ".$this->lang['pm_root']).
-                ($row['id'] == $ns ? ' '.$this->lang['pm_current'] : '').
-                    "</option>" );
+
+                $result[($row['id'] ? $row['id'] : ':')] = ($row['id'] ? $row['id'].':' : ": ".$this->getLang('pm_root')).
+                                       ($row['id'] == $ns ? ' '.$this->getLang('pm_current') : '');
             }
         }
+        return $result;
     }
 
 
     /**
      * handle user request
      *
+     * @author  Michael Hamann <michael@content-space.de>
      * @author  Gary Owen <gary@isection.co.uk>
      */
     function handle() {
-
-        global $conf;
-        global $lang;
         global $ID;
-        global $INFO;
         global $ACT;
+        global $INFO;
 
-        // check we have rights to move this document
-        if( !$INFO['exists'] ) {
-            $this->have_rights = false;
-            $this->errors[] = $this->lang['pm_notexist'];
-            return;
-        }
-        // do not move start page
-        if( $ID == $conf['start'] ) {
-            $this->have_rights = false;
-            $this->errors[] = $this->lang['pm_notstart'];
-            return;
-        }
+        // populate options with default values
+        $this->opts['ns']          = getNS($ID);
+        $this->opts['name']        = noNS($ID);
+        $this->opts['ns_for_page'] = $INFO['namespace'];
+        $this->opts['newns']       = '';
+        $this->opts['newname']     = noNS($ID);
+        $this->opts['targetns']    = getNS($ID);
+        $this->opts['newnsname']   = '';
+        $this->opts['move_type']   = 'page';
 
-        // was a form send?
-        if (! array_key_exists('page_ns', $_REQUEST)) {
-            // @fixme do something more intelligent like showing in message
+        // Only continue when the form was submitted
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             return;
         }
 
-        // extract namespace and document name from ID
-        $this->opts['ns']   = getNS($ID);
-        $this->opts['name'] = noNS($ID);
-        $this->opts['page_ns'] = $_REQUEST['page_ns'];
+        // Store the form data in the options and clean the submitted data.
+        if (isset($_POST['ns_for_page'])) $this->opts['ns_for_page'] = cleanID((string)$_POST['ns_for_page']);
+        if (isset($_POST['newns'])) $this->opts['newns'] = cleanID((string)$_POST['newns']);
+        if (isset($_POST['newname'])) $this->opts['newname'] = cleanID((string)$_POST['newname']);
+        if (isset($_POST['targetns'])) $this->opts['targetns'] = cleanID((string)$_POST['targetns']);
+        if (isset($_POST['newnsname'])) $this->opts['newnsname'] = cleanID((string)$_POST['newnsname']);
+        if (isset($_POST['move_type'])) $this->opts['move_type'] = (string)$_POST['move_type'];
 
         // check the input for completeness
-        if( $this->opts['page_ns'] == 'ns' ) {
-            // @todo Target namespace needn't be new (check pages for overwrite!)
-            if( $_REQUEST['namespacename'] == '' ) {
-                $this->errors[] = $this->lang['pm_emptynamespace'];
-                return;
-            }
-            $this->opts['newnsname'] = $_REQUEST['namespacename'];
-            if ( cleanID($this->opts['newnsname']) == '' ) {
-                $this->errors[] = $this->lang['pm_badns'];
-                return;
-            }
-            if ($_REQUEST['ns'] == ':') {
+        if( $this->opts['move_type'] == 'namespace' ) {
+            if ($this->opts['targetns'] == '') {
                 $this->opts['newns'] = $this->opts['newnsname'];
-            }
-            else {
-                $this->opts['newns'] = $_REQUEST['ns'].':'.$this->opts['newnsname'];
+            } else {
+                $this->opts['newns'] = $this->opts['targetns'].':'.$this->opts['newnsname'];
             }
 
-            $nsRelPath = utf8_encodeFN(str_replace(':', '/', $this->opts['ns']));
-            $this->_pm_move_recursive($nsRelPath, $this->opts);
-        }
-        elseif( $this->opts['page_ns'] == 'page' ) {
-            if( $_REQUEST['pagename'] == '' ) {
-                $this->errors[] = $this->lang['pm_emptypagename'];
+            if ($this->_pm_move_recursive($this->opts, true) &&
+                $this->_pm_move_recursive($this->opts)) {
+                $ID = $this->getNewID($INFO['id'], $this->opts['ns'], $this->opts['newns']);
+                $ACT = 'show';
+            } else {
                 return;
             }
-            $this->opts['newname'] = $_REQUEST['pagename'];
+        } else {
             // check that the pagename is valid
-            if ( cleanID($this->opts['newname']) == '' ) {
-                $this->errors[] = $this->lang['pm_badname'];
+            if ($this->opts['newname'] == '' ) {
+                msg($this->getLang('pm_badname'), -1);
                 return;
             }
 
-            if ($_REQUEST['nsr'] == '<old>') {
-                $this->opts['newns'] = ($_REQUEST['ns_for_page'] == ':' ? '' : $_REQUEST['ns_for_page']);
+            if ($this->opts['newns'] === '') {
+                $this->opts['newns'] = $this->opts['ns_for_page'];
             }
-            elseif ($_REQUEST['nsr'] =='<new>') {
-                // if a new namespace was requested, check and use it
-                if ($_REQUEST['newns'] != '') {
-                    $this->opts['newns'] = $_REQUEST['newns'];
-                    // check that the new namespace is valid
-                    if ( cleanID($this->opts['newns']) == '' ) {
-                        $this->errors[] = $this->lang['pm_badns'];
-                        return;
-                    }
-                }
-                else {
-                    $this->errors[] = $this->lang['pm_badns'];
-                    return;
-                }
-            }
-            else {
-                $this->errors[] = $this->lang['pm_fatal'];
+
+            if ($this->_pm_move_page($this->opts)) {
+                // @todo if the namespace is now empty, delete it
+
+                // Set things up to display the new page.
+                $ID = $this->opts['new_id'];
+                $ACT = 'show'; // this triggers a redirect to the page
+            } else {
                 return;
             }
-
-            $this->_pm_move_page($this->opts);
-
-            // @todo if the namespace is now empty, delete it
-
-            // Set things up to display the new page.
-            $ID = $this->opts['new_id'];
-            $ACT = 'show';
-            $INFO = pageinfo();
-            $this->show_form = false;
         }
-        else {
-            $this->errors[] = $this->lang['pm_fatal'];
-            return;
-        }
-
-
-        // only go on if no errors occured and inputs are not empty
-        if (count($this->errors) != 0 ) {
-            return;
-        }
-        // delete empty namespaces if possible
-        // @fixme does not work like that
-        foreach ($this->idsToDelete as $idToDelete) {
-            io_sweepNS($idToDelete);
-        }
-
     }
 
 
     /**
      *
      * @author Bastian Wolf
-     * @param $pathToSearch
      * @param array $opts      Options for moving the page
      * @param bool  $checkonly If only the checks if all pages can be moved shall be executed
      * @return bool if the move was executed
      */
-    function _pm_move_recursive($pathToSearch, &$opts, $checkonly = false) {
+    function _pm_move_recursive(&$opts, $checkonly = false) {
         global $ID;
         global $conf;
 
         $pagelist = array();
+        $pathToSearch = utf8_encodeFN(str_replace(':', '/', $opts['ns']));
         $searchOpts = array('depth' => 0, 'skipacl' => true);
         search($pagelist, $conf['datadir'], 'search_allpages', $searchOpts, $pathToSearch);
 
