@@ -504,7 +504,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             $text = $helper->rewrite_content($text, $ID, array($ID => $opts['new_id']));
 
             // Move the Subscriptions & Indexes
-            $this->_pm_movemeta('metadir', '/^'.$opts['name'].'\.\w*?$/', $opts);
+            $this->movemeta($opts);
 
             // Save the updated document in its new location
             if ($opts['ns'] == $opts['newns']) {
@@ -525,7 +525,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             }
 
             // Move the old revisions
-            $this->_pm_movemeta('olddir', '/^'.$ID.'\.[0-9]{10}\.txt(\.gz)?$/', $opts);
+            $this->moveattic($opts);
 
             asort($page_meta['old_ids']);
 
@@ -565,26 +565,49 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
     }
 
     /**
-     * move meta files (Old Revs, Subscriptions, Meta, etc)
+     * Move the old revisions of the page that is specified in the options.
      *
-     * This function meta files between directories
-     *
-     * @author  Gary Owen <gary@isection.co.uk>
+     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
      */
-    function _pm_movemeta($dir, $regex, $opts) {
+    function moveattic($opts) {
         global $conf;
 
-        $old_path = $conf[$dir].'/'.str_replace(':','/',$opts['ns']).'/';
-        $new_path = $conf[$dir].'/'.str_replace(':','/',$opts['newns']).'/';
+        $regex = '\.\d+\.txt(?:\.gz|\.bz2)?';
+        $this->move_files($conf['olddir'], $opts, $regex);
+    }
+
+    /**
+     * Move the meta files of the page that is specified in the options.
+     *
+     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     */
+    function movemeta($opts) {
+        global $conf;
+
+        $regex = '\.[^.]+';
+        $this->move_files($conf['metadir'], $opts, $regex);
+    }
+
+    /**
+     * Internal function for moving and renaming meta/attic files between namespaces
+     *
+     * @param string $dir   The root path of the files (e.g. $conf['metadir'] or $conf['olddir']
+     * @param array  $opts  Pagemove options (used here: ns, newns, name, newname)
+     * @param string $extregex Regular expression for matching the extension of the file that shall be moved
+     */
+    private function move_files($dir, $opts, $extregex) {
+        $old_path = $dir.'/'.utf8_encodeFN(str_replace(':', '/', $opts['ns'])).'/';
+        $new_path = $dir.'/'.utf8_encodeFN(str_replace(':', '/', $opts['newns'])).'/';
+        $regex = '/^'.preg_quote(utf8_encodeFN($opts['name'])).'('.$extregex.')$/u';
+
         $dh = @opendir($old_path);
         if($dh) {
             while(($file = readdir($dh)) !== false) {
-            	// skip hidden files and upper dirs
-                if(preg_match('/^\./',$file)) continue;
-                if(is_file($old_path.$file) and preg_match($regex,$file)) {
-                    io_mkdir_p($new_path);
-                    io_rename($old_path.$file,$new_path.str_replace($opts['name'], $opts['newname'], $file));
-                    continue;
+                if (substr($file, 0, 1) == '.') continue;
+                $match = array();
+                if (is_file($old_path.$file) && preg_match($regex, $file, $match)) {
+                    if (!is_dir($new_path)) io_mkdir_p($new_path);
+                    io_rename($old_path.$file, $new_path.utf8_encodeFN($opts['newname'].$match[1]));
                 }
             }
             closedir($dh);
