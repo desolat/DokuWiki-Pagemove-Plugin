@@ -22,6 +22,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
      * @param mixed      $param Optional parameters (not used)
      */
     function handle_read(Doku_Event $event, $param) {
+        global $ACT;
         static $stack = array();
         // handle only reads of the current revision
         if ($event->data[3]) return;
@@ -29,6 +30,11 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
         $id = $event->data[2];
         if ($event->data[1]) $id = $event->data[1].':'.$id;
         if (isset($stack[$id])) return;
+
+        // Don't change the page when the user is currently changing the page content or the page is locked by another user
+        if ((isset($ACT) && (in_array($ACT, array('save', 'preview', 'recover', 'revert'))))
+            || checklock($id) !== false) return;
+
         $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
         if ($meta && isset($meta['moves'])) {
             $stack[$id] = true;
