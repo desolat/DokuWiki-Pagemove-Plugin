@@ -11,7 +11,7 @@ class PagemovePageTest extends DokuWikiTest {
     var $currentNsBacklinkingId = 'parent_ns:current_ns:some_page';
     var $otherBacklinkingId = 'level0:level1:other_backlinking_page';
     var $subNsPage = 'parent_ns:current_ns:sub_ns:some_page';
-    /** @var admin_plugin_pagemove $pagemove */
+    /** @var helper_plugin_pagemove $pagemove */
     private $pagemove = NULL;
 
     // @todo Move page to an ID which already exists
@@ -163,7 +163,7 @@ EOT;
         $references = array_keys(p_get_metadata($this->subNsPage, 'relation references', METADATA_RENDER_UNLIMITED));
         idx_get_indexer()->addMetaKeys($this->subNsPage, 'relation_references', $references);
 
-        $this->pagemove = new admin_plugin_pagemove();
+        $this->pagemove = new helper_plugin_pagemove();
         parent::setUp();
     }
 
@@ -187,7 +187,7 @@ EOT;
         $opts['newns'] = $opts['ns'];
         $opts['newname'] = $newPagename;
         $this->movedToId = $opts['newns'].':'.$newPagename;
-	    $this->pagemove->_pm_move_page($opts);
+	    $this->pagemove->move_page($opts);
 
 	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $newContent = rawWiki($newId);
@@ -305,7 +305,7 @@ EOT;
 	    $opts['newns'] = 'parent_ns:parallel_ns';
 	    $opts['newname'] = $newPagename;
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
-	    $this->pagemove->_pm_move_page($opts);
+	    $this->pagemove->move_page($opts);
 
 	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $newContent = rawWiki($newId);
@@ -425,7 +425,7 @@ EOT;
 	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
 
-	    $this->pagemove->_pm_move_page($opts);
+	    $this->pagemove->move_page($opts);
 
 	    $newContent = rawWiki($newId);
 	    $expectedContent = <<<EOT
