@@ -373,44 +373,52 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      *
      * @author Bastian Wolf
      * @param $pathToSearch
-     * @param $opts
-     * @return unknown_type
+     * @param array $opts      Options for moving the page
+     * @param bool  $checkonly If only the checks if all pages can be moved shall be executed
+     * @return bool if the move was executed
      */
-    function _pm_move_recursive($pathToSearch, $opts) {
+    function _pm_move_recursive($pathToSearch, &$opts, $checkonly = false) {
         global $ID;
         global $conf;
 
         $pagelist = array();
-        search($pagelist, $conf['datadir'], 'search_index', array(), $pathToSearch);
+        $searchOpts = array('depth' => 0, 'skipacl' => true);
+        search($pagelist, $conf['datadir'], 'search_allpages', $searchOpts, $pathToSearch);
 
+        // FIXME: either use ajax for executing the queue and/or store the queue so it can be resumed when the execution
+        // is aborted.
         foreach ($pagelist as $page) {
-            if ($page['type'] == 'd') {
-                $pathToSearch = utf8_encodeFN(str_replace(':', '/', $page['id']));
-                // @fixme shouldn't be necessary as ID already exists
-                io_createNamespace($page['id']);
-                // NS to move is this one
-                $nsOpts = $opts;
-                $nsOpts['ns'] = $page['id'];
-                // target NS is this folder under the current target NS
-                $thisFolder = end(explode(':', $page['id']));
-                $nsOpts['newns'] .= ':'.$thisFolder;
-                array_push($this->idsToDelete, $page['id']);
-                // Recursion
-                $this->_pm_move_recursive($pathToSearch, $nsOpts);
-            }
-            elseif ($page['type'] == 'f') {
-                $ID = $page['id'];
-                $pageOpts = $opts;
-                $pageOpts['ns']   = getNS($ID);
-                $pageOpts['name'] = noNS($ID);
-                $pageOpts['newname'] = noNS($ID);
-                $this->_pm_move_page($pageOpts);
-            }
-            else {
-                $this->errors[] = $this->lang['pm_unknown_file_type'];
-                return;
-            }
+            $ID = $page['id'];
+            $newID = $this->getNewID($ID, $opts['ns'], $opts['newns']);
+            $pageOpts = $opts;
+            $pageOpts['ns']   = getNS($ID);
+            $pageOpts['name'] = noNS($ID);
+            $pageOpts['newname'] = noNS($ID);
+            $pageOpts['newns'] = getNS($newID);
+            if (!$this->_pm_move_page($pageOpts, $checkonly)) return false;
         }
+        return true;
+    }
+
+    /**
+     * Get the id of a page after a namespace move
+     *
+     * @param string $oldid The old id of the page
+     * @param string $oldns The old namespace. $oldid needs to be inside $oldns
+     * @param string $newns The new namespace
+     * @return string The new id
+     */
+    function getNewID($oldid, $oldns, $newns) {
+        $newid = $oldid;
+        if ($oldns != '') {
+            $newid = substr($oldid, strlen($oldns)+1);
+        }
+
+        if ($newns != '') {
+            $newid = $newns.':'.$newid;
+        }
+
+        return $newid;
     }
 
 
@@ -420,9 +428,10 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      * @author  Gary Owen <gary@isection.co.uk>, modified by Kay Roesler
      *
      * @param array $opts
+     * @param bool  $checkonly Only execute the checks if the page can be moved
      * @return bool If the move was executed
      */
-    function _pm_move_page(&$opts) {
+    function _pm_move_page(&$opts, $checkonly = false) {
         global $ID;
 
         // Check we have rights to move this document
@@ -462,6 +471,8 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             msg(sprintf($this->getLang('pm_notargetperms'), $opts['new_id']), -1);
             return false;
         }
+
+        if ($checkonly) return true;
 
         /**
          * End of init (checks)
@@ -550,6 +561,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         }
 
         $event->advise_after();
+        return true;
     }
 
     /**
