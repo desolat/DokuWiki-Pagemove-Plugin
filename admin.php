@@ -420,35 +420,25 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      * @author  Gary Owen <gary@isection.co.uk>, modified by Kay Roesler
      *
      * @param array $opts
+     * @return bool If the move was executed
      */
-    function _pm_move_page($opts) {
-
-        global $conf;
-        global $lang;
+    function _pm_move_page(&$opts) {
         global $ID;
-        global $INFO;
-        global $ACT;
 
         // Check we have rights to move this document
-        if ( !$INFO['exists']) {
-            $this->have_rights = false;
-            $this->errors[] = $this->lang['pm_notexist'];
-            return;
-        }
-        if ( $ID == $conf['start']) {
-            $this->have_rights = false;
-            $this->errors[] = $this->lang['pm_notstart'];
-            return;
+        if ( !page_exists($ID)) {
+            msg($this->getLang('pm_notexist'), -1);
+            return false;
         }
         if ( auth_quickaclcheck($ID) < AUTH_EDIT ) {
-            $this->have_rights = false;
-            $this->errors[] = $this->lang['pm_norights'];
-            return;
+            msg(sprintf($this->getLang('pm_norights'), hsc($ID)), -1);
+            return false;
         }
 
         // Check file is not locked
-        if (checklock($ID)) {
-        	$this->locked_files[] = $ID;
+        if (checklock($ID) !== false) {
+            msg( sprintf($this->getLang('pm_filelocked'), hsc($ID)), -1);
+            return false;
         }
 
         // Assemble fill document name and path
@@ -457,18 +447,20 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
         // Has the document name and/or namespace changed?
         if ( $opts['newns'] == $opts['ns'] && $opts['newname'] == $opts['name'] ) {
-            $this->errors[] = $this->lang['pm_nochange'];
-            return;
+            msg($this->getLang('pm_nochange'), -1);
+            return false;
         }
         // Check the page does not already exist
         if ( @file_exists($opts['new_path']) ) {
-            $this->errors[] = sprintf($this->lang['pm_existing'], $opts['newname'],
-                    ($opts['newns'] == '' ? $this->lang['pm_root'] : $opts['newns']));
-            return;
+            msg(sprintf($this->getLang('pm_existing'), $opts['newname'],
+                    ($opts['newns'] == '' ? $this->getLang('pm_root') : $opts['newns'])), -1);
+            return false;
         }
 
-        if ( count($this->errors) != 0 ) {
-            return;
+        // Check if the current user can create the new page
+        if (auth_quickaclcheck($opts['new_id']) < AUTH_CREATE) {
+            msg(sprintf($this->getLang('pm_notargetperms'), $opts['new_id']), -1);
+            return false;
         }
 
         /**
@@ -496,7 +488,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
             /** @var helper_plugin_pagemove $helper */
             $helper = $this->loadHelper('pagemove', true);
-            if (is_null($helper)) return;
+            if (is_null($helper)) return false;
 
             $text = $helper->rewrite_content($text, $ID, array($ID => $opts['new_id']));
 
@@ -513,12 +505,12 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             else {
                 $lang_key = 'pm_move_rename';
             }
-            $summary = sprintf($this->lang[$lang_key], $ID, $opts['new_id']);
+            $summary = sprintf($this->getLang($lang_key), $ID, $opts['new_id']);
             saveWikiText($opts['new_id'], $text, $summary);
 
             // Delete the orginal file
             if (@file_exists(wikiFN($opts['new_id']))) {
-                saveWikiText($ID, '', $this->lang['pm_delete'] );
+                saveWikiText($ID, '', $this->getLang('pm_delete') );
             }
 
             // Move the old revisions
