@@ -1,8 +1,15 @@
 <?php
 /**
- * Helper part of the pagemove plugins.
+ * Plugin : Pagemove
  *
- * @author Michael Hamann <michael@content-space.de>
+ * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author     Michael Hamann <michael@content-space.de>
+ */
+// must be run within Dokuwiki
+if (!defined('DOKU_INC')) die();
+
+/**
+ * Helper part of the pagemove plugin.
  */
 class helper_plugin_pagemove extends DokuWiki_Plugin {
     /**
