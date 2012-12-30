@@ -186,10 +186,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
                 }
                 foreach ($affected_pages[$page_id] as $id) {
                     if (!page_exists($id, '', false) || $id == $page_id || $id == $opts['new_id']) continue;
+                    $additional_pages[] = $id;
                     // if the page has been modified since the rename of the old page, the link in the new page is most
                     // probably intentionally to the old page and shouldn't be changed
                     if (filemtime(wikiFN($id, '', false)) > $time) continue;
-                    $additional_pages[] = $id;
                     // we are only interested in persistent metadata, so no need to render anything.
                     $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
                     if (!$meta) $meta = array('moves' => array());
