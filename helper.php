@@ -203,6 +203,8 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             }
 
             p_set_metadata($opts['new_id'], array('plugin_pagemove' => $page_meta), false, true);
+
+            unlock($ID);
         }
 
         $event->advise_after();
