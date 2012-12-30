@@ -46,7 +46,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         global $INFO;
 
         if( !$INFO['exists'] )
-            return $this->getLang('menu').' ('.$this->getLang('pm_notexist').')';
+            return $this->getLang('menu').' ('.sprintf($this->getLang('pm_notexist'), $INFO['id']).')';
         elseif( !$INFO['writable'] )
             return $this->getLang('menu').' ('.$this->getLang('pm_notwrite').')';
         else

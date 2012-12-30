@@ -15,7 +15,7 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Page/Namespace Move/Rename...';
 $lang['desc'] = 'Page/Namespace Move/Rename Plugin';
 
-$lang['pm_notexist']    = 'This page does not exist';
+$lang['pm_notexist']    = 'The page %s does not exist';
 $lang['pm_notwrite']    = 'You do not have sufficient permissions to modify this page';
 $lang['pm_badns']       = 'Invalid characters in namespace.';
 $lang['pm_badname']     = 'Invalid characters in pagename.';

@@ -81,7 +81,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 
         // Check we have rights to move this document
         if ( !page_exists($ID)) {
-            msg($this->getLang('pm_notexist'), -1);
+            msg(sprintf($this->getLang('pm_notexist'), $ID), -1);
             return false;
         }
         if ( auth_quickaclcheck($ID) < AUTH_EDIT ) {
