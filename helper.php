@@ -248,6 +248,32 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     }
 
     /**
+     * Rewrite the text of a page according to the recorded moves, the rewritten text is saved
+     *
+     * @param string      $id   The id of the page that shall be rewritten
+     * @param string|null $text Old content of the page. When null is given the content is loaded from disk.
+     * @return string The rewritten content
+     */
+    public function execute_rewrites($id, $text = null) {
+        $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+        if($meta && isset($meta['moves'])) {
+            if(is_null($text)) $text = rawWiki($id);
+
+            $text = $this->rewrite_content($text, $id, $meta['moves']);
+            $file = wikiFN($id, '', false);
+            if(is_writable($file)) {
+                saveWikiText($id, $text, $this->getLang('pm_linkchange'));
+                unset($meta['moves']);
+                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
+            } else { // FIXME: print error here or fail silently?
+                msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
+            }
+        }
+
+        return $text;
+    }
+
+    /**
      * Rewrite a text in order to fix the content after the given moves.
      *
      * @param string $text   The wiki text that shall be rewritten

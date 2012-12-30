@@ -35,21 +35,10 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
         if ((isset($ACT) && (in_array($ACT, array('save', 'preview', 'recover', 'revert'))))
             || checklock($id) !== false) return;
 
-        $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
-        if ($meta && isset($meta['moves'])) {
-            $stack[$id] = true;
-            $helper = $this->loadHelper('pagemove', true);
-            if (!is_null($helper)) {
-                $event->result = $helper->rewrite_content($event->result, $id, $meta['moves']);
-            }
-            $file = wikiFN($id, '', false);
-            if (is_writable($file)) {
-                saveWikiText($id,$event->result,$this->getLang('pm_linkchange'));
-                unset($meta['moves']);
-                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
-            } else { // FIXME: print error here or fail silently?
-                msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
-            }
+        $helper = $this->loadHelper('pagemove', true);
+        if(!is_null($helper)) {
+            $stack[$id]    = true;
+            $event->result = $helper->execute_rewrites($id, $event->result);
             unset($stack[$id]);
         }
     }
