@@ -62,21 +62,23 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
     /**
      * output appropriate html
      *
+     * @author  Michael Hamann <michael@content-space.de>
      * @author  Gary Owen <gary@isection.co.uk>
      */
     function html() {
         ptln('<!-- Pagemove Plugin start -->');
         ptln( $this->locale_xhtml('pagemove') );
-        $this->_pm_form();
+        $this->printForm();
         ptln('<!-- Pagemove Plugin end -->');
     }
 
     /**
      * show the move and/or rename a page form
      *
+     * @author  Michael Hamann <michael@content-space.de>
      * @author  Gary Owen <gary@isection.co.uk>
      */
-    function _pm_form() {
+    function printForm() {
         global $ID;
 
         $ns = getNS($ID);
@@ -184,8 +186,6 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
                 $helper->move_namespace($this->opts)) {
                 $ID = $helper->getNewID($INFO['id'], $this->opts['ns'], $this->opts['newns']);
                 $ACT = 'show';
-            } else {
-                return;
             }
         } else {
             // check that the pagename is valid
@@ -199,13 +199,9 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             }
 
             if ($helper->move_page($this->opts)) {
-                // @todo if the namespace is now empty, delete it
-
                 // Set things up to display the new page.
                 $ID = $this->opts['new_id'];
                 $ACT = 'show'; // this triggers a redirect to the page
-            } else {
-                return;
             }
         }
     }
