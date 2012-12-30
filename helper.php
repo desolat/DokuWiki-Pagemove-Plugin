@@ -316,7 +316,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         while($changed) {
             $changed = false;
             foreach($tmp_moves as $old => $new) {
-                if(isset($moves[$new]) && $moves[$new] != $new) {
+                if($old != $new && isset($moves[$new]) && $moves[$new] != $new) {
                     $tmp_moves[$old] = $moves[$new];
                     $changed         = true;
                 }
@@ -325,7 +325,8 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 
         // manual merge, we can't use array_merge here as ids can be numeric
         foreach($tmp_moves as $old => $new) {
-            $moves[$old] = $new;
+            if ($old == $new) unset($moves[$old]);
+            else $moves[$old] = $new;
         }
 
         $handlers = array();
