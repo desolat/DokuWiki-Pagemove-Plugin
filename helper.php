@@ -141,7 +141,8 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             lock($ID);
             $text = rawWiki($ID);
 
-            $text = $this->rewrite_content($text, $ID, array($ID => $opts['new_id']));
+            $text   = $this->rewrite_content($text, $ID, array($ID => $opts['new_id']));
+            $oldRev = getRevisions($ID, -1, 1, 1024); // from changelog
 
             // Move the Subscriptions & Indexes
             $this->movemeta($opts);
@@ -156,6 +157,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             else {
                 $lang_key = 'pm_move_rename';
             }
+
+            // Wait a second when the page has just been rewritten
+            if ($oldRev == time()) sleep(1);
+
             $summary = sprintf($this->getLang($lang_key), $ID, $opts['new_id']);
             saveWikiText($opts['new_id'], $text, $summary);
 
@@ -269,6 +274,9 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             $text = $this->rewrite_content($text, $id, $meta['moves']);
             $file = wikiFN($id, '', false);
             if(is_writable($file)) {
+                // Wait a seconf if page has just been saved
+                $oldRev = getRevisions($id, -1, 1, 1024); // from changelog
+                if ($oldRev == time()) sleep(1);
                 saveWikiText($id, $text, $this->getLang('pm_linkchange'));
                 unset($meta['moves']);
                 p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
