@@ -243,8 +243,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * @param string $extregex Regular expression for matching the extension of the file that shall be moved
      */
     private function move_files($dir, $opts, $extregex) {
-        $old_path = $dir.'/'.utf8_encodeFN(str_replace(':', '/', $opts['ns'])).'/';
-        $new_path = $dir.'/'.utf8_encodeFN(str_replace(':', '/', $opts['newns'])).'/';
+        $old_path = $dir.'/';
+        if ($opts['ns'] != '') $old_path .= utf8_encodeFN(str_replace(':', '/', $opts['ns'])).'/';
+        $new_path = $dir.'/';
+        if ($opts['newns'] != '') $new_path .= utf8_encodeFN(str_replace(':', '/', $opts['newns'])).'/';
         $regex = '/^'.preg_quote(utf8_encodeFN($opts['name'])).'('.$extregex.')$/u';
 
         $dh = @opendir($old_path);
