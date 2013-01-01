@@ -150,7 +150,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
                 msg('Error while updating the search index '.$idx_msg, -1);
                 return false;
             }
-            $this->movemeta($opts);
+            if (!$this->movemeta($opts)) {
+                msg('The meta files of page '.$ID.' couldn\'t be moved', -1);
+                return false;
+            }
 
             // Save the updated document in its new location
             if ($opts['ns'] == $opts['newns']) {
@@ -175,7 +178,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             }
 
             // Move the old revisions
-            $this->moveattic($opts);
+            if (!$this->moveattic($opts)) {
+                // it's too late to stop the move, so just display a message.
+                msg('The attic files of page '.$ID.' couldn\'t be moved. Please move them manually.', -1);
+            }
 
             foreach ($affected_pages as $id) {
                 if (!page_exists($id, '', false) || $id == $ID || $id == $opts['new_id']) continue;
@@ -202,24 +208,26 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * Move the old revisions of the page that is specified in the options.
      *
      * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @return bool If the attic files were moved successfully
      */
     public function moveattic($opts) {
         global $conf;
 
         $regex = '\.\d+\.txt(?:\.gz|\.bz2)?';
-        $this->move_files($conf['olddir'], $opts, $regex);
+        return $this->move_files($conf['olddir'], $opts, $regex);
     }
 
     /**
      * Move the meta files of the page that is specified in the options.
      *
      * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @return bool If the meta files were moved successfully
      */
     public function movemeta($opts) {
         global $conf;
 
         $regex = '\.[^.]+';
-        $this->move_files($conf['metadir'], $opts, $regex);
+        return $this->move_files($conf['metadir'], $opts, $regex);
     }
 
     /**
@@ -228,6 +236,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * @param string $dir   The root path of the files (e.g. $conf['metadir'] or $conf['olddir']
      * @param array  $opts  Pagemove options (used here: ns, newns, name, newname)
      * @param string $extregex Regular expression for matching the extension of the file that shall be moved
+     * @return bool If the files were moved successfully
      */
     private function move_files($dir, $opts, $extregex) {
         $old_path = $dir.'/';
@@ -242,12 +251,24 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
                 if (substr($file, 0, 1) == '.') continue;
                 $match = array();
                 if (is_file($old_path.$file) && preg_match($regex, $file, $match)) {
-                    if (!is_dir($new_path)) io_mkdir_p($new_path);
-                    io_rename($old_path.$file, $new_path.utf8_encodeFN($opts['newname'].$match[1]));
+                    if (!is_dir($new_path)) {
+                        if (!io_mkdir_p($new_path)) {
+                            msg('Creating directory '.hsc($new_path).' failed.', -1);
+                            return false;
+                        }
+                    }
+                    if (!io_rename($old_path.$file, $new_path.utf8_encodeFN($opts['newname'].$match[1]))) {
+                        msg('Moving '.hsc($old_path.$file).' to '.hsc($new_path.utf8_encodeFN($opts['newname'].$match[1])).' failed.', -1);
+                        return false;
+                    }
                 }
             }
             closedir($dh);
+        } else {
+            msg('Directory '.hsc($old_path).' couldn\'t be opened.', -1);
+            return false;
         }
+        return true;
     }
 
     /**
