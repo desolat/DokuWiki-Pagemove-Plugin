@@ -128,7 +128,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $page_meta['old_ids'][$ID] = time();
 
         // ft_backlinks() is not used here, as it does a hidden page and acl check but we really need all pages
-        $affected_pages = idx_get_indexer()->lookupKey('relation_references', array_keys($page_meta['old_ids']));
+        $affected_pages = idx_get_indexer()->lookupKey('relation_references', $ID);
 
         $data = array('opts' => &$opts, 'old_ids' => $page_meta['old_ids'], 'affected_pages' => &$affected_pages);
         // give plugins the option to add their own meta files to the list of files that need to be moved
@@ -145,6 +145,11 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             $oldRev = getRevisions($ID, -1, 1, 1024); // from changelog
 
             // Move the Subscriptions & Indexes
+            $Indexer = new helper_plugin_pagemove_indexer();
+            if (($idx_msg = $Indexer->renamePage($ID, $opts['new_id'])) !== true) {
+                msg('Error while updating the search index '.$idx_msg, -1);
+                return false;
+            }
             $this->movemeta($opts);
 
             // Save the updated document in its new location
@@ -172,34 +177,16 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             // Move the old revisions
             $this->moveattic($opts);
 
-            asort($page_meta['old_ids']);
-
-            // additional pages that should be considered because they were affected by moves from previous names
-            // if the page has been rendered in the meantime and but the new links aren't in the index yet the
-            // page might need information about a more recent rename even though it is not listed for this more recent link
-            $additional_pages = array();
-            foreach ($page_meta['old_ids'] as $page_id => $time) {
-                if (!isset($affected_pages[$page_id])) {
-                    $affected_pages[$page_id] = $additional_pages;
-                } else {
-                    $affected_pages[$page_id] = array_unique(array_merge($affected_pages[$page_id], $additional_pages));
-                }
-                foreach ($affected_pages[$page_id] as $id) {
-                    if (!page_exists($id, '', false) || $id == $page_id || $id == $opts['new_id']) continue;
-                    $additional_pages[] = $id;
-                    // if the page has been modified since the rename of the old page, the link in the new page is most
-                    // probably intentionally to the old page and shouldn't be changed
-                    if (filemtime(wikiFN($id, '', false)) > $time) continue;
-                    // we are only interested in persistent metadata, so no need to render anything.
-                    $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
-                    if (!$meta) $meta = array('moves' => array());
-                    if (!isset($meta['moves'])) $meta['moves'] = array();
-                    $meta['moves'][$page_id] = $opts['new_id'];
-                    // remove redundant moves (can happen when a page is moved back to its old id)
-                    if ($page_id == $opts['new_id']) unset($meta['moves'][$page_id]);
-                    if (empty($meta['moves'])) unset($meta['moves']);
-                    p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
-                }
+            foreach ($affected_pages as $id) {
+                if (!page_exists($id, '', false) || $id == $ID || $id == $opts['new_id']) continue;
+                // we are only interested in persistent metadata, so no need to render anything.
+                $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+                if (!$meta) $meta = array('moves' => array());
+                if (!isset($meta['moves'])) $meta['moves'] = array();
+                $meta['moves'] = $this->resolve_moves($meta['moves'], $id);
+                $meta['moves'][$ID] = $opts['new_id'];
+                //if (empty($meta['moves'])) unset($meta['moves']);
+                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
             }
 
             p_set_metadata($opts['new_id'], array('plugin_pagemove' => $page_meta), false, true);
@@ -301,33 +288,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * @return string        The rewritten wiki text
      */
     function rewrite_content($text, $id, $moves) {
-        // resolve moves of pages that were moved more than once
-        $tmp_moves = array();
-        foreach($moves as $old => $new) {
-            if($old != $id && isset($moves[$new]) && $moves[$new] != $new) {
-                // write to temp array in order to correctly handle rename circles
-                $tmp_moves[$old] = $moves[$new];
-            }
-        }
-
-        $changed = !empty($tmp_moves);
-
-        // this correctly resolves rename circles by moving forward one step a time
-        while($changed) {
-            $changed = false;
-            foreach($tmp_moves as $old => $new) {
-                if($old != $new && isset($moves[$new]) && $moves[$new] != $new) {
-                    $tmp_moves[$old] = $moves[$new];
-                    $changed         = true;
-                }
-            }
-        }
-
-        // manual merge, we can't use array_merge here as ids can be numeric
-        foreach($tmp_moves as $old => $new) {
-            if ($old == $new) unset($moves[$old]);
-            else $moves[$old] = $new;
-        }
+        $moves = $this->resolve_moves($moves, $id);
 
         $handlers = array();
         $data     = array('id' => $id, 'moves' => &$moves, 'handlers' => &$handlers);
@@ -363,6 +324,138 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 
         return $Parser->parse($text);
     }
+
+    /**
+     * Resolves the provided moves, i.e. it calculates for each page the final page it was moved to.
+     *
+     * @param array $moves The moves
+     * @param string $id
+     * @return array The resolved moves
+     */
+    protected function resolve_moves($moves, $id) {
+        // resolve moves of pages that were moved more than once
+        $tmp_moves = array();
+        foreach($moves as $old => $new) {
+            if($old != $id && isset($moves[$new]) && $moves[$new] != $new) {
+                // write to temp array in order to correctly handle rename circles
+                $tmp_moves[$old] = $moves[$new];
+            }
+        }
+
+        $changed = !empty($tmp_moves);
+
+        // this correctly resolves rename circles by moving forward one step a time
+        while($changed) {
+            $changed = false;
+            foreach($tmp_moves as $old => $new) {
+                if($old != $new && isset($moves[$new]) && $moves[$new] != $new) {
+                    $tmp_moves[$old] = $moves[$new];
+                    $changed         = true;
+                }
+            }
+        }
+
+        // manual merge, we can't use array_merge here as ids can be numeric
+        foreach($tmp_moves as $old => $new) {
+            if($old == $new) unset($moves[$old]);
+            else $moves[$old] = $new;
+        }
+        return $moves;
+    }
+}
+
+/**
+ * Indexer class extended by pagemove features
+ */
+class helper_plugin_pagemove_indexer extends Doku_Indexer {
+    /**
+     * Rename a page in the search index without changing the indexed content
+     *
+     * @param string $oldpage The old page name
+     * @param string $newpage The new page name
+     * @return string|bool If the page was successfully renamed, can be a message in the case of an error
+     */
+    public function renamePage($oldpage, $newpage) {
+        if (!$this->lock()) return 'locked';
+
+        $pages = $this->getPages();
+
+        $id = array_search($oldpage, $pages);
+        if ($id === false) {
+            $this->unlock();
+            return 'page is not in index';
+        }
+
+        $new_id = array_search($newpage, $pages);
+        if ($new_id !== false) {
+            $this->unlock();
+            // make sure the page is not in the index anymore
+            $this->deletePage($newpage);
+            if (!$this->lock()) return 'locked';
+
+            $pages[$new_id] = 'deleted:'.time().rand(0, 9999);
+        }
+
+        $pages[$id] = $newpage;
+
+        // update index
+        if (!$this->saveIndex('page', '', $pages)) {
+            $this->unlock();
+            return false;
+        }
+
+        if (isset($this->pidCache))
+            $this->pidCache = array();
+
+        unset($pages);
+
+
+        // change the relation references index
+        $linktargets = $this->getIndex('relation_references', '_w');
+        $linktargetid = array_search($oldpage, $linktargets);
+        if ($linktargetid !== false) {
+            $newlinktargetid = array_search($newpage, $linktargets);
+            if ($newlinktargetid !== false) {
+                // free memory
+                unset ($linktargets);
+
+                // okay, now we have two entries for the same page. we need to merge them.
+                $indexline = $this->getIndexKey('relation_references', '_i', $linktargetid);
+                if ($indexline != '') {
+                    $newindexline = $this->getIndexKey('relation_references', '_i', $newlinktargetid);
+                    $pagekeys     = $this->getIndex('relation_references', '_p');
+                    $parts = explode(':', $indexline);
+                    foreach ($parts as $part) {
+                        list($id, $count) = explode('*', $part);
+                        $newindexline =  $this->updateTuple($newindexline, $id, $count);
+
+                        $keyline = explode(':', $pagekeys[$id]);
+                        // remove old link target
+                        $keyline = array_diff($keyline, array($linktargetid));
+                        // add new link target when not already present
+                        if (!in_array($newlinktargetid, $keyline)) {
+                            array_push($keyline, $newlinktargetid);
+                        }
+                        $pagekeys[$id] = implode(':', $keyline);
+                    }
+                    $this->saveIndex('relation_references', '_p', $pagekeys);
+                    unset($pagekeys);
+                    $this->saveIndexKey('relation_references', '_i', $linktargetid, '');
+                    $this->saveIndexKey('relation_references', '_i', $newlinktargetid, $newindexline);
+                }
+            } else {
+                $linktargets[$linktargetid] = $newpage;
+                if (!$this->saveIndex('relation_references', '_w', $linktargets)) {
+                    $this->unlock();
+                    return false;
+                }
+            }
+        }
+
+        $this->unlock();
+        return true;
+    }
+
 }
 
 /**
