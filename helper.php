@@ -283,13 +283,17 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         if($meta && isset($meta['moves'])) {
             if(is_null($text)) $text = rawWiki($id);
 
+            $old_text = $text;
             $text = $this->rewrite_content($text, $id, $meta['moves']);
+            $changed = ($old_text != $text);
             $file = wikiFN($id, '', false);
-            if(is_writable($file)) {
-                // Wait a seconf if page has just been saved
-                $oldRev = getRevisions($id, -1, 1, 1024); // from changelog
-                if ($oldRev == time()) sleep(1);
-                saveWikiText($id, $text, $this->getLang('pm_linkchange'));
+            if(is_writable($file) || !$changed) {
+                if ($changed) {
+                    // Wait a second if page has just been saved
+                    $oldRev = getRevisions($id, -1, 1, 1024); // from changelog
+                    if ($oldRev == time()) sleep(1);
+                    saveWikiText($id, $text, $this->getLang('pm_linkchange'));
+                }
                 unset($meta['moves']);
                 p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
             } else { // FIXME: print error here or fail silently?
