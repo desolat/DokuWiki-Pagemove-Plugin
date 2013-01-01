@@ -29,13 +29,23 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
      * @param mixed      $param Optional parameters (not used)
      */
     function handle_read(Doku_Event $event, $param) {
-        global $ACT;
+        global $ACT, $conf;
         static $stack = array();
         // handle only reads of the current revision
         if ($event->data[3]) return;
 
         $id = $event->data[2];
         if ($event->data[1]) $id = $event->data[1].':'.$id;
+
+        if (!$id) {
+            // try to reconstruct the id from the filename
+            $path = $event->data[0][0];
+            if (strpos($path, $conf['datadir']) === 0) {
+                $path = substr($path, strlen($conf['datadir'])+1);
+                $id = pathID($path);
+            }
+        }
+
         if (isset($stack[$id])) return;
 
         // Don't change the page when the user is currently changing the page content or the page is locked by another user
@@ -57,9 +67,18 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
      * @param mixed      $param Optional parameters (not used)
      */
     function handle_cache(Doku_Event $event, $param) {
+        global $conf;
         /** @var $cache cache_parser */
         $cache = $event->data;
         $id = $cache->page;
+        if (!$id) {
+            // try to reconstruct the id from the filename
+            $path = $cache->file;
+            if (strpos($path, $conf['datadir']) === 0) {
+                $path = substr($path, strlen($conf['datadir'])+1);
+                $id = pathID($path);
+            }
+        }
         if ($id) {
             $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
             if ($meta && isset($meta['moves'])) {
