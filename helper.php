@@ -239,10 +239,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * @return bool If the files were moved successfully
      */
     private function move_files($dir, $opts, $extregex) {
-        $old_path = $dir.'/';
-        if ($opts['ns'] != '') $old_path .= utf8_encodeFN(str_replace(':', '/', $opts['ns'])).'/';
-        $new_path = $dir.'/';
-        if ($opts['newns'] != '') $new_path .= utf8_encodeFN(str_replace(':', '/', $opts['newns'])).'/';
+        $old_path = $dir;
+        if ($opts['ns'] != '') $old_path .= '/'.utf8_encodeFN(str_replace(':', '/', $opts['ns']));
+        $new_path = $dir;
+        if ($opts['newns'] != '') $new_path .= '/'.utf8_encodeFN(str_replace(':', '/', $opts['newns']));
         $regex = '/^'.preg_quote(utf8_encodeFN($opts['name'])).'('.$extregex.')$/u';
 
         $dh = @opendir($old_path);
@@ -250,15 +250,15 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             while(($file = readdir($dh)) !== false) {
                 if (substr($file, 0, 1) == '.') continue;
                 $match = array();
-                if (is_file($old_path.$file) && preg_match($regex, $file, $match)) {
+                if (is_file($old_path.'/'.$file) && preg_match($regex, $file, $match)) {
                     if (!is_dir($new_path)) {
                         if (!io_mkdir_p($new_path)) {
                             msg('Creating directory '.hsc($new_path).' failed.', -1);
                             return false;
                         }
                     }
-                    if (!io_rename($old_path.$file, $new_path.utf8_encodeFN($opts['newname'].$match[1]))) {
-                        msg('Moving '.hsc($old_path.$file).' to '.hsc($new_path.utf8_encodeFN($opts['newname'].$match[1])).' failed.', -1);
+                    if (!io_rename($old_path.'/'.$file, $new_path.'/'.utf8_encodeFN($opts['newname'].$match[1]))) {
+                        msg('Moving '.hsc($old_path.'/'.$file).' to '.hsc($new_path.'/'.utf8_encodeFN($opts['newname'].$match[1])).' failed.', -1);
                         return false;
                     }
                 }
