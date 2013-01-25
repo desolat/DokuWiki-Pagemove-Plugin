@@ -1,4 +1,3 @@
-<code php>
 <?php
 /**
  * english language file
@@ -18,26 +17,17 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Przenieś / Zmień nazwę strony';
 $lang['desc'] = 'Wtyczka Przenieś/Zmień nazwę';
 
-$lang['pm_notexist']   = 'Ten temat jeszcze nie istnieje';
-$lang['pm_notstart']   = 'Strona start nie może być przeniesiona ani przemianowana';
+//$lang['pm_notexist']   = 'Ten temat jeszcze nie istnieje';
 $lang['pm_notwrite']   = 'Niewystarczające uprawnienia by wykonać operację';
 $lang['pm_badns']      = 'Nieprawidłowy znak w nazwie katalogu';
 $lang['pm_badname']    = 'Nieprawidłowy znak w nazwie dokumentu';
 $lang['pm_nochange']   = 'Nazwa dokumentu i katalogu niezmieniona';
-$lang['pm_existing1']  = 'Dokument o nazwie ';
-$lang['pm_existing2']  = ' już istnieje ';
+$lang['pm_existing']  = 'Dokument o nazwie %s już istnieje %s';
 $lang['pm_root']       = '[katalog bazowy]';
 $lang['pm_current']    = '(Bieżący)';
-$lang['pm_movedfrom']  = 'Dokument przeniesiony z ';
-$lang['pm_movedto']    = 'Dokument przeniesiony do ';
-$lang['pm_norights']   = 'Nie masz wystarczających uprawnień do zmiany co najmniej jednego z linków do tej strony';
-$lang['pm_tryagain']   = 'Spróbuj ponownie później';
-$lang['pm_filelocked']  = 'Ten plik jest zablokowany - ';
-$lang['pm_fileslocked'] = 'Te pliki są zablokowane - ';
-$lang['pm_linkchange1'] = 'Linki do ';
-$lang['pm_linkchange2'] = ' zmienione na ';
+//$lang['pm_norights']   = 'Nie masz wystarczających uprawnień do zmiany co najmniej jednego z linków do tej strony';
+$lang['pm_filelocked']  = 'Ten plik jest zablokowany - spróbuj ponownie później';
+$lang['pm_linkchange1'] = 'Linki do %s zmienione na %s';
 $lang['pm_newname']     = 'Nowa nazwa dokumentu:';
 $lang['pm_targetns']    = 'Nazwa docelowego katalogu:';
 $lang['pm_submit']      = 'Zmień';
-?>
-</code>

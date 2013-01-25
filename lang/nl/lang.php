@@ -15,25 +15,17 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Pagina Verplaatsen/Hernoemen...';
 $lang['desc'] = 'Pagina Verplaatsen/Hernoemen Plugin';
 
-$lang['pm_notexist']   = 'Dit onderwerp bestaat nog niet';
-$lang['pm_notstart']   = 'De startpagina kan niet worden verplaatst of hernoemd';
+//$lang['pm_notexist']   = 'Dit onderwerp bestaat nog niet';
 $lang['pm_notwrite']   = 'U heeft niet voldoende rechten om deze pagina te wijzigen';
 $lang['pm_badns']      = 'De namespace bevat een niet-toegestaan teken.';
 $lang['pm_badname']    = 'De paginanaam bevat een niet-toegestaan teken.';
 $lang['pm_nochange']   = 'De paginanaam en -namespace zijn ongewijzigd.';
-$lang['pm_existing1']  = 'Het document met naam ';
-$lang['pm_existing2']  = ' bestaat al in ';
+$lang['pm_existing1']  = 'Het document met naam %s bestaat al in %s';
 $lang['pm_root']       = '[Hoofdnamespace]';
 $lang['pm_current']    = '(Huidig)';
-$lang['pm_movedfrom']  = 'Document verplaatst van ';
-$lang['pm_movedto']    = 'Document verplaatst naar ';
-$lang['pm_norights']   = 'U heeft niet voldoende rechten om een of meerdere referenties aan te passen.';
-$lang['pm_tryagain']   = 'Probeer later opnieuw.';
-$lang['pm_filelocked']  = 'Deze file is geblokkeerd - ';
-$lang['pm_fileslocked'] = 'Deze files zijn geblokeerd - ';
-$lang['pm_linkchange1'] = 'Gelinkt aan ';
-$lang['pm_linkchange2'] = ' gewijzigd naar ';
+//$lang['pm_norights']   = 'U heeft niet voldoende rechten om een of meerdere referenties aan te passen.';
+$lang['pm_filelocked']  = 'Deze file is geblokkeerd - probeer later opnieuw.';
+$lang['pm_linkchange1'] = 'Gelinkt aan %s gewijzigd naar %s';
 $lang['pm_newname']     = 'Nieuwe naam document:';
 $lang['pm_targetns']    = 'Selecteer namespace van het doel:';
 
-?>

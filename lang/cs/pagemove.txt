@@ -2,9 +2,8 @@
 
 Pomocí tohoto pluginu lze přesunout nebo přejmenovat aktuální stránku. Platí však jistá omezení:
 
-  * Nelze přesouvat titulní stránku.
-  * Musíte mít práva na danou stránku a na všechny, které se na ní odkazují.
-  * Tato stránka a na ni odkazující stránky nesmí být zamčené.
+  * Musíte mít práva na danou stránku.
+  * The pages that are moved must not be locked for editing.
   * Pro přesun stránky potřebujete práva pro zápis v cílovém místě.
   * Nelze přesunout stránku někam, kde již existuje stránka stejného jména.
 	

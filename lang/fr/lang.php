@@ -16,25 +16,17 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Déplacer/Renommer la page...';
 $lang['desc'] = 'Plugin de Déplacement/Renommage';
 
-$lang['pm_notexist']   = 'Ce sujet n\'existe pas encore';
-$lang['pm_notstart']   = 'La page de démarrage (Start) ne peut être déplacée ou renommée';
+$lang['pm_notexist']   = 'Le sujet %s n\'existe pas encore';
 $lang['pm_notwrite']   = 'Vous ne disposez pas des droits suffisants pour modifier cette page';
 $lang['pm_badns']      = "Caractères invalides dans l'espace de nommage.";
 $lang['pm_badname']    = 'Caractères invalides dans le nom de la page.';
 $lang['pm_nochange']   = "Le nom du document et l'espace de nomage sont inchangés.";
-$lang['pm_existing1']  = 'Un document appelé ';
-$lang['pm_existing2']  = ' existe déjà dans ';
+$lang['pm_existing']  = 'Un document appelé %s existe déjà dans %s';
 $lang['pm_root']       = '[Espace de nom racine]';
 $lang['pm_current']    = '(Courant)';
-$lang['pm_movedfrom']  = 'Document déplacé depuis ';
-$lang['pm_movedto']    = 'Document déplacé vers ';
-$lang['pm_norights']   = 'Vos permissions sont insufisante pour éditer un ou plusieurs liens pointant vers cette page.';
-$lang['pm_tryagain']   = 'Réessayez plus tard.';
-$lang['pm_filelocked']  = 'Ce fichier est verrouillé - ';
-$lang['pm_fileslocked'] = 'Ces fichiers sont verrouillés - ';
-$lang['pm_linkchange1'] = 'Les liens vers ';
-$lang['pm_linkchange2'] = ' ont été changés vers ';
+$lang['pm_norights']   = 'Vos permissions sont insufisante pour éditer %s.';
+$lang['pm_filelocked']  = 'Ce fichier est verrouillé - réessayez plus tard.';
+$lang['pm_linkchange'] = 'Les liens vers %s ont été changés vers %s';
 $lang['pm_newname']     = 'Nouveau nom du document :';
 $lang['pm_targetns']    = 'Sélectionnez le nouvel espace de nommage :';
 
-?>

@@ -1,4 +1,3 @@
-<php>
 <?php
 /**
  * czech language file
@@ -16,26 +15,19 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Přesun/přejmenování stránky';
 $lang['desc'] = 'Plugin pro přesun/přejmenování stránku';
 
-$lang['pm_notexist']   = 'Toto téma ještě neexistuje';
-$lang['pm_notstart']   = 'Titulní stránku nelze přesouvat ani přejmenovat';
+//$lang['pm_notexist']   = 'Toto téma ještě neexistuje';
 $lang['pm_notwrite']   = 'Nemáte dostatečná oprávnění pro úpravu stránky';
 $lang['pm_badns']      = 'Neplatný název jmenného prostoru';
 $lang['pm_badname']    = 'Neplatný název stránky';
 $lang['pm_nochange']   = 'Jméno stránky a jmenného prostoru se nezměnilo';
-$lang['pm_existing1']  = 'Stránka ';
-$lang['pm_existing2']  = ' již existuje v ';
+$lang['pm_existing1']  = 'Stránka %s již existuje v %s';
 $lang['pm_root']       = '[Kořen]';
 $lang['pm_current']    = '(Současný)';
-$lang['pm_movedfrom']  = 'Stránka přesunuta z ';
-$lang['pm_movedto']    = 'Stránka přesunuta do ';
-$lang['pm_norights']   = 'Nemáte právo editovat jednu nebo více odkazujících stránek';
-$lang['pm_tryagain']   = 'Zkuste prosím znovu později';
-$lang['pm_filelocked']  = 'Tento soubor je uzamčen - ';
-$lang['pm_fileslocked'] = 'Tyto soubory jsou uzamčeny - ';
-$lang['pm_linkchange1'] = 'Odkazy na ';
-$lang['pm_linkchange2'] = ' změněny na ';
+//$lang['pm_norights']   = 'Nemáte právo editovat jednu nebo více odkazujících stránek';
+$lang['pm_filelocked']  = 'Tento soubor je uzamčen - zkuste prosím znovu později';
+$lang['pm_linkchange1'] = 'Odkazy na %s změněny na %s';
 $lang['pm_newname']     = 'Nový název stránky :';
 $lang['pm_targetns']    = 'Cílový jmenný prostor :';
 $lang['pm_submit']      = 'Potvrdit';
-?>
-</php>
+
+
