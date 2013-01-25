@@ -145,8 +145,13 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             $oldRev = getRevisions($ID, -1, 1, 1024); // from changelog
 
             // Move the Subscriptions & Indexes
-            $Indexer = new helper_plugin_pagemove_indexer();
-            if (($idx_msg = $Indexer->renamePage($ID, $opts['new_id'])) !== true) {
+            if (method_exists('Doku_Indexer', 'renamePage')) { // new feature since Spring 2013 release
+                $Indexer = idx_get_indexer();
+            } else {
+                $Indexer = new helper_plugin_pagemove_indexer(); // copy of the new code
+            }
+            if (($idx_msg = $Indexer->renamePage($ID, $opts['new_id'])) !== true
+                || ($idx_msg = $Indexer->renameMetaValue('relation_references', $ID, $opts['new_id'])) !== true) {
                 msg('Error while updating the search index '.$idx_msg, -1);
                 return false;
             }
@@ -390,7 +395,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 }
 
 /**
- * Indexer class extended by pagemove features
+ * Indexer class extended by pagemove features, only needed and used in releases older than Spring 2013
  */
 class helper_plugin_pagemove_indexer extends Doku_Indexer {
     /**
@@ -429,48 +434,58 @@ class helper_plugin_pagemove_indexer extends Doku_Indexer {
             return false;
         }
 
-        if (isset($this->pidCache))
-            $this->pidCache = array();
+        $this->unlock();
+        return true;
+    }
 
-        unset($pages);
-
+    /**
+     * Renames a meta value in the index. This doesn't change the meta value in the pages, it assumes that all pages
+     * will be updated.
+     *
+     * @param string $key       The metadata key of which a value shall be changed
+     * @param string $oldvalue  The old value that shall be renamed
+     * @param string $newvalue  The new value to which the old value shall be renamed, can exist (then values will be merged)
+     * @return bool|string      If renaming the value has been successful, false or error message on error.
+     */
+    public function renameMetaValue($key, $oldvalue, $newvalue) {
+        if (!$this->lock()) return 'locked';
 
         // change the relation references index
-        $linktargets = $this->getIndex('relation_references', '_w');
-        $linktargetid = array_search($oldpage, $linktargets);
-        if ($linktargetid !== false) {
-            $newlinktargetid = array_search($newpage, $linktargets);
-            if ($newlinktargetid !== false) {
+        $metavalues = $this->getIndex($key, '_w');
+        $oldid = array_search($oldvalue, $metavalues);
+        if ($oldid !== false) {
+            $newid = array_search($newvalue, $metavalues);
+            if ($newid !== false) {
                 // free memory
-                unset ($linktargets);
+                unset ($metavalues);
 
-                // okay, now we have two entries for the same page. we need to merge them.
-                $indexline = $this->getIndexKey('relation_references', '_i', $linktargetid);
+                // okay, now we have two entries for the same value. we need to merge them.
+                $indexline = $this->getIndexKey($key, '_i', $oldid);
                 if ($indexline != '') {
-                    $newindexline = $this->getIndexKey('relation_references', '_i', $newlinktargetid);
-                    $pagekeys     = $this->getIndex('relation_references', '_p');
+                    $newindexline = $this->getIndexKey($key, '_i', $newid);
+                    $pagekeys     = $this->getIndex($key, '_p');
                     $parts = explode(':', $indexline);
                     foreach ($parts as $part) {
                         list($id, $count) = explode('*', $part);
                         $newindexline =  $this->updateTuple($newindexline, $id, $count);
 
                         $keyline = explode(':', $pagekeys[$id]);
-                        // remove old link target
-                        $keyline = array_diff($keyline, array($linktargetid));
-                        // add new link target when not already present
-                        if (!in_array($newlinktargetid, $keyline)) {
-                            array_push($keyline, $newlinktargetid);
+                        // remove old meta value
+                        $keyline = array_diff($keyline, array($oldid));
+                        // add new meta value when not already present
+                        if (!in_array($newid, $keyline)) {
+                            array_push($keyline, $newid);
                         }
                         $pagekeys[$id] = implode(':', $keyline);
                     }
-                    $this->saveIndex('relation_references', '_p', $pagekeys);
+                    $this->saveIndex($key, '_p', $pagekeys);
                     unset($pagekeys);
-                    $this->saveIndexKey('relation_references', '_i', $linktargetid, '');
-                    $this->saveIndexKey('relation_references', '_i', $newlinktargetid, $newindexline);
+                    $this->saveIndexKey($key, '_i', $oldid, '');
+                    $this->saveIndexKey($key, '_i', $newid, $newindexline);
                 }
             } else {
-                $linktargets[$linktargetid] = $newpage;
-                if (!$this->saveIndex('relation_references', '_w', $linktargets)) {
+                $metavalues[$oldid] = $newvalue;
+                if (!$this->saveIndex($key, '_w', $metavalues)) {
                     $this->unlock();
                     return false;
                 }
@@ -480,7 +495,6 @@ class helper_plugin_pagemove_indexer extends Doku_Indexer {
         $this->unlock();
         return true;
     }
-
 }
 
 /**
