@@ -20,6 +20,8 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
     public function register($controller) {
         $controller->register_hook('IO_WIKIPAGE_READ', 'AFTER', $this, 'handle_read', array());
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_cache', array());
+        $controller->register_hook('INDEXER_VERSION_GET', 'BEFORE', $this, 'handle_index_version');
+        $controller->register_hook('INDEXER_PAGE_ADD', 'BEFORE', $this, 'index_media_use');
    }
 
     /**
@@ -87,6 +89,65 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
                     $cache->depends['purge'] = true;
                 else // FIXME: print error here or fail silently?
                     msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
+            }
+        }
+    }
+
+    /**
+     * Add the pagemove version to theindex version
+     *
+     * @param Doku_Event $event The event object
+     * @param array $param Optional parameters (unused)
+     */
+    public function handle_index_version(Doku_Event $event, $param) {
+        $event->data['plugin_pagemove'] = 0.1;
+    }
+
+    /**
+     * Index media usage data
+     *
+     * @param Doku_Event $event The event object
+     * @param array $param  Optional parameters (unused)
+     */
+    public function index_media_use(Doku_Event $event, $param) {
+        $id = $event->data['page'];
+        $media_references = array();
+        $instructions = p_cached_instructions(wikiFn($id), false, $id);
+        if (is_array($instructions)) {
+            $this->get_media_references_from_instructions($instructions, $media_references, $id);
+        }
+        $media_references = array_unique($media_references);
+        $event->data['metadata']['pagemove_media'] = $media_references;
+    }
+
+    /**
+     * Helper function for getting all media references from an instruction array
+     *
+     * @param array $instructions The instructions to scan
+     * @param array $media_references The array of media references
+     * @param string $id The reference id for resolving media ids
+     */
+    private function get_media_references_from_instructions($instructions, &$media_references, $id) {
+        foreach ($instructions as $ins) {
+            if ($ins[0] === 'internalmedia') {
+                $src = $ins[1][0];
+                list($src,$hash) = explode('#',$src,2);
+                resolve_mediaid(getNS($id),$src, $exists);
+                $media_references[] = $src;
+            } elseif (in_array($ins[0], array('interwikilink', 'windowssharelink', 'externallink', 'emaillink', 'locallink', 'internallink'))) {
+                $img = $ins[1][1];
+                if (is_array($img) && $img['type'] === 'internalmedia') {
+                    list($src,$hash) = explode('#',$img['src'],2);
+                    resolve_mediaid(getNS($id), $src, $exists);
+                    $media_references[] = $src;
+                }
+            } elseif ($ins[0] === 'nest') {
+                // nested instructions
+                $this->get_media_references_from_instructions($ins[1][0], $media_references, $id);
+            } elseif ($ins[0] === 'plugin' && $ins[1][0] === 'variants_variants') {
+                // the variants plugin has two branches with nested instructions, both need to be rewritten
+                $this->get_media_references_from_instructions($ins[1][1][1], $media_references, $id);
+                $this->get_media_references_from_instructions($ins[1][1][2], $media_references, $id);
             }
         }
     }
