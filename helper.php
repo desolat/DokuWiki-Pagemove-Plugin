@@ -583,6 +583,14 @@ class helper_plugin_pagemove_handler {
         $link = explode('|',$link,2);
         if ( !isset($link[1]) ) {
             $link[1] = NULL;
+        } else if ( preg_match('/^\{\{[^\}]+\}\}$/',$link[1]) ) {
+            // If the title is an image, rewrite it
+            $old_title = $link[1];
+            $link[1] = $this->rewrite_media($link[1]);
+            // do a simple replace of the first match so really only the id is changed and not e.g. the alignment
+            $oldpos = strpos($match, $old_title);
+            $oldlen = strlen($old_title);
+            $match  = substr_replace($match, $link[1], $oldpos, $oldlen);
         }
         $link[0] = trim($link[0]);
 
@@ -657,21 +665,28 @@ class helper_plugin_pagemove_handler {
      * @return bool If parsing should be continued
      */
     public function media($match, $state, $pos) {
+        $this->calls .= $this->rewrite_media($match);
+        return true;
+    }
+
+    /**
+     * Rewrite a media syntax
+     *
+     * @param string $match The text match of the media syntax
+     * @return string The rewritten syntax
+     */
+    protected function rewrite_media($match) {
         $p = Doku_Handler_Parse_Media($match);
-        if ($p['type'] == 'internalmedia') {
+        if ($p['type'] == 'internalmedia') { // else: external media
             $new_src = $this->adaptRelativeId($p['src']);
-            if ($new_src == $p['src']) {
-                $this->calls .= $match;
-            } else {
+            if ($new_src !== $p['src']) {
                 // do a simple replace of the first match so really only the id is changed and not e.g. the alignment
                 $srcpos = strpos($match, $p['src']);
                 $srclen = strlen($p['src']);
-                $this->calls .= substr_replace($match, $new_src, $srcpos, $srclen);
+                return substr_replace($match, $new_src, $srcpos, $srclen);
             }
-        } else { // external media
-            $this->calls .= $match;
         }
-        return true;
+        return $match;
     }
 
     /**
