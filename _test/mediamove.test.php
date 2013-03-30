@@ -1,5 +1,8 @@
 <?php
 
+// must be run within Dokuwiki
+if (!defined('DOKU_INC')) die();
+
 /**
  * Test cases for the pagemove plugin
  */
