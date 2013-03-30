@@ -35,7 +35,7 @@ $lang['pm_nomediarights']    = 'You have insufficient permissions to delete %s.'
 $lang['pm_notargetperms'] = 'You don\'t have the permission to create the page %s.';
 $lang['pm_nomediatargetperms'] = 'You don\'t have the permission to create the media file %s.';
 $lang['pm_filelocked']  = 'The page %s is locked. Try again later.';
-$lang['pm_linkchange']  = 'Links to %s changed to %s';
+$lang['pm_linkchange']  = 'Links adapted because of a pagemove operation';
 
 $lang['pm_ns_move_in_progress'] = 'There is currently a namespace move of %s page and %s media files from namespace %s to namespace %s in progress.';
 $lang['pm_ns_move_continue'] = 'Continue the namespace move';

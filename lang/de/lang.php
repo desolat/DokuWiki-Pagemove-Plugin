@@ -30,7 +30,7 @@ $lang['pm_delete']      = 'Gelöscht durch das pagemove Plugin';
 $lang['pm_norights']    = 'Sie haben unzureichende Rechte um %s zu bearbeiten.';
 $lang['pm_notargetperms'] = 'Sie haben nicht die Berechtigung, die Seite %s anzulegen.';
 $lang['pm_filelocked']  = 'Die Seite %s ist gesperrt - versuchen Sie es später noch einmal.';
-$lang['pm_linkchange']  = 'Link zu %s geändert zu %s';
+$lang['pm_linkchange']  = 'Links angepasst weil Seiten im Wiki verschoben wurden';
 // Form labels
 $lang['pm_newname']		= 'Neuer Seitenname:';
 $lang['pm_newnsname']   = 'Neuer Name für Namensraum:';
