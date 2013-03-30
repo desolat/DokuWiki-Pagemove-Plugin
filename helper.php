@@ -493,6 +493,8 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
                 return false;
             }
 
+            io_sweepNS($opts['id'], 'mediadir');
+
             // Move the old revisions
             if (!$this->movemediaattic($opts)) {
                 // it's too late to stop the move, so just display a message.
