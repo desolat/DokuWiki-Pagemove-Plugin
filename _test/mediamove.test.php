@@ -58,6 +58,6 @@ class plugin_pagemove_mediamove_test extends DokuWikiTest {
 
         $this->assertTrue(@file_exists(mediaFn('foobar:logo.png')));
 
-        //$this->assertEquals('{{foobar:logo.png?200}}', 'wiki:movetest');
+        $this->assertEquals('{{foobar:logo.png?200}}', rawWiki('wiki:movetest'));
     }
 }

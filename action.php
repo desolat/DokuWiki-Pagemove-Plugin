@@ -83,7 +83,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
         }
         if ($id) {
             $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
-            if ($meta && isset($meta['moves'])) {
+            if ($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
                 $file = wikiFN($id, '', false);
                 if (is_writable($file))
                     $cache->depends['purge'] = true;

@@ -324,11 +324,17 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         global $conf;
 
         $ext = mimetype($opts['name']);
-        if ($ext[0] !== false)
+        if ($ext[0] !== false) {
             $name = substr($opts['name'],0, -1*strlen($ext[0])-1);
+        } else {
+            $name = $opts['name'];
+        }
         $newext = mimetype($opts['newname']);
-        if ($ext[0] !== false)
+        if ($ext[0] !== false) {
             $newname = substr($opts['newname'],0, -1*strlen($ext[0])-1);
+        } else {
+            $newname = $opts['newname'];
+        }
         $regex = '\.\d+\.'.preg_quote((string)$ext[0], '/');
 
         return $this->move_files($conf['mediaolddir'], array(
@@ -430,11 +436,13 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      */
     public function execute_rewrites($id, $text = null) {
         $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
-        if($meta && isset($meta['moves'])) {
+        if($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
             if(is_null($text)) $text = rawWiki($id);
+            $moves = isset($meta['moves']) ? $meta['moves'] : array();
+            $media_moves = isset($meta['media_moves']) ? $meta['media_moves'] : array();
 
             $old_text = $text;
-            $text = $this->rewrite_content($text, $id, $meta['moves']);
+            $text = $this->rewrite_content($text, $id, $moves, $media_moves);
             $changed = ($old_text != $text);
             $file = wikiFN($id, '', false);
             if(is_writable($file) || !$changed) {
@@ -445,6 +453,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
                     saveWikiText($id, $text, $this->getLang('pm_linkchange'));
                 }
                 unset($meta['moves']);
+                unset($meta['media_moves']);
                 p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
             } else { // FIXME: print error here or fail silently?
                 msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
@@ -459,11 +468,13 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      *
      * @param string $text   The wiki text that shall be rewritten
      * @param string $id     The id of the wiki page, if the page itself was moved the old id
-     * @param array  $moves  Array of all moves, the keys are the old ids, the values the new ids
+     * @param array $moves  Array of all page moves, the keys are the old ids, the values the new ids
+     * @param array $media_moves Array of all media moves.
      * @return string        The rewritten wiki text
      */
-    function rewrite_content($text, $id, $moves) {
+    function rewrite_content($text, $id, $moves, $media_moves = array()) {
         $moves = $this->resolve_moves($moves, $id);
+        $media_moves = $this->resolve_moves($media_moves, $id);
 
         $handlers = array();
         $data     = array('id' => $id, 'moves' => &$moves, 'handlers' => &$handlers);
@@ -490,7 +501,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $Parser = new Doku_Parser();
 
         // Add the Handler
-        $Parser->Handler = new helper_plugin_pagemove_handler($id, $moves, $handlers);
+        $Parser->Handler = new helper_plugin_pagemove_handler($id, $moves, $media_moves, $handlers);
 
         //add modes to parser
         foreach($modes as $mode) {
@@ -652,19 +663,22 @@ class helper_plugin_pagemove_handler {
     public $new_id;
     public $new_ns;
     public $moves;
+    public $media_moves;
     private $handlers;
 
     /**
      * Construct the pagemove handler.
      *
      * @param string $id       The id of the text that is passed to the handler
-     * @param array  $moves    Moves that shall be considered in the form $old => $new ($old can be $id)
-     * @param array  $handlers Handlers for plugin content in the form $plugin_anme => $callback
+     * @param array $moves    Moves that shall be considered in the form $old => $new ($old can be $id)
+     * @param array $media_moves Moves of media files that shall be considered in the form $old => $new
+     * @param array $handlers Handlers for plugin content in the form $plugin_anme => $callback
      */
-    public function __construct($id, $moves, $handlers) {
+    public function __construct($id, $moves, $media_moves, $handlers) {
         $this->id = $id;
         $this->ns = getNS($id);
         $this->moves = $moves;
+        $this->media_moves = $media_moves;
         $this->handlers = $handlers;
         if (isset($moves[$id])) {
             $this->new_id = $moves[$id];
@@ -823,7 +837,7 @@ class helper_plugin_pagemove_handler {
     protected function rewrite_media($match) {
         $p = Doku_Handler_Parse_Media($match);
         if ($p['type'] == 'internalmedia') { // else: external media
-            $new_src = $this->adaptRelativeId($p['src']);
+            $new_src = $this->adaptRelativeId($p['src'], true);
             if ($new_src !== $p['src']) {
                 // do a simple replace of the first match so really only the id is changed and not e.g. the alignment
                 $srcpos = strpos($match, $p['src']);
@@ -878,9 +892,10 @@ class helper_plugin_pagemove_handler {
      * Adapts a link respecting all moves and making it a relative link according to the new id
      *
      * @param string $id A relative id
+     * @param bool $media If the id is a media id
      * @return string The relative id, adapted according to the new/old id and the moves
      */
-    public function adaptRelativeId($id) {
+    public function adaptRelativeId($id, $media = false) {
         global $conf;
 
         if ($id === '') {
@@ -898,9 +913,11 @@ class helper_plugin_pagemove_handler {
         if (substr($clean_id, -1) === ':')
             $clean_id .= $conf['start'];
 
-        if (isset($this->moves[$clean_id]) || $this->ns !== $this->new_ns) {
-            if (isset($this->moves[$clean_id])) {
+        if (($media ? isset($this->media_moves[$clean_id]) : isset($this->moves[$clean_id])) || $this->ns !== $this->new_ns) {
+            if (!$media && isset($this->moves[$clean_id])) {
                 $new = $this->moves[$clean_id];
+            } elseif ($media && isset($this->media_moves[$clean_id])) {
+                $new = $this->media_moves[$clean_id];
             } else {
                 $new = $clean_id;
 
