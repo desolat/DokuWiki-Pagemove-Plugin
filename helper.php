@@ -134,7 +134,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         // give plugins the option to add their own meta files to the list of files that need to be moved
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
-        // note that old_ids is in the form 'id' => timestamp of move and affected_pages is indexed by these ids
+        // note that old_ids is in the form 'id' => timestamp of move
         $event = new Doku_Event('PAGEMOVE_PAGE_RENAME', $data);
         if ($event->advise_before()) {
             // Open the old document and change forward links
@@ -210,6 +210,149 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     }
 
     /**
+     * Move media file
+     *
+     * @author  Michael Hamann <michael@content-space.de>
+     *
+     * @param array $opts
+     * @param bool  $checkonly Only execute the checks if the media file can be moved
+     * @return bool If the move was executed
+     */
+    public function move_media(&$opts, $checkonly = false) {
+        $opts['id'] = cleanID($opts['ns'].':'.$opts['name']);
+        $opts['path'] = mediaFN($opts['id']);
+
+        // Check we have rights to move this document
+        if ( !file_exists(mediaFN($opts['id']))) {
+            msg(sprintf($this->getLang('pm_medianotexist'), hsc($opts['id'])), -1);
+            return false;
+        }
+
+        if ( auth_quickaclcheck($opts['ns'].':*') < AUTH_DELETE ) {
+            msg(sprintf($this->getLang('pm_nomediarights'), hsc($opts['id'])), -1);
+            return false;
+        }
+
+        // Assemble media name and path
+        $opts['new_id'] = cleanID($opts['newns'].':'.$opts['newname']);
+        $opts['new_path'] = mediaFN($opts['new_id']);
+
+        // Has the document name and/or namespace changed?
+        if ( $opts['newns'] == $opts['ns'] && $opts['newname'] == $opts['name'] ) {
+            msg($this->getLang('pm_nomediachange'), -1);
+            return false;
+        }
+        // Check the page does not already exist
+        if ( @file_exists($opts['new_path']) ) {
+            msg(sprintf($this->getLang('pm_mediaexisting'), $opts['newname'], ($opts['newns'] == '' ? $this->getLang('pm_root') : $opts['newns'])), -1);
+            return false;
+        }
+
+        // Check if the current user can create the new page
+        if (auth_quickaclcheck($opts['new_ns'].':*') < AUTH_UPLOAD) {
+            msg(sprintf($this->getLang('pm_nomediatargetperms'), $opts['new_id']), -1);
+            return false;
+        }
+
+        if ($checkonly) return true;
+
+        /**
+         * End of init (checks)
+         */
+
+        $affected_pages = idx_get_indexer()->lookupKey('pagemove_media', $opts['id']);
+
+        $data = array('opts' => &$opts, 'affected_pages' => &$affected_pages);
+        // give plugins the option to add their own meta files to the list of files that need to be moved
+        // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
+        // and to add other pages to the affected pages
+        $event = new Doku_Event('PAGEMOVE_MEDIA_RENAME', $data);
+        if ($event->advise_before()) {
+            // Move the Subscriptions & Indexes
+            if (method_exists('Doku_Indexer', 'renamePage')) { // new feature since Spring 2013 release
+                $Indexer = idx_get_indexer();
+            } else {
+                $Indexer = new helper_plugin_pagemove_indexer(); // copy of the new code
+            }
+            if (($idx_msg = $Indexer->renameMetaValue('pagemove_media', $opts['id'], $opts['new_id'])) !== true) {
+                msg('Error while updating the search index '.$idx_msg, -1);
+                return false;
+            }
+            if (!$this->movemediameta($opts)) {
+                msg('The meta files of the media file '.$opts['id'].' couldn\'t be moved', -1);
+                return false;
+            }
+
+            // prepare directory
+            io_createNamespace($opts['new_id'], 'media');
+
+            if (!io_rename($opts['path'], $opts['new_path'])) {
+                msg('Moving the media file '.$opts['id'].' failed', -1);
+                return false;
+            }
+
+            // Move the old revisions
+            if (!$this->movemediaattic($opts)) {
+                // it's too late to stop the move, so just display a message.
+                msg('The attic files of media file '.$opts['id'].' couldn\'t be moved. Please move them manually.', -1);
+            }
+
+            foreach ($affected_pages as $id) {
+                if (!page_exists($id, '', false)) continue;
+                // we are only interested in persistent metadata, so no need to render anything.
+                $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+                if (!$meta) $meta = array('media_moves' => array());
+                if (!isset($meta['media_moves'])) $meta['media_moves'] = array();
+                $meta['media_moves'] = $this->resolve_moves($meta['media_moves'], '__');
+                $meta['media_moves'][$opts['id']] = $opts['new_id'];
+                //if (empty($meta['moves'])) unset($meta['moves']);
+                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
+            }
+        }
+
+        $event->advise_after();
+        return true;
+    }
+
+    /**
+     * Move the old revisions of the media file that is specified in the options
+     *
+     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @return bool If the attic files were moved successfully
+     */
+    public function movemediaattic($opts) {
+        global $conf;
+
+        $ext = mimetype($opts['name']);
+        if ($ext[0] !== false)
+            $name = substr($opts['name'],0, -1*strlen($ext[0])-1);
+        $newext = mimetype($opts['newname']);
+        if ($ext[0] !== false)
+            $newname = substr($opts['newname'],0, -1*strlen($ext[0])-1);
+        $regex = '\.\d+\.'.preg_quote((string)$ext[0], '/');
+
+        return $this->move_files($conf['mediaolddir'], array(
+            'ns' => $opts['ns'],
+            'newns' => $opts['newns'],
+            'name' => $name,
+            'newname' => $newname
+        ), $regex);
+    }
+
+    /**
+     * Move the meta files of the page that is specified in the options.
+     *
+     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @return bool If the meta files were moved successfully
+     */
+    public function movemediameta($opts) {
+        global $conf;
+
+        $regex = '\.[^.]+';
+        return $this->move_files($conf['mediametadir'], $opts, $regex);
+    }
+
+    /**
      * Move the old revisions of the page that is specified in the options.
      *
      * @param array $opts Pagemove options (used here: name, newname, ns, newns)
@@ -249,6 +392,8 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $new_path = $dir;
         if ($opts['newns'] != '') $new_path .= '/'.utf8_encodeFN(str_replace(':', '/', $opts['newns']));
         $regex = '/^'.preg_quote(utf8_encodeFN($opts['name'])).'('.$extregex.')$/u';
+
+        if (!is_dir($old_path)) return true; // no media files found
 
         $dh = @opendir($old_path);
         if($dh) {

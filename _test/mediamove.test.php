@@ -30,10 +30,34 @@ class plugin_pagemove_mediamove_test extends DokuWikiTest {
         $opts['newname'] = 'foo';
         /** @var helper_plugin_pagemove $pagemove */
         $pagemove = plugin_load('helper', 'pagemove');
-        $pagemove->move_page($opts);
+        $this->assertTrue($pagemove->move_page($opts));
 
         $this->assertEquals('{{ mediareltest:myimage.png}} [[:start|{{ mediareltest:testimage.png?200x800 }}]] [[mediareltest:bar|{{mediareltest:testimage.gif?400x200}}]]
 [[doku>wiki:dokuwiki|{{wiki:logo.png}}]] [[http://www.example.com|{{mediareltest:testimage.jpg}}]]
 [[doku>wiki:foo|{{mediareltest:foo.gif?200x3000}}]]', rawWiki('foo'));
+    }
+
+    public function test_moveSingleMedia() {
+        global $AUTH_ACL;
+
+        $AUTH_ACL[] = "wiki:*\t@ALL\t16";
+        $AUTH_ACL[] = "foobar:*\t@ALL\t8";
+
+        saveWikiText('wiki:movetest', '{{wiki:dokuwiki-128.png?200}}', 'Test initialized');
+        idx_addPage('wiki:movetest');
+
+        $opts = array();
+        $opts['ns'] = 'wiki';
+        $opts['name'] = 'dokuwiki-128.png';
+        $opts['newns'] = 'foobar';
+        $opts['newname'] = 'logo.png';
+
+        /** @var helper_plugin_pagemove $pagemove */
+        $pagemove = plugin_load('helper', 'pagemove');
+        $this->assertTrue($pagemove->move_media($opts));
+
+        $this->assertTrue(@file_exists(mediaFn('foobar:logo.png')));
+
+        //$this->assertEquals('{{foobar:logo.png?200}}', 'wiki:movetest');
     }
 }

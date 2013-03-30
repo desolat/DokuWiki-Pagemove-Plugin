@@ -16,11 +16,14 @@ $lang['menu'] = 'Page/Namespace Move/Rename...';
 $lang['desc'] = 'Page/Namespace Move/Rename Plugin';
 
 $lang['pm_notexist']    = 'The page %s does not exist';
+$lang['pm_medianotexist']    = 'The media file %s does not exist';
 $lang['pm_notwrite']    = 'You do not have sufficient permissions to modify this page';
 $lang['pm_badns']       = 'Invalid characters in namespace.';
 $lang['pm_badname']     = 'Invalid characters in pagename.';
 $lang['pm_nochange']    = 'Page name and namespace are unchanged.';
+$lang['pm_nomediachange']    = 'Media file name and namespace are unchanged.';
 $lang['pm_existing']    = 'A page called %s already exists in %s';
+$lang['pm_mediaexisting']    = 'A media file called %s already exists in %s';
 $lang['pm_root']        = '[Root namespace]';
 $lang['pm_current']     = '(Current)';
 $lang['pm_renamed']     = 'Page name changed from %s to %s';
@@ -28,7 +31,9 @@ $lang['pm_moved']       = 'Page moved from %s to %s';
 $lang['pm_move_rename'] = 'Page moved and renamed from %s to %s';
 $lang['pm_delete']		= 'Deleted by PageMove plugin';
 $lang['pm_norights']    = 'You have insufficient permissions to edit %s.';
-$lang['pm_notargetperms'] = 'You don\'t have the permission to create %s.';
+$lang['pm_nomediarights']    = 'You have insufficient permissions to delete %s.';
+$lang['pm_notargetperms'] = 'You don\'t have the permission to create the page %s.';
+$lang['pm_nomediatargetperms'] = 'You don\'t have the permission to create the media file %s.';
 $lang['pm_filelocked']  = 'The page %s is locked. Try again later.';
 $lang['pm_linkchange']  = 'Links to %s changed to %s';
 // Form labels
