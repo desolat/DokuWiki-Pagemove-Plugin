@@ -45,6 +45,208 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     }
 
     /**
+     * Start a namespace move by creating the list of all pages and media files that shall be moved
+     *
+     * @param array $opts The options for the namespace move
+     * @return int The number of items to move
+     */
+    public function start_namespace_move(&$opts) {
+        global $conf;
+
+        // generate and save a list of all pages
+        $pagelist = array();
+        $pathToSearch = utf8_encodeFN(str_replace(':', '/', $opts['ns']));
+        $searchOpts = array('depth' => 0, 'skipacl' => true);
+        search($pagelist, $conf['datadir'], 'search_allpages', $searchOpts, $pathToSearch);
+        $pages = array();
+        foreach ($pagelist as $page) {
+            $pages[] = $page['id'];
+        }
+        unset($pagelist);
+
+        $opts['num_pages'] = count($pages);
+
+        $files = $this->get_namespace_meta_files();
+        io_saveFile($files['pagelist'], implode("\n", $pages));
+        unset($pages);
+
+        // generate and save a list of all media files
+        $medialist = array();
+        if (isset($opts['media']) && $opts['media']) {
+            search($medialist, $conf['mediadir'], 'search_media', $searchOpts, $pathToSearch);
+        }
+
+        $media_files = array();
+        foreach ($medialist as $media) {
+            $media_files[] = $media['id'];
+        }
+        unset ($medialist);
+
+        $opts['num_media'] = count($media_files);
+
+        io_saveFile($files['medialist'], implode("\n", $media_files));
+
+        // save the options
+        io_saveFile($files['opts'], serialize($opts));
+
+        return $opts['num_pages'] + $opts['num_media'];
+    }
+
+    /**
+     * Execute the next steps (moving up to 10 pages or media files) of the currently running namespace move
+     *
+     * @return bool|int False if an error occurred, otherwise the number of remaining moves
+     */
+    public function continue_namespace_move() {
+        global $ID;
+        $files = $this->get_namespace_meta_files();
+
+        if (!@file_exists($files['opts'])) {
+            msg('Error: there are no saved options', -1);
+            return false;
+        }
+
+        $opts = unserialize(file_get_contents($files['opts']));
+
+        if (@file_exists($files['pagelist'])) {
+            $pagelist = file($files['pagelist'], FILE_IGNORE_NEW_LINES);
+
+            $limit = min(10, count($pagelist));
+            for ($i = 0; $i < $limit; ++$i) {
+                $ID = array_pop($pagelist);
+                $newID = $this->getNewID($ID, $opts['ns'], $opts['newns']);
+                $pageOpts = $opts;
+                $pageOpts['ns']   = getNS($ID);
+                $pageOpts['name'] = noNS($ID);
+                $pageOpts['newname'] = noNS($ID);
+                $pageOpts['newns'] = getNS($newID);
+                if (!$this->move_page($pageOpts)) return false;
+
+                // save the list of pages after every move
+                if (empty($pagelist)) {
+                    unlink($files['pagelist']);
+                } else {
+                    io_saveFile($files['pagelist'], implode("\n", $pagelist));
+                }
+            }
+            return count($pagelist) + $opts['num_media'];
+        } elseif (@file_exists($files['medialist'])) {
+            $medialist = file($files['medialist'], FILE_IGNORE_NEW_LINES);
+
+            $limit = min(10, count($medialist));
+            for ($i = 0; $i < $limit; ++$i) {
+                $ID = array_pop($medialist);
+                $newID = $this->getNewID($ID, $opts['ns'], $opts['newns']);
+                $pageOpts = $opts;
+                $pageOpts['ns']   = getNS($ID);
+                $pageOpts['name'] = noNS($ID);
+                $pageOpts['newname'] = noNS($ID);
+                $pageOpts['newns'] = getNS($newID);
+                if (!$this->move_media($pageOpts)) return false;
+
+                // save the list of media files after every move
+                if (empty($medialist)) {
+                    unlink($files['medialist']);
+                    unlink($files['opts']);
+                } else {
+                    io_saveFile($files['medialist'], implode("\n", $medialist));
+                }
+            }
+            return count($medialist);
+        } else {
+            unlink($files['opts']);
+            return 0;
+        }
+    }
+
+    /**
+     * Skip the item that would be executed next in the current namespace move
+     *
+     * @return bool|int False if an error occurred, otherwise the number of remaining moves
+     */
+    public function skip_namespace_move_item() {
+        global $ID;
+        $files = $this->get_namespace_meta_files();
+
+        if (!@file_exists($files['opts'])) {
+            msg('Error: there are no saved options', -1);
+            return false;
+        }
+
+        $opts = unserialize(file_get_contents($files['opts']));
+
+        if (@file_exists($files['pagelist'])) {
+            $pagelist = file($files['pagelist'], FILE_IGNORE_NEW_LINES);
+
+            $ID = array_pop($pagelist);
+            // save the list of pages after every move
+            if (empty($pagelist)) {
+                unlink($files['pagelist']);
+            } else {
+                io_saveFile($files['pagelist'], implode("\n", $pagelist));
+            }
+            return count($pagelist) + $opts['num_media'];
+        } elseif (@file_exists($files['medialist'])) {
+            $medialist = file($files['medialist'], FILE_IGNORE_NEW_LINES);
+
+            $ID = array_pop($medialist);
+            // save the list of media files after every move
+            if (empty($medialist)) {
+                unlink($files['medialist']);
+                unlink($files['opts']);
+            } else {
+                io_saveFile($files['medialist'], implode("\n", $medialist));
+            }
+
+            return count($medialist);
+        } else {
+            unlink($files['opts']);
+            return 0;
+        }
+    }
+
+    /**
+     * Abort the currently running namespace move
+     */
+    public function abort_namespace_move() {
+        $files = $this->get_namespace_meta_files();
+        foreach ($files as $file) {
+            @unlink($file);
+        }
+    }
+
+    /**
+     * Get the options for the namespace move that is currently in progress if there is any
+     *
+     * @return bool|array False if there is no namespace move in progress, otherwise the array of options
+     */
+    public function get_namespace_move_opts() {
+        $files = $this->get_namespace_meta_files();
+
+        if (!@file_exists($files['opts'])) {
+            return false;
+        }
+
+        $opts = unserialize(file_get_contents($files['opts']));
+
+        return $opts;
+    }
+
+    /**
+     * Get the filenames for the metadata of the pagemove plugin
+     *
+     * @return array The file names for opts, pagelist and medialist
+     */
+    protected function get_namespace_meta_files() {
+        global $conf;
+        return array(
+            'opts' => $conf['metadir'].'/__pagemove_opts',
+            'pagelist' => $conf['metadir'].'/__pagemove_pagelist',
+            'medialist' => $conf['metadir'].'/__pagemove_medialist'
+        );
+    }
+
+    /**
      * Get the id of a page after a namespace move
      *
      * @param string $oldid The old id of the page

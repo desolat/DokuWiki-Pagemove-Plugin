@@ -36,6 +36,15 @@ $lang['pm_notargetperms'] = 'You don\'t have the permission to create the page %
 $lang['pm_nomediatargetperms'] = 'You don\'t have the permission to create the media file %s.';
 $lang['pm_filelocked']  = 'The page %s is locked. Try again later.';
 $lang['pm_linkchange']  = 'Links to %s changed to %s';
+
+$lang['pm_ns_move_in_progress'] = 'There is currently a namespace move of %s page and %s media files from namespace %s to namespace %s in progress.';
+$lang['pm_ns_move_continue'] = 'Continue the namespace move';
+$lang['pm_ns_move_abort'] = 'Abort the namespace move';
+$lang['pm_ns_move_continued'] = 'The namespace move from namespace %s to namespace %s was continued, %s items are still remaining.';
+$lang['pm_ns_move_started'] = 'A namespace move from namespace %s to namespace %s was started, %s pages and %s media files will be moved.';
+$lang['pm_ns_move_error'] = 'An error occurred while continueing the namespace move from %s to %s.';
+$lang['pm_ns_move_tryagain'] = 'Try again';
+$lang['pm_ns_move_skip'] = 'Skip the current item';
 // Form labels
 $lang['pm_newname']     = 'New page name:';
 $lang['pm_newnsname']   = 'New namespace name:';

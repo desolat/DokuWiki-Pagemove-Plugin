@@ -22,6 +22,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_cache', array());
         $controller->register_hook('INDEXER_VERSION_GET', 'BEFORE', $this, 'handle_index_version');
         $controller->register_hook('INDEXER_PAGE_ADD', 'BEFORE', $this, 'index_media_use');
+        $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handle_ajax_call');
    }
 
     /**
@@ -149,6 +150,73 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
                 $this->get_media_references_from_instructions($ins[1][1][1], $media_references, $id);
                 $this->get_media_references_from_instructions($ins[1][1][2], $media_references, $id);
             }
+        }
+    }
+
+    /**
+     * Handle the plugin_pagemove_ns_continue ajax call
+     *
+     * @param Doku_Event $event The event that is handled
+     * @param array $params Optional parameters (unused)
+     */
+    public function handle_ajax_call(Doku_Event $event, $params) {
+        if ($event->data == 'plugin_pagemove_ns_continue') {
+            $event->preventDefault();
+            $event->stopPropagation();
+
+            /** @var helper_plugin_pagemove $helper */
+            $helper = $this->loadHelper('pagemove', false);
+            $opts = $helper->get_namespace_move_opts();
+            $id = cleanID((string)$_POST['id']);
+            $skip = (int)$_POST['skip'];
+            if ($opts !== false) {
+                if ($skip) {
+                    $helper->skip_namespace_move_item();
+                }
+                $remaining = $helper->continue_namespace_move();
+                $newid = $helper->getNewID($id, $opts['ns'], $opts['newns']);
+
+                $result = array();
+                $result['remaining'] = $remaining;
+                $result['pages'] = $opts['num_pages'];
+                $result['media'] = $opts['num_media'];
+                $result['redirect_url'] = wl($newid, '', true);
+                ob_start();
+                html_msgarea();
+                if ($remaining === false) {
+                    $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => 'pagemove__nsform pagemove__nscontinue'));
+                    $form->addHidden('page', $this->getPluginName());
+                    $form->addHidden('id', $id);
+                    $form->addHidden('continue_namespace_move', true);
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_tryagain')));
+                    $form->printForm();
+                    $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => 'pagemove__nsform'));
+                    $form->addHidden('page', $this->getPluginName());
+                    $form->addHidden('id', $id);
+                    $form->addHidden('abort_namespace_move', true);
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_abort')));
+                    $form->printForm();
+                    $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => 'pagemove__nsform pagemove__nsskip'));
+                    $form->addHidden('page', $this->getPluginName());
+                    $form->addHidden('id', $id);
+                    $form->addHidden('skip_continue_namespace_move', true);
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_skip')));
+                    $form->printForm();
+                    ptln('<p>'.sprintf($this->getLang('pm_ns_move_error'), $opts['ns'], $opts['newns']).'</p>');
+                } else {
+                    ptln('<p>'.sprintf($this->getLang('pm_ns_move_continued'), $opts['ns'], $opts['newns'], $remaining).'</p>');
+                }
+                $result['html'] = ob_get_clean();
+            } else {
+                $result = array();
+                $result['remaining'] = 0;
+                $result['pages'] = 0;
+                $result['media'] = 0;
+                $result['redirect_url'] = wl('', '', true);
+                $result['html'] = '';
+            }
+            $json = new JSON();
+            echo $json->encode($result);
         }
     }
 }
