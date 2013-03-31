@@ -752,6 +752,56 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         }
         return $moves;
     }
+
+    /**
+     * Get the HTML code of a namespace move button
+     * @param string $action The desired action of the button (continue, tryagain, skip, abort)
+     * @param string|null $id The id of the target page, null if $ID shall be used
+     * @return bool|string The HTML of code of the form or false if an invalid action was supplied
+     */
+    public function getNSMoveButton($action, $id = NULL) {
+        if ($id === NULL) {
+            global $ID;
+            $id = $ID;
+        }
+
+        $class = 'pagemove__nsform';
+        switch ($action) {
+            case 'continue':
+            case 'tryagain':
+                $class .= ' pagemove__nscontinue';
+                break;
+            case 'skip':
+                $class .= ' pagemove__nsskip';
+                break;
+        }
+
+        $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => $class));
+        $form->addHidden('page', $this->getPluginName());
+        $form->addHidden('id', $id);
+        switch ($action) {
+            case 'continue':
+            case 'tryagain':
+                $form->addHidden('continue_namespace_move', true);
+                if ($action == 'tryagain') {
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_tryagain')));
+                } else {
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_continue')));
+                }
+                break;
+            case 'skip':
+                $form->addHidden('skip_continue_namespace_move', true);
+                $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_skip')));
+                break;
+            case 'abort':
+                $form->addHidden('abort_namespace_move', true);
+                $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_abort')));
+                break;
+            default:
+                return false;
+        }
+        return $form->getForm();
+    }
 }
 
 /**

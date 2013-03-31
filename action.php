@@ -184,25 +184,10 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
                 ob_start();
                 html_msgarea();
                 if ($remaining === false) {
-                    $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => 'pagemove__nsform pagemove__nscontinue'));
-                    $form->addHidden('page', $this->getPluginName());
-                    $form->addHidden('id', $id);
-                    $form->addHidden('continue_namespace_move', true);
-                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_tryagain')));
-                    $form->printForm();
-                    $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => 'pagemove__nsform'));
-                    $form->addHidden('page', $this->getPluginName());
-                    $form->addHidden('id', $id);
-                    $form->addHidden('abort_namespace_move', true);
-                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_abort')));
-                    $form->printForm();
-                    $form = new Doku_Form(array('action' => wl($id), 'method' => 'post', 'class' => 'pagemove__nsform pagemove__nsskip'));
-                    $form->addHidden('page', $this->getPluginName());
-                    $form->addHidden('id', $id);
-                    $form->addHidden('skip_continue_namespace_move', true);
-                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_skip')));
-                    $form->printForm();
                     ptln('<p>'.sprintf($this->getLang('pm_ns_move_error'), $opts['ns'], $opts['newns']).'</p>');
+                    echo $helper->getNSMoveButton('tryagain', $id);
+                    echo $helper->getNSMoveButton('skip', $id);
+                    echo $helper->getNSMoveButton('abort', $id);
                 } else {
                     ptln('<p>'.sprintf($this->getLang('pm_ns_move_continued'), $opts['ns'], $opts['newns'], $remaining).'</p>');
                 }
