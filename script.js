@@ -64,8 +64,12 @@ jQuery(function() {
                         skip: skip
                     },
                     function(data) {
-                        $progressbar.progressbar('option', 'value', data.pages + data.media - data.remaining);
-                        $progressbar.progressbar('option', 'max', data.pages + data.media);
+                        if (data.remaining === false) {
+                            $progressbar.progressbar('option', 'value', false);
+                        } else {
+                            $progressbar.progressbar('option', 'value', data.pages + data.media - data.remaining);
+                            $progressbar.progressbar('option', 'max', data.pages + data.media);
+                        }
                         $message.html(data.html);
                         if (data.remaining === false) {
                             $container.find('form.pagemove__nscontinue, form.pagemove__nsskip').submit(submit_handler);
