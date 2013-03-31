@@ -19,6 +19,8 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
     private $ns_opts = false;
     /** @var helper_plugin_pagemove $helper */
     private $helper = null;
+    /** @var string $ns_move_state The state of the current namespace move (none, started, continued, error) */
+    private $ns_move_state = 'none';
 
     /**
      * Get the sort number that defines the position in the admin menu.
@@ -70,30 +72,32 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         ptln( $this->locale_xhtml('pagemove') );
         ptln('<div class="plugin__pagemove_forms">');
 
-        if ($this->ns_opts !== false && isset($this->ns_opts['started'])) {
-            ptln('<p>');
-            ptln(sprintf($this->getLang('pm_ns_move_started'), hsc($this->ns_opts['ns']), hsc($this->ns_opts['newns']), $this->ns_opts['num_pages'], $this->ns_opts['num_media']));
-            ptln('</p>');
-            ptln($this->helper->getNSMoveButton('continue'));
-            ptln($this->helper->getNSMoveButton('abort'));
-        } elseif ($this->ns_opts !== false && isset($this->ns_opts['remaining'])) {
-            if ($this->ns_opts['remaining'] === false) {
+        switch ($this->ns_move_state) {
+            case 'started':
+                ptln('<p>');
+                ptln(sprintf($this->getLang('pm_ns_move_started'), hsc($this->ns_opts['ns']), hsc($this->ns_opts['newns']), $this->ns_opts['num_pages'], $this->ns_opts['num_media']));
+                ptln('</p>');
+                ptln($this->helper->getNSMoveButton('continue'));
+                ptln($this->helper->getNSMoveButton('abort'));
+                break;
+            case 'error':
                 ptln('<p>');
                 ptln(sprintf($this->getLang('pm_ns_move_error'), $this->ns_opts['ns'], $this->ns_opts['newns']));
                 ptln('</p>');
                 ptln($this->helper->getNSMoveButton('tryagain'));
                 ptln($this->helper->getNSMoveButton('skip'));
                 ptln($this->helper->getNSMoveButton('abort'));
-            } else {
+                break;
+            case 'continued':
                 ptln('<p>');
                 ptln(sprintf($this->getLang('pm_ns_move_continued'), $this->ns_opts['ns'], $this->ns_opts['newns'], $this->ns_opts['remaining']));
                 ptln('</p>');
 
                 ptln($this->helper->getNSMoveButton('continue'));
                 ptln($this->helper->getNSMoveButton('abort'));
-            }
-        } else {
-            $this->printForm();
+                break;
+            default:
+                $this->printForm();
         }
         ptln('</div>');
         ptln('<!-- Pagemove Plugin end -->');
@@ -124,7 +128,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         $form->endFieldset();
         $form->printForm();
 
-        if ($this->ns_opts !== false && !isset($this->ns_opts['remaining'])) {
+        if ($this->ns_opts !== false) {
             ptln('<fieldset>');
             ptln('<legend>');
             ptln($this->getLang('pm_movens'));
@@ -212,6 +216,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
                 $this->helper->skip_namespace_move_item();
             }
             $this->ns_opts['remaining'] = $this->helper->continue_namespace_move();
+            $this->ns_move_state = ($this->ns_opts['remaining'] === false ? 'error': 'continued');
             if ($this->ns_opts['remaining'] === 0) {
                 $ID = $this->helper->getNewID($INFO['id'], $this->opts['ns'], $this->opts['newns']);
                 $ACT = 'show';
@@ -246,7 +251,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             $started = $this->helper->start_namespace_move($this->opts);
             if ($started !== false) {
                 $this->ns_opts = $this->helper->get_namespace_move_opts();
-                $this->ns_opts['started'] = $started;
+                $this->ns_move_state = 'started';
             }
         } else {
             // check that the pagename is valid

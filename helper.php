@@ -86,6 +86,8 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 
         io_saveFile($files['medialist'], implode("\n", $media_files));
 
+        $opts['remaining'] = $opts['num_media'] + $opts['num_pages'];
+
         // save the options
         io_saveFile($files['opts'], serialize($opts));
 
@@ -109,54 +111,68 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $opts = unserialize(file_get_contents($files['opts']));
 
         if (@file_exists($files['pagelist'])) {
-            $pagelist = file($files['pagelist'], FILE_IGNORE_NEW_LINES);
+            $pagelist = fopen($files['pagelist'], 'a+');;
 
-            $limit = min(10, count($pagelist));
-            for ($i = 0; $i < $limit; ++$i) {
-                $ID = array_pop($pagelist);
+            for ($i = 0; $i < 10; ++$i) {
+                $ID = $this->get_last_id($pagelist);
+                if ($ID === false) {
+                    break;
+                }
                 $newID = $this->getNewID($ID, $opts['ns'], $opts['newns']);
                 $pageOpts = $opts;
                 $pageOpts['ns']   = getNS($ID);
                 $pageOpts['name'] = noNS($ID);
                 $pageOpts['newname'] = noNS($ID);
                 $pageOpts['newns'] = getNS($newID);
-                if (!$this->move_page($pageOpts)) return false;
-
-                // save the list of pages after every move
-                if (empty($pagelist)) {
-                    unlink($files['pagelist']);
-                } else {
-                    io_saveFile($files['pagelist'], implode("\n", $pagelist));
+                if (!$this->move_page($pageOpts)) {
+                    fclose($pagelist);
+                    return false;
                 }
+
+                // update the list of pages and the options after every move
+                ftruncate($pagelist, ftell($pagelist));
+                $opts['remaining']--;
+                io_saveFile($files['opts'], serialize($opts));
             }
-            return count($pagelist) + $opts['num_media'];
+
+            fclose($pagelist);
+            if ($ID === false) unlink($files['pagelist']);
         } elseif (@file_exists($files['medialist'])) {
-            $medialist = file($files['medialist'], FILE_IGNORE_NEW_LINES);
+            $medialist = fopen($files['medialist'], 'a+');
 
-            $limit = min(10, count($medialist));
-            for ($i = 0; $i < $limit; ++$i) {
-                $ID = array_pop($medialist);
+            for ($i = 0; $i < 10; ++$i) {
+                $ID = $this->get_last_id($medialist);
+                if ($ID === false) {
+                    break;
+                }
                 $newID = $this->getNewID($ID, $opts['ns'], $opts['newns']);
                 $pageOpts = $opts;
                 $pageOpts['ns']   = getNS($ID);
                 $pageOpts['name'] = noNS($ID);
                 $pageOpts['newname'] = noNS($ID);
                 $pageOpts['newns'] = getNS($newID);
-                if (!$this->move_media($pageOpts)) return false;
-
-                // save the list of media files after every move
-                if (empty($medialist)) {
-                    unlink($files['medialist']);
-                    unlink($files['opts']);
-                } else {
-                    io_saveFile($files['medialist'], implode("\n", $medialist));
+                if (!$this->move_media($pageOpts)) {
+                    fclose($medialist);
+                    return false;
                 }
+
+                // update the list of media files and the options after every move
+                ftruncate($medialist, ftell($medialist));
+                $opts['remaining']--;
+                io_saveFile($files['opts'], serialize($opts));
             }
-            return count($medialist);
+
+            fclose($medialist);
+            if ($ID === false) {
+                unlink($files['medialist']);
+                unlink($files['opts']);
+            }
         } else {
             unlink($files['opts']);
             return 0;
         }
+
+        return $opts['remaining'];
     }
 
     /**
@@ -176,33 +192,67 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $opts = unserialize(file_get_contents($files['opts']));
 
         if (@file_exists($files['pagelist'])) {
-            $pagelist = file($files['pagelist'], FILE_IGNORE_NEW_LINES);
+            $pagelist = fopen($files['pagelist'], 'a+');
 
-            $ID = array_pop($pagelist);
+            $ID = $this->get_last_id($pagelist);
             // save the list of pages after every move
-            if (empty($pagelist)) {
+            if ($ID === false || ftell($pagelist) == 0) {
+                fclose($pagelist);
                 unlink($files['pagelist']);
             } else {
-                io_saveFile($files['pagelist'], implode("\n", $pagelist));
+                ftruncate($pagelist, ftell($pagelist));;
+                fclose($pagelist);
             }
-            return count($pagelist) + $opts['num_media'];
         } elseif (@file_exists($files['medialist'])) {
-            $medialist = file($files['medialist'], FILE_IGNORE_NEW_LINES);
+            $medialist = fopen($files['medialist'], 'a+');
 
-            $ID = array_pop($medialist);
+            $ID = $this->get_last_id($medialist);;
             // save the list of media files after every move
-            if (empty($medialist)) {
+            if ($ID === false || ftell($medialist) == 0) {
+                fclose($medialist);
                 unlink($files['medialist']);
                 unlink($files['opts']);
             } else {
-                io_saveFile($files['medialist'], implode("\n", $medialist));
+                ftruncate($medialist, ftell($medialist));
             }
-
-            return count($medialist);
         } else {
             unlink($files['opts']);
-            return 0;
         }
+        if ($opts['remaining'] == 0) return 0;
+        else {
+            $opts['remaining']--;
+            // save the options
+            io_saveFile($files['opts'], serialize($opts));
+            return $opts['remaining'];
+        }
+    }
+
+    /**
+     * Get last file id from the list that is stored in the file that is referenced by the handle
+     * The handle is set to the newline before the file id
+     *
+     * @param resource $handle The file handle to read from
+     * @return string|bool the last id from the list or false if there is none
+     */
+    private function get_last_id($handle) {
+        // begin the seek at the end of the file
+        fseek($handle, 0, SEEK_END);
+        $id = '';
+
+        // seek one backwards as long as it's possible
+        while (fseek($handle, -1, SEEK_CUR) >= 0) {
+            $c = fgetc($handle);
+            fseek($handle, -1, SEEK_CUR); // reset the position to the character that was read
+
+            if ($c == "\n") {
+                break;
+            }
+            if ($c === false) return false; // EOF, i.e. the file is empty
+            $id = $c.$id;
+        }
+
+        if ($id === '') return false; // nothing was read i.e. the file is empty
+        else return $id;
     }
 
     /**
