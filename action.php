@@ -52,6 +52,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
         if (isset($stack[$id])) return;
 
         // Don't change the page when the user is currently changing the page content or the page is locked by another user
+        // FIXME: this doesn't work, most probably because $ACT is an array or not yet set
         if ((isset($ACT) && (in_array($ACT, array('save', 'preview', 'recover', 'revert'))))
             || checklock($id) !== false) return;
 
@@ -168,9 +169,9 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
             $helper = $this->loadHelper('pagemove', false);
             $opts = $helper->get_namespace_move_opts();
             $id = cleanID((string)$_POST['id']);
-            $skip = (int)$_POST['skip'];
+            $skip = (string)$_POST['skip'];
             if ($opts !== false) {
-                if ($skip) {
+                if ($skip == 'true') {
                     $helper->skip_namespace_move_item();
                 }
                 $remaining = $helper->continue_namespace_move();
