@@ -1,7 +1,7 @@
 base   pagemove
 author Michael Hamann, Gary Owen, Arno Puschmann, Christoph Jähnigen
 email  michael@content-space.de
-date   2013-04-01
+date   2013-10-29
 name   Pagemove plugin
 desc   Move and rename pages and namespaces whilst maintaining the links.
 url    http://www.dokuwiki.org/plugin:pagemove
