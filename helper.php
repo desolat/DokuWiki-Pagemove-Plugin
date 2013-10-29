@@ -344,7 +344,10 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         }
 
         // Check file is not locked
-        if (checklock($ID) !== false) {
+        // checklock checks if the page lock hasn't expired and the page hasn't been locked by another user
+        // the file exists check checks if the page is reported unlocked if a lock exists which means that
+        // the page is locked by the current user
+        if (checklock($ID) !== false || @file_exists(wikiLockFN($ID))) {
             msg( sprintf($this->getLang('pm_filelocked'), hsc($ID)), -1);
             return false;
         }

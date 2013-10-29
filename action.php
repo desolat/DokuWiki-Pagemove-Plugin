@@ -51,10 +51,15 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
 
         if (isset($stack[$id])) return;
 
-        // Don't change the page when the user is currently changing the page content or the page is locked by another user
-        // FIXME: this doesn't work, most probably because $ACT is an array or not yet set
-        if ((isset($ACT) && (in_array($ACT, array('save', 'preview', 'recover', 'revert'))))
-            || checklock($id) !== false) return;
+        // Don't change the page when the user is currently changing the page content or the page is locked
+        $forbidden_actions = array('save', 'preview', 'recover', 'revert');
+        if ((isset($ACT) && (
+                    in_array($ACT, $forbidden_actions) || (is_array($ACT) && in_array(key($ACT), $forbidden_actions)
+                    )))
+            // checklock checks if the page lock hasn't expired and the page hasn't been locked by another user
+            // the file exists check checks if the page is reported unlocked if a lock exists which means that
+            // the page is locked by the current user
+            || checklock($id) !== false || @file_exists(wikiLockFN($id))) return;
 
         $helper = $this->loadHelper('pagemove', true);
         if(!is_null($helper)) {
