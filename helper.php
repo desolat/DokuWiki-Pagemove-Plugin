@@ -517,7 +517,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
          * End of init (checks)
          */
 
-        $affected_pages = idx_get_indexer()->lookupKey('pagemove_media', $opts['id']);
+        $affected_pages = idx_get_indexer()->lookupKey('relation_media', $opts['id']);
 
         $data = array('opts' => &$opts, 'affected_pages' => &$affected_pages);
         // give plugins the option to add their own meta files to the list of files that need to be moved
@@ -531,7 +531,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             } else {
                 $Indexer = new helper_plugin_pagemove_indexer(); // copy of the new code
             }
-            if (($idx_msg = $Indexer->renameMetaValue('pagemove_media', $opts['id'], $opts['new_id'])) !== true) {
+            if (($idx_msg = $Indexer->renameMetaValue('relation_media', $opts['id'], $opts['new_id'])) !== true) {
                 msg('Error while updating the search index '.$idx_msg, -1);
                 return false;
             }

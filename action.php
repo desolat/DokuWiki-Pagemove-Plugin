@@ -107,7 +107,9 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
      * @param array $param Optional parameters (unused)
      */
     public function handle_index_version(Doku_Event $event, $param) {
-        $event->data['plugin_pagemove'] = 0.1;
+        // From indexer version 6 on the media references are indexed by DokuWiki itself
+        if ($event->data['dokuwiki'] < 6)
+            $event->data['plugin_pagemove'] = 0.2;
     }
 
     /**
@@ -117,6 +119,8 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
      * @param array $param  Optional parameters (unused)
      */
     public function index_media_use(Doku_Event $event, $param) {
+        // From indexer version 6 on the media references are indexed by DokuWiki itself
+        if (INDEXER_VERSION >= 6) return;
         $id = $event->data['page'];
         $media_references = array();
         $instructions = p_cached_instructions(wikiFn($id), false, $id);
@@ -124,7 +128,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
             $this->get_media_references_from_instructions($instructions, $media_references, $id);
         }
         $media_references = array_unique($media_references);
-        $event->data['metadata']['pagemove_media'] = $media_references;
+        $event->data['metadata']['relation_media'] = $media_references;
     }
 
     /**
