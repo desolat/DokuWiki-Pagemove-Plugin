@@ -147,6 +147,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             $form->startFieldset($this->getLang('pm_movens'));
             $form->addElement(form_makeMenuField('targetns', $ns_select_data, $this->opts['targetns'], $this->getLang('pm_targetns'), '', 'block'));
             $form->addElement(form_makeTextField('newnsname', $this->opts['newnsname'], $this->getLang('pm_newnsname'), '', 'block'));
+            $form->addElement(form_makeMenuField('contenttomove', array('pages' => $this->getLang('pm_move_pages'), 'media' => $this->getLang('pm_move_media'), 'both' => $this->getLang('pm_move_media_and_pages')), $this->opts['contenttomove'], $this->getLang('pm_content_to_move'), '', 'block'));
             $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_submit')));
             $form->endFieldset();
             $form->printForm();
@@ -200,6 +201,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         $this->opts['targetns']    = getNS($ID);
         $this->opts['newnsname']   = '';
         $this->opts['move_type']   = 'page';
+        $this->opts['contenttomove'] = 'pages';
 
         $this->helper = $this->loadHelper('pagemove', true);
         if (!$this->helper) return;
@@ -237,10 +239,10 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         if (isset($_POST['targetns'])) $this->opts['targetns'] = cleanID((string)$_POST['targetns']);
         if (isset($_POST['newnsname'])) $this->opts['newnsname'] = cleanID((string)$_POST['newnsname']);
         if (isset($_POST['move_type'])) $this->opts['move_type'] = (string)$_POST['move_type'];
+        if (isset($_POST['contenttomove']) && in_array($_POST['contenttomove'], array('pages', 'media', 'both'), true)) $this->opts['contenttomove'] = $_POST['contenttomove'];
 
         // check the input for completeness
         if( $this->opts['move_type'] == 'namespace' ) {
-            $this->opts['media'] = true; // FIXME: add checkbox later!
 
             if ($this->opts['targetns'] == '') {
                 $this->opts['newns'] = $this->opts['newnsname'];

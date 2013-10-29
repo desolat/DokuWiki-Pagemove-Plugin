@@ -53,6 +53,10 @@ $lang['pm_newtargetns'] = 'Create a new namespace:';
 $lang['pm_movepage']	= 'Move page';
 $lang['pm_movens']		= 'Move namespace';
 $lang['pm_submit']      = 'Submit';
+$lang['pm_content_to_move'] = 'Content to move';
+$lang['pm_move_pages']  = 'Pages';
+$lang['pm_move_media']  = 'Media files';
+$lang['pm_move_media_and_pages'] = 'Pages and media files';
 // JavaScript preview
 $lang['js']['pm_previewpage'] = 'OLDPAGE will be moved to NEWPAGE';
 $lang['js']['pm_previewns'] = 'All pages and namespaces in the namespace OLDNS will be moved in the namespace NEWNS';

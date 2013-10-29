@@ -57,7 +57,9 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $pagelist = array();
         $pathToSearch = utf8_encodeFN(str_replace(':', '/', $opts['ns']));
         $searchOpts = array('depth' => 0, 'skipacl' => true);
-        search($pagelist, $conf['datadir'], 'search_allpages', $searchOpts, $pathToSearch);
+        if (in_array($opts['contenttomove'], array('pages', 'both'))) {
+            search($pagelist, $conf['datadir'], 'search_allpages', $searchOpts, $pathToSearch);
+        }
         $pages = array();
         foreach ($pagelist as $page) {
             $pages[] = $page['id'];
@@ -72,7 +74,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 
         // generate and save a list of all media files
         $medialist = array();
-        if (isset($opts['media']) && $opts['media']) {
+        if (in_array($opts['contenttomove'], array('media,', 'both'))) {
             search($medialist, $conf['mediadir'], 'search_media', $searchOpts, $pathToSearch);
         }
 
