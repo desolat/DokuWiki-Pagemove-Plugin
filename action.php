@@ -17,7 +17,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
      *
      * @param Doku_Event_Handler $controller The plugin controller
      */
-    public function register($controller) {
+    public function register(Doku_Event_Handler $controller) {
         $controller->register_hook('IO_WIKIPAGE_READ', 'AFTER', $this, 'handle_read', array());
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_cache', array());
         $controller->register_hook('INDEXER_VERSION_GET', 'BEFORE', $this, 'handle_index_version');
