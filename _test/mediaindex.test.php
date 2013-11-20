@@ -23,7 +23,7 @@ class plugin_pagemove_mediaindex_test extends DokuWikiTest {
         $this->assertEquals( array(
             'test:internalmedia.png' => array('test:internalmedia_usage'),
             'internal_media.png' => array('test:internalmedia_usage')
-        ), idx_get_indexer()->lookupKey('pagemove_media', $query));
+        ), idx_get_indexer()->lookupKey('relation_media', $query));
     }
 
     public function test_media_in_links() {
@@ -34,7 +34,7 @@ class plugin_pagemove_mediaindex_test extends DokuWikiTest {
         $this->assertEquals(array(
             'wiki:logo.png' => array('test:medialinks'),
             'test:example.png' => array('test:medialinks')
-        ), idx_get_indexer()->lookupKey('pagemove_media', $query));
+        ), idx_get_indexer()->lookupKey('relation_media', $query));
     }
 
     public function test_media_in_footnotes() {
@@ -45,6 +45,6 @@ class plugin_pagemove_mediaindex_test extends DokuWikiTest {
         $this->assertEquals(array(
             'test:footnote.png' => array('test:media_footnotes'),
             'footlink.png' => array('test:media_footnotes')
-        ), idx_get_indexer()->lookupKey('pagemove_media', $query));
+        ), idx_get_indexer()->lookupKey('relation_media', $query));
     }
 }
