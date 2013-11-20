@@ -26,7 +26,7 @@ class plugin_pagemove_namespace_move_test extends DokuWikiTest {
         $opts = array(
             'ns' => 'wiki',
             'newns' => 'foo',
-            'media' => true
+            'contenttomove' => 'both'
         );
 
         $this->assertSame(3, $pagemove->start_namespace_move($opts));
