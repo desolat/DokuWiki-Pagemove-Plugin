@@ -4,9 +4,9 @@
 if (!defined('DOKU_INC')) die();
 
 /**
- * Test cases for the pagemove plugin
+ * Test cases for the move plugin
  */
-class PagemovePageTest extends DokuWikiTest {
+class plugin_move_pagemove_test  extends DokuWikiTest {
 
     var $movedToId = '';
     var $movedId = 'parent_ns:current_ns:test_page';
@@ -14,14 +14,14 @@ class PagemovePageTest extends DokuWikiTest {
     var $currentNsBacklinkingId = 'parent_ns:current_ns:some_page';
     var $otherBacklinkingId = 'level0:level1:other_backlinking_page';
     var $subNsPage = 'parent_ns:current_ns:sub_ns:some_page';
-    /** @var helper_plugin_pagemove $pagemove */
-    private $pagemove = NULL;
+    /** @var helper_plugin_move $move */
+    private $move = NULL;
 
     // @todo Move page to an ID which already exists
     // @todo Check backlinks of a sub-namespace page (moving same, up, down, different)
 
     function setUp() {
-        $this->pluginsEnabled[] = 'pagemove';
+        $this->pluginsEnabled[] = 'move';
         global $ID;
         global $INFO;
 
@@ -166,7 +166,7 @@ EOT;
         $references = array_keys(p_get_metadata($this->subNsPage, 'relation references', METADATA_RENDER_UNLIMITED));
         idx_get_indexer()->addMetaKeys($this->subNsPage, 'relation_references', $references);
 
-        $this->pagemove = new helper_plugin_pagemove();
+        $this->move = new helper_plugin_move();
         parent::setUp();
     }
 
@@ -175,7 +175,7 @@ EOT;
 #	}
 
 // 	function test_pm_getforwardlinks() {
-// 		$origLinkAbsLinkArray = $this->pagemove->_pm_getforwardlinks($this->movedId);
+// 		$origLinkAbsLinkArray = $this->move->_pm_getforwardlinks($this->movedId);
 // 	}
 
 	function test_move_page_in_same_ns() {
@@ -190,7 +190,7 @@ EOT;
         $opts['newns'] = $opts['ns'];
         $opts['newname'] = $newPagename;
         $this->movedToId = $opts['newns'].':'.$newPagename;
-	    $this->pagemove->move_page($opts);
+	    $this->move->move_page($opts);
 
 	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $newContent = rawWiki($newId);
@@ -308,7 +308,7 @@ EOT;
 	    $opts['newns'] = 'parent_ns:parallel_ns';
 	    $opts['newname'] = $newPagename;
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
-	    $this->pagemove->move_page($opts);
+	    $this->move->move_page($opts);
 
 	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $newContent = rawWiki($newId);
@@ -428,7 +428,7 @@ EOT;
 	    $newId = $opts['newns'].':'.$opts['newname'];
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
 
-	    $this->pagemove->move_page($opts);
+	    $this->move->move_page($opts);
 
 	    $newContent = rawWiki($newId);
 	    $expectedContent = <<<EOT
@@ -545,7 +545,7 @@ EOT;
 	    $opts['newname'] = $newPagename;
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
 
-	    //$this->pagemove->_pm_move_recursive($opts);
+	    //$this->move->_pm_move_recursive($opts);
 
 	}
 

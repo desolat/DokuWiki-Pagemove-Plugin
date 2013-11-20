@@ -1,4 +1,4 @@
-====== Pagemove ======
+====== Move ======
 
 This plugin allows you to move and/or rename the current page or move and/or rename the current namespace within the following restrictions:
 

@@ -8,10 +8,10 @@ if (!defined('DOKU_INC')) die();
  *
  * @author Michael Hamann <michael@content-space.de>
  */
-class plugin_pagemove_mediaindex_test extends DokuWikiTest {
+class plugin_move_mediaindex_test extends DokuWikiTest {
 
     public function setUp() {
-        $this->pluginsEnabled[] = 'pagemove';
+        $this->pluginsEnabled[] = 'move';
         parent::setUp();
     }
 

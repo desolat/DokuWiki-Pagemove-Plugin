@@ -1,11 +1,11 @@
 /**
- * JavasScript code for the preview in the pagemove plugin
+ * JavasScript code for the preview in the move plugin
  *
  * @author Michael Hamann <michael@content-space.de>
  */
 
 jQuery(function() {
-    jQuery('form.pagemove__form').each(function() {
+    jQuery('form.move__form').each(function() {
         var $this = jQuery(this);
         var $preview = jQuery('<p></p>');
         $this.find('input[type=submit]').before($preview);
@@ -19,7 +19,7 @@ jQuery(function() {
                 } else {
                     previewns = targetns + ':' + newnsname;
                 }
-                $preview.text(LANG['plugins']['pagemove']['pm_previewns'].replace('OLDNS', JSINFO['namespace']).replace('NEWNS', previewns));
+                $preview.text(LANG['plugins']['move']['pm_previewns'].replace('OLDNS', JSINFO['namespace']).replace('NEWNS', previewns));
             } else {
                 var ns_for_page = $this.find('select[name=ns_for_page]').val();
                 var newns = $this.find('input[name=newns]').val();
@@ -34,7 +34,7 @@ jQuery(function() {
                     newid = ns_for_page + ':';
                 }
                 newid += newname;
-                $preview.text(LANG['plugins']['pagemove']['pm_previewpage'].replace('OLDPAGE', JSINFO['id']).replace('NEWPAGE', newid));
+                $preview.text(LANG['plugins']['move']['pm_previewpage'].replace('OLDPAGE', JSINFO['id']).replace('NEWPAGE', newid));
 
             }
         };
@@ -43,9 +43,9 @@ jQuery(function() {
         $this.find('input').keyup(updatePreview);
     });
 
-    jQuery('form.pagemove__nscontinue').each(function() {
+    jQuery('form.move__nscontinue').each(function() {
         var $this = jQuery(this);
-        var $container = jQuery('div.plugin__pagemove_forms');
+        var $container = jQuery('div.plugin__move_forms');
         var submit_handler = function() {
             $container.empty();
             var $progressbar = jQuery('<div></div>');
@@ -53,13 +53,13 @@ jQuery(function() {
             $progressbar.progressbar({value: false});
             var $message = jQuery('<div></div>');
             $container.append($message);
-            var skip = jQuery(this).hasClass('pagemove__nsskip');
+            var skip = jQuery(this).hasClass('move__nsskip');
 
             var continue_move = function() {
                 jQuery.post(
                     DOKU_BASE + 'lib/exe/ajax.php',
                     {
-                        call: 'plugin_pagemove_ns_continue',
+                        call: 'plugin_move_ns_continue',
                         id: JSINFO['id'],
                         skip: skip
                     },
@@ -72,7 +72,7 @@ jQuery(function() {
                         }
                         $message.html(data.html);
                         if (data.remaining === false) {
-                            $container.find('form.pagemove__nscontinue, form.pagemove__nsskip').submit(submit_handler);
+                            $container.find('form.move__nscontinue, form.move__nsskip').submit(submit_handler);
                         } else if (data.remaining === 0) {
                             window.location.href = data.redirect_url;
                         } else {

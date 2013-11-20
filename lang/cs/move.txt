@@ -1,4 +1,4 @@
-====== Pagemove ======
+====== Move ======
 
 Pomocí tohoto pluginu lze přesunout nebo přejmenovat aktuální stránku. Platí však jistá omezení:
 

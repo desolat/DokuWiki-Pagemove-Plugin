@@ -1,4 +1,4 @@
-====== Pagemove ======
+====== Move ======
 
 Ce plugin permet de déplacer et/ou renommer le document courant, avec les limitations suivantes :
   * Il faut avoir les droits d'édition sur le document

@@ -1,4 +1,4 @@
-====== Pagemove ======
+====== Move ======
 
 Esta extensión le permite mover y/o renombrar el documento actual respetando las siguientes restricciones.
 

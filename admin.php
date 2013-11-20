@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin : Pagemove
+ * Plugin : Move
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author     Michael Hamann <michael@content-space.de>
@@ -11,13 +11,13 @@
 if (!defined('DOKU_INC')) die();
 
 /**
- * Admin component of the pagemove plugin. Provides the user interface.
+ * Admin component of the move plugin. Provides the user interface.
  */
-class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
+class admin_plugin_move extends DokuWiki_Admin_Plugin {
 
     var $opts = array();
     private $ns_opts = false;
-    /** @var helper_plugin_pagemove $helper */
+    /** @var helper_plugin_move $helper */
     private $helper = null;
     /** @var string $ns_move_state The state of the current namespace move (none, started, continued, error) */
     private $ns_move_state = 'none';
@@ -68,9 +68,9 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
      */
     function html() {
         if (!$this->helper) return;
-        ptln('<!-- Pagemove Plugin start -->');
-        ptln( $this->locale_xhtml('pagemove') );
-        ptln('<div class="plugin__pagemove_forms">');
+        ptln('<!-- Mmove Plugin start -->');
+        ptln( $this->locale_xhtml('move') );
+        ptln('<div class="plugin__move_forms">');
 
         switch ($this->ns_move_state) {
             case 'started':
@@ -100,7 +100,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
                 $this->printForm();
         }
         ptln('</div>');
-        ptln('<!-- Pagemove Plugin end -->');
+        ptln('<!-- Move Plugin end -->');
     }
 
     /**
@@ -116,7 +116,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
 
         $ns_select_data = $this->build_namespace_select_content($ns);
 
-        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'pagemove__form'));
+        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'move__form'));
         $form->addHidden('page', $this->getPluginName());
         $form->addHidden('id', $ID);
         $form->addHidden('move_type', 'page');
@@ -140,7 +140,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
             ptln($this->helper->getNSMoveButton('abort'));
             ptln('</fieldset>');
         } else {
-            $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'pagemove__form'));
+            $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'move__form'));
             $form->addHidden('page', $this->getPluginName());
             $form->addHidden('id', $ID);
             $form->addHidden('move_type', 'namespace');
@@ -203,7 +203,7 @@ class admin_plugin_pagemove extends DokuWiki_Admin_Plugin {
         $this->opts['move_type']   = 'page';
         $this->opts['contenttomove'] = 'pages';
 
-        $this->helper = $this->loadHelper('pagemove', true);
+        $this->helper = $this->loadHelper('move', true);
         if (!$this->helper) return;
 
         $this->ns_opts = $this->helper->get_namespace_move_opts();

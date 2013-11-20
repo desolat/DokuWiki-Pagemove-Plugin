@@ -1,4 +1,4 @@
-====== Pagemove ======
+====== Move ======
 
 Ta plugin omogoča premikanje in/ali preimenovanje trenutnega dokumenta v okviru naslednjih omejitev:
 

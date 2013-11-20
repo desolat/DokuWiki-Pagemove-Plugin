@@ -1,4 +1,4 @@
-====== Pagemove ======
+====== Move ======
 
 Ta wtyczka umożliwia przeniesienie lub zmianę nazwy dokumentu z poniższymi zastrzeżeniami:
 

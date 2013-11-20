@@ -4,12 +4,12 @@
 if (!defined('DOKU_INC')) die();
 
 /**
- * Test cases for namespace move functionality of the pagemove plugin
+ * Test cases for namespace move functionality of the move plugin
  */
-class plugin_pagemove_namespace_move_test extends DokuWikiTest {
+class plugin_move_namespace_move_test extends DokuWikiTest {
 
     public function setUp() {
-        $this->pluginsEnabled[] = 'pagemove';
+        $this->pluginsEnabled[] = 'move';
         parent::setUp();
     }
 
@@ -21,17 +21,17 @@ class plugin_pagemove_namespace_move_test extends DokuWikiTest {
         idx_addPage('wiki:dokuwiki');
         idx_addPage('wiki:syntax');
 
-        /** @var helper_plugin_pagemove $pagemove  */
-        $pagemove = plugin_load('helper', 'pagemove');
+        /** @var helper_plugin_move $move  */
+        $move = plugin_load('helper', 'move');
         $opts = array(
             'ns' => 'wiki',
             'newns' => 'foo',
             'contenttomove' => 'both'
         );
 
-        $this->assertSame(3, $pagemove->start_namespace_move($opts));
-        $this->assertSame(1, $pagemove->continue_namespace_move());
-        $this->assertSame(0, $pagemove->continue_namespace_move());
+        $this->assertSame(3, $move->start_namespace_move($opts));
+        $this->assertSame(1, $move->continue_namespace_move());
+        $this->assertSame(0, $move->continue_namespace_move());
 
         $this->assertFileExists(wikiFN('foo:dokuwiki'));
         $this->assertFileNotExists(wikiFN('wiki:syntax'));

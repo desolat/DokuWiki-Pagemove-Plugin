@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin : Pagemove
+ * Plugin : Move
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author     Michael Hamann <michael@content-space.de>
@@ -9,9 +9,9 @@
 if (!defined('DOKU_INC')) die();
 
 /**
- * Helper part of the pagemove plugin.
+ * Helper part of the move plugin.
  */
-class helper_plugin_pagemove extends DokuWiki_Plugin {
+class helper_plugin_move extends DokuWiki_Plugin {
     /**
      * Move a namespace according to the given options
      *
@@ -285,16 +285,16 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     }
 
     /**
-     * Get the filenames for the metadata of the pagemove plugin
+     * Get the filenames for the metadata of the move plugin
      *
      * @return array The file names for opts, pagelist and medialist
      */
     protected function get_namespace_meta_files() {
         global $conf;
         return array(
-            'opts' => $conf['metadir'].'/__pagemove_opts',
-            'pagelist' => $conf['metadir'].'/__pagemove_pagelist',
-            'medialist' => $conf['metadir'].'/__pagemove_medialist'
+            'opts' => $conf['metadir'].'/__move_opts',
+            'pagelist' => $conf['metadir'].'/__move_pagelist',
+            'medialist' => $conf['metadir'].'/__move_medialist'
         );
     }
 
@@ -379,7 +379,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
          * End of init (checks)
          */
 
-        $page_meta  = p_get_metadata($ID, 'plugin_pagemove', METADATA_DONT_RENDER);
+        $page_meta  = p_get_metadata($ID, 'plugin_move', METADATA_DONT_RENDER);
         if (!$page_meta) $page_meta = array();
         if (!isset($page_meta['old_ids'])) $page_meta['old_ids'] = array();
         $page_meta['old_ids'][$ID] = time();
@@ -392,7 +392,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
         // note that old_ids is in the form 'id' => timestamp of move
-        $event = new Doku_Event('PAGEMOVE_PAGE_RENAME', $data);
+        $event = new Doku_Event('MOVE_PAGE_RENAME', $data);
         if ($event->advise_before()) {
             // Open the old document and change forward links
             lock($ID);
@@ -405,7 +405,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             if (method_exists('Doku_Indexer', 'renamePage')) { // new feature since Spring 2013 release
                 $Indexer = idx_get_indexer();
             } else {
-                $Indexer = new helper_plugin_pagemove_indexer(); // copy of the new code
+                $Indexer = new helper_plugin_move_indexer(); // copy of the new code
             }
             if (($idx_msg = $Indexer->renamePage($ID, $opts['new_id'])) !== true
                 || ($idx_msg = $Indexer->renameMetaValue('relation_references', $ID, $opts['new_id'])) !== true) {
@@ -448,16 +448,16 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             foreach ($affected_pages as $id) {
                 if (!page_exists($id, '', false) || $id == $ID || $id == $opts['new_id']) continue;
                 // we are only interested in persistent metadata, so no need to render anything.
-                $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+                $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
                 if (!$meta) $meta = array('moves' => array());
                 if (!isset($meta['moves'])) $meta['moves'] = array();
                 $meta['moves'] = $this->resolve_moves($meta['moves'], $id);
                 $meta['moves'][$ID] = $opts['new_id'];
                 //if (empty($meta['moves'])) unset($meta['moves']);
-                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
+                p_set_metadata($id, array('plugin_move' => $meta), false, true);
             }
 
-            p_set_metadata($opts['new_id'], array('plugin_pagemove' => $page_meta), false, true);
+            p_set_metadata($opts['new_id'], array('plugin_move' => $page_meta), false, true);
 
             unlock($ID);
         }
@@ -523,13 +523,13 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         // give plugins the option to add their own meta files to the list of files that need to be moved
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
-        $event = new Doku_Event('PAGEMOVE_MEDIA_RENAME', $data);
+        $event = new Doku_Event('MOVE_MEDIA_RENAME', $data);
         if ($event->advise_before()) {
             // Move the Subscriptions & Indexes
             if (method_exists('Doku_Indexer', 'renamePage')) { // new feature since Spring 2013 release
                 $Indexer = idx_get_indexer();
             } else {
-                $Indexer = new helper_plugin_pagemove_indexer(); // copy of the new code
+                $Indexer = new helper_plugin_move_indexer(); // copy of the new code
             }
             if (($idx_msg = $Indexer->renameMetaValue('relation_media', $opts['id'], $opts['new_id'])) !== true) {
                 msg('Error while updating the search index '.$idx_msg, -1);
@@ -559,13 +559,13 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             foreach ($affected_pages as $id) {
                 if (!page_exists($id, '', false)) continue;
                 // we are only interested in persistent metadata, so no need to render anything.
-                $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+                $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
                 if (!$meta) $meta = array('media_moves' => array());
                 if (!isset($meta['media_moves'])) $meta['media_moves'] = array();
                 $meta['media_moves'] = $this->resolve_moves($meta['media_moves'], '__');
                 $meta['media_moves'][$opts['id']] = $opts['new_id'];
                 //if (empty($meta['moves'])) unset($meta['moves']);
-                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
+                p_set_metadata($id, array('plugin_move' => $meta), false, true);
             }
         }
 
@@ -576,7 +576,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     /**
      * Move the old revisions of the media file that is specified in the options
      *
-     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @param array $opts Move options (used here: name, newname, ns, newns)
      * @return bool If the attic files were moved successfully
      */
     public function movemediaattic($opts) {
@@ -607,7 +607,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     /**
      * Move the meta files of the page that is specified in the options.
      *
-     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @param array $opts Move options (used here: name, newname, ns, newns)
      * @return bool If the meta files were moved successfully
      */
     public function movemediameta($opts) {
@@ -620,7 +620,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     /**
      * Move the old revisions of the page that is specified in the options.
      *
-     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @param array $opts Move options (used here: name, newname, ns, newns)
      * @return bool If the attic files were moved successfully
      */
     public function moveattic($opts) {
@@ -633,7 +633,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
     /**
      * Move the meta files of the page that is specified in the options.
      *
-     * @param array $opts Pagemove options (used here: name, newname, ns, newns)
+     * @param array $opts Move options (used here: name, newname, ns, newns)
      * @return bool If the meta files were moved successfully
      */
     public function movemeta($opts) {
@@ -647,7 +647,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * Internal function for moving and renaming meta/attic files between namespaces
      *
      * @param string $dir   The root path of the files (e.g. $conf['metadir'] or $conf['olddir']
-     * @param array  $opts  Pagemove options (used here: ns, newns, name, newname)
+     * @param array  $opts  Move options (used here: ns, newns, name, newname)
      * @param string $extregex Regular expression for matching the extension of the file that shall be moved
      * @return bool If the files were moved successfully
      */
@@ -694,7 +694,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
      * @return string The rewritten content
      */
     public function execute_rewrites($id, $text = null) {
-        $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+        $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
         if($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
             if(is_null($text)) $text = rawWiki($id);
             $moves = isset($meta['moves']) ? $meta['moves'] : array();
@@ -713,7 +713,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
                 }
                 unset($meta['moves']);
                 unset($meta['media_moves']);
-                p_set_metadata($id, array('plugin_pagemove' => $meta), false, true);
+                p_set_metadata($id, array('plugin_move' => $meta), false, true);
             } else { // FIXME: print error here or fail silently?
                 msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
             }
@@ -739,7 +739,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $data     = array('id' => $id, 'moves' => &$moves, 'handlers' => &$handlers);
 
         /*
-         * PAGEMOVE_HANDLERS REGISTER event:
+         * MOVE_HANDLERS REGISTER event:
          *
          * Plugin handlers can be registered in the $handlers array, the key is the plugin name as it is given to the handler
          * The handler needs to be a valid callback, it will get the following parameters:
@@ -752,7 +752,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
          * - moves: array of moves, the same as $moves in the event
          * - adaptRelativeId($id): adapts the relative $id according to the moves
          */
-        trigger_event('PAGEMOVE_HANDLERS_REGISTER', $data);
+        trigger_event('MOVE_HANDLERS_REGISTER', $data);
 
         $modes = p_get_parsermodes();
 
@@ -760,7 +760,7 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
         $Parser = new Doku_Parser();
 
         // Add the Handler
-        $Parser->Handler = new helper_plugin_pagemove_handler($id, $moves, $media_moves, $handlers);
+        $Parser->Handler = new helper_plugin_move_handler($id, $moves, $media_moves, $handlers);
 
         //add modes to parser
         foreach($modes as $mode) {
@@ -820,14 +820,14 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
             $id = $ID;
         }
 
-        $class = 'pagemove__nsform';
+        $class = 'move__nsform';
         switch ($action) {
             case 'continue':
             case 'tryagain':
-                $class .= ' pagemove__nscontinue';
+                $class .= ' move__nscontinue';
                 break;
             case 'skip':
-                $class .= ' pagemove__nsskip';
+                $class .= ' move__nsskip';
                 break;
         }
 
@@ -860,9 +860,9 @@ class helper_plugin_pagemove extends DokuWiki_Plugin {
 }
 
 /**
- * Indexer class extended by pagemove features, only needed and used in releases older than Spring 2013
+ * Indexer class extended by move features, only needed and used in releases older than Spring 2013
  */
-class helper_plugin_pagemove_indexer extends Doku_Indexer {
+class helper_plugin_move_indexer extends Doku_Indexer {
     /**
      * Rename a page in the search index without changing the indexed content
      *
@@ -963,9 +963,9 @@ class helper_plugin_pagemove_indexer extends Doku_Indexer {
 }
 
 /**
- * Handler class for pagemove. It does the actual rewriting of the content.
+ * Handler class for move. It does the actual rewriting of the content.
  */
-class helper_plugin_pagemove_handler {
+class helper_plugin_move_handler {
     public $calls = '';
     public $id;
     public $ns;
@@ -976,7 +976,7 @@ class helper_plugin_pagemove_handler {
     private $handlers;
 
     /**
-     * Construct the pagemove handler.
+     * Construct the move handler.
      *
      * @param string $id       The id of the text that is passed to the handler
      * @param array $moves    Moves that shall be considered in the form $old => $new ($old can be $id)

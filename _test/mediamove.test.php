@@ -4,12 +4,12 @@
 if (!defined('DOKU_INC')) die();
 
 /**
- * Test cases for the pagemove plugin
+ * Test cases for the move plugin
  */
-class plugin_pagemove_mediamove_test extends DokuWikiTest {
+class plugin_move_mediamove_test extends DokuWikiTest {
 
     public function setUp() {
-        $this->pluginsEnabled[] = 'pagemove';
+        $this->pluginsEnabled[] = 'move';
         parent::setUp();
     }
 
@@ -28,9 +28,9 @@ class plugin_pagemove_mediamove_test extends DokuWikiTest {
         $opts['name'] = noNS($ID);
         $opts['newns'] = '';
         $opts['newname'] = 'foo';
-        /** @var helper_plugin_pagemove $pagemove */
-        $pagemove = plugin_load('helper', 'pagemove');
-        $this->assertTrue($pagemove->move_page($opts));
+        /** @var helper_plugin_move $move */
+        $move = plugin_load('helper', 'move');
+        $this->assertTrue($move->move_page($opts));
 
         $this->assertEquals('{{ mediareltest:myimage.png}} [[:start|{{ mediareltest:testimage.png?200x800 }}]] [[mediareltest:bar|{{mediareltest:testimage.gif?400x200}}]]
 [[doku>wiki:dokuwiki|{{wiki:logo.png}}]] [[http://www.example.com|{{mediareltest:testimage.jpg}}]]
@@ -52,9 +52,9 @@ class plugin_pagemove_mediamove_test extends DokuWikiTest {
         $opts['newns'] = 'foobar';
         $opts['newname'] = 'logo.png';
 
-        /** @var helper_plugin_pagemove $pagemove */
-        $pagemove = plugin_load('helper', 'pagemove');
-        $this->assertTrue($pagemove->move_media($opts));
+        /** @var helper_plugin_move $move */
+        $move = plugin_load('helper', 'move');
+        $this->assertTrue($move->move_media($opts));
 
         $this->assertTrue(@file_exists(mediaFn('foobar:logo.png')));
 

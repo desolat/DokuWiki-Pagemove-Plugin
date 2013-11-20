@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin : Pagemove
+ * Plugin : Move
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author     Michael Hamann <michael@content-space.de>
@@ -9,9 +9,9 @@
 if (!defined('DOKU_INC')) die();
 
 /**
- * Action part of the pagemove plugin
+ * Action part of the move plugin
  */
-class action_plugin_pagemove extends DokuWiki_Action_Plugin {
+class action_plugin_move extends DokuWiki_Action_Plugin {
     /**
      * Register event handlers.
      *
@@ -61,7 +61,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
             // the page is locked by the current user
             || checklock($id) !== false || @file_exists(wikiLockFN($id))) return;
 
-        $helper = $this->loadHelper('pagemove', true);
+        $helper = $this->loadHelper('move', true);
         if(!is_null($helper)) {
             $stack[$id]    = true;
             $event->result = $helper->execute_rewrites($id, $event->result);
@@ -89,7 +89,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
             }
         }
         if ($id) {
-            $meta = p_get_metadata($id, 'plugin_pagemove', METADATA_DONT_RENDER);
+            $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
             if ($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
                 $file = wikiFN($id, '', false);
                 if (is_writable($file))
@@ -101,7 +101,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
     }
 
     /**
-     * Add the pagemove version to theindex version
+     * Add the move version to theindex version
      *
      * @param Doku_Event $event The event object
      * @param array $param Optional parameters (unused)
@@ -109,7 +109,7 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
     public function handle_index_version(Doku_Event $event, $param) {
         // From indexer version 6 on the media references are indexed by DokuWiki itself
         if ($event->data['dokuwiki'] < 6)
-            $event->data['plugin_pagemove'] = 0.2;
+            $event->data['plugin_move'] = 0.2;
     }
 
     /**
@@ -164,18 +164,18 @@ class action_plugin_pagemove extends DokuWiki_Action_Plugin {
     }
 
     /**
-     * Handle the plugin_pagemove_ns_continue ajax call
+     * Handle the plugin_move_ns_continue ajax call
      *
      * @param Doku_Event $event The event that is handled
      * @param array $params Optional parameters (unused)
      */
     public function handle_ajax_call(Doku_Event $event, $params) {
-        if ($event->data == 'plugin_pagemove_ns_continue') {
+        if ($event->data == 'plugin_move_ns_continue') {
             $event->preventDefault();
             $event->stopPropagation();
 
-            /** @var helper_plugin_pagemove $helper */
-            $helper = $this->loadHelper('pagemove', false);
+            /** @var helper_plugin_move $helper */
+            $helper = $this->loadHelper('move', false);
             $opts = $helper->get_namespace_move_opts();
             $id = cleanID((string)$_POST['id']);
             $skip = (string)$_POST['skip'];
