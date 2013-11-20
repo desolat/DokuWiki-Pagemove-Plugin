@@ -15,19 +15,19 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Přesun/přejmenování stránky';
 $lang['desc'] = 'Plugin pro přesun/přejmenování stránku';
 
-//$lang['pm_notexist']   = 'Toto téma ještě neexistuje';
-$lang['pm_notwrite']   = 'Nemáte dostatečná oprávnění pro úpravu stránky';
-$lang['pm_badns']      = 'Neplatný název jmenného prostoru';
-$lang['pm_badname']    = 'Neplatný název stránky';
-$lang['pm_nochange']   = 'Jméno stránky a jmenného prostoru se nezměnilo';
-$lang['pm_existing1']  = 'Stránka %s již existuje v %s';
-$lang['pm_root']       = '[Kořen]';
-$lang['pm_current']    = '(Současný)';
-//$lang['pm_norights']   = 'Nemáte právo editovat jednu nebo více odkazujících stránek';
-$lang['pm_filelocked']  = 'Tento soubor je uzamčen - zkuste prosím znovu později';
-$lang['pm_linkchange1'] = 'Odkazy na %s změněny na %s';
-$lang['pm_newname']     = 'Nový název stránky :';
-$lang['pm_targetns']    = 'Cílový jmenný prostor :';
-$lang['pm_submit']      = 'Potvrdit';
+//$lang['notexist']   = 'Toto téma ještě neexistuje';
+$lang['notwrite']   = 'Nemáte dostatečná oprávnění pro úpravu stránky';
+$lang['badns']      = 'Neplatný název jmenného prostoru';
+$lang['badname']    = 'Neplatný název stránky';
+$lang['nochange']   = 'Jméno stránky a jmenného prostoru se nezměnilo';
+$lang['existing1']  = 'Stránka %s již existuje v %s';
+$lang['root']       = '[Kořen]';
+$lang['current']    = '(Současný)';
+//$lang['norights']   = 'Nemáte právo editovat jednu nebo více odkazujících stránek';
+$lang['filelocked']  = 'Tento soubor je uzamčen - zkuste prosím znovu později';
+$lang['linkchange1'] = 'Odkazy na %s změněny na %s';
+$lang['newname']     = 'Nový název stránky :';
+$lang['targetns']    = 'Cílový jmenný prostor :';
+$lang['submit']      = 'Potvrdit';
 
 

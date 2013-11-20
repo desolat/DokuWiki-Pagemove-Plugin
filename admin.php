@@ -51,9 +51,9 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
         global $INFO;
 
         if( !$INFO['exists'] )
-            return $this->getLang('menu').' ('.sprintf($this->getLang('pm_notexist'), $INFO['id']).')';
+            return $this->getLang('menu').' ('.sprintf($this->getLang('notexist'), $INFO['id']).')';
         elseif( !$INFO['writable'] )
-            return $this->getLang('menu').' ('.$this->getLang('pm_notwrite').')';
+            return $this->getLang('menu').' ('.$this->getLang('notwrite').')';
         else
             return $this->getLang('menu');
     }
@@ -75,14 +75,14 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
         switch ($this->ns_move_state) {
             case 'started':
                 ptln('<p>');
-                ptln(sprintf($this->getLang('pm_ns_move_started'), hsc($this->ns_opts['ns']), hsc($this->ns_opts['newns']), $this->ns_opts['num_pages'], $this->ns_opts['num_media']));
+                ptln(sprintf($this->getLang('ns_move_started'), hsc($this->ns_opts['ns']), hsc($this->ns_opts['newns']), $this->ns_opts['num_pages'], $this->ns_opts['num_media']));
                 ptln('</p>');
                 ptln($this->helper->getNSMoveButton('continue'));
                 ptln($this->helper->getNSMoveButton('abort'));
                 break;
             case 'error':
                 ptln('<p>');
-                ptln(sprintf($this->getLang('pm_ns_move_error'), $this->ns_opts['ns'], $this->ns_opts['newns']));
+                ptln(sprintf($this->getLang('ns_move_error'), $this->ns_opts['ns'], $this->ns_opts['newns']));
                 ptln('</p>');
                 ptln($this->helper->getNSMoveButton('tryagain'));
                 ptln($this->helper->getNSMoveButton('skip'));
@@ -90,7 +90,7 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
                 break;
             case 'continued':
                 ptln('<p>');
-                ptln(sprintf($this->getLang('pm_ns_move_continued'), $this->ns_opts['ns'], $this->ns_opts['newns'], $this->ns_opts['remaining']));
+                ptln(sprintf($this->getLang('ns_move_continued'), $this->ns_opts['ns'], $this->ns_opts['newns'], $this->ns_opts['remaining']));
                 ptln('</p>');
 
                 ptln($this->helper->getNSMoveButton('continue'));
@@ -120,21 +120,21 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
         $form->addHidden('page', $this->getPluginName());
         $form->addHidden('id', $ID);
         $form->addHidden('move_type', 'page');
-        $form->startFieldset($this->getLang('pm_movepage'));
-        $form->addElement(form_makeMenuField('ns_for_page', $ns_select_data, $this->opts['ns_for_page'], $this->getLang('pm_targetns'), '', 'block'));
-        $form->addElement(form_makeTextField('newns', $this->opts['newns'], $this->getLang('pm_newtargetns'), '', 'block'));
-        $form->addElement(form_makeTextField('newname', $this->opts['newname'], $this->getLang('pm_newname'), '', 'block'));
-        $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_submit')));
+        $form->startFieldset($this->getLang('movepage'));
+        $form->addElement(form_makeMenuField('ns_for_page', $ns_select_data, $this->opts['ns_for_page'], $this->getLang('targetns'), '', 'block'));
+        $form->addElement(form_makeTextField('newns', $this->opts['newns'], $this->getLang('newtargetns'), '', 'block'));
+        $form->addElement(form_makeTextField('newname', $this->opts['newname'], $this->getLang('newname'), '', 'block'));
+        $form->addElement(form_makeButton('submit', 'admin', $this->getLang('submit')));
         $form->endFieldset();
         $form->printForm();
 
         if ($this->ns_opts !== false) {
             ptln('<fieldset>');
             ptln('<legend>');
-            ptln($this->getLang('pm_movens'));
+            ptln($this->getLang('movens'));
             ptln('</legend>');
             ptln('<p>');
-            ptln(sprintf($this->getLang('pm_ns_move_in_progress'), $this->ns_opts['num_pages'], $this->ns_opts['num_media'], ':'.hsc($this->ns_opts['ns']), ':'.hsc($this->ns_opts['newns'])));
+            ptln(sprintf($this->getLang('ns_move_in_progress'), $this->ns_opts['num_pages'], $this->ns_opts['num_media'], ':'.hsc($this->ns_opts['ns']), ':'.hsc($this->ns_opts['newns'])));
             ptln('</p>');
             ptln($this->helper->getNSMoveButton('continue'));
             ptln($this->helper->getNSMoveButton('abort'));
@@ -144,11 +144,11 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
             $form->addHidden('page', $this->getPluginName());
             $form->addHidden('id', $ID);
             $form->addHidden('move_type', 'namespace');
-            $form->startFieldset($this->getLang('pm_movens'));
-            $form->addElement(form_makeMenuField('targetns', $ns_select_data, $this->opts['targetns'], $this->getLang('pm_targetns'), '', 'block'));
-            $form->addElement(form_makeTextField('newnsname', $this->opts['newnsname'], $this->getLang('pm_newnsname'), '', 'block'));
-            $form->addElement(form_makeMenuField('contenttomove', array('pages' => $this->getLang('pm_move_pages'), 'media' => $this->getLang('pm_move_media'), 'both' => $this->getLang('pm_move_media_and_pages')), $this->opts['contenttomove'], $this->getLang('pm_content_to_move'), '', 'block'));
-            $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_submit')));
+            $form->startFieldset($this->getLang('movens'));
+            $form->addElement(form_makeMenuField('targetns', $ns_select_data, $this->opts['targetns'], $this->getLang('targetns'), '', 'block'));
+            $form->addElement(form_makeTextField('newnsname', $this->opts['newnsname'], $this->getLang('newnsname'), '', 'block'));
+            $form->addElement(form_makeMenuField('contenttomove', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), $this->opts['contenttomove'], $this->getLang('content_to_move'), '', 'block'));
+            $form->addElement(form_makeButton('submit', 'admin', $this->getLang('submit')));
             $form->endFieldset();
             $form->printForm();
         }
@@ -160,7 +160,7 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
      *
      * @author  Michael Hamann <michael@content-space.de>
      * @author  Gary Owen <gary@isection.co.uk>
-     * @author  Arno Puschmann (bin out of _pm_form)
+     * @author  Arno Puschmann (bin out of _form)
      */
     private function build_namespace_select_content($ns) {
         global $conf;
@@ -173,8 +173,8 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
         foreach($namesp as $row) {
             if ( auth_quickaclcheck($row['id'].':*') >= AUTH_CREATE || $row['id'] == $ns ) {
 
-                $result[($row['id'] ? $row['id'] : ':')] = ($row['id'] ? $row['id'].':' : ": ".$this->getLang('pm_root')).
-                                       ($row['id'] == $ns ? ' '.$this->getLang('pm_current') : '');
+                $result[($row['id'] ? $row['id'] : ':')] = ($row['id'] ? $row['id'].':' : ": ".$this->getLang('root')).
+                                       ($row['id'] == $ns ? ' '.$this->getLang('current') : '');
             }
         }
         return $result;
@@ -258,7 +258,7 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
         } else {
             // check that the pagename is valid
             if ($this->opts['newname'] == '' ) {
-                msg($this->getLang('pm_badname'), -1);
+                msg($this->getLang('badname'), -1);
                 return;
             }
 

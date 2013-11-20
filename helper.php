@@ -335,11 +335,11 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         // Check we have rights to move this document
         if ( !page_exists($ID)) {
-            msg(sprintf($this->getLang('pm_notexist'), $ID), -1);
+            msg(sprintf($this->getLang('notexist'), $ID), -1);
             return false;
         }
         if ( auth_quickaclcheck($ID) < AUTH_EDIT ) {
-            msg(sprintf($this->getLang('pm_norights'), hsc($ID)), -1);
+            msg(sprintf($this->getLang('norights'), hsc($ID)), -1);
             return false;
         }
 
@@ -348,7 +348,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         // the file exists check checks if the page is reported unlocked if a lock exists which means that
         // the page is locked by the current user
         if (checklock($ID) !== false || @file_exists(wikiLockFN($ID))) {
-            msg( sprintf($this->getLang('pm_filelocked'), hsc($ID)), -1);
+            msg( sprintf($this->getLang('filelocked'), hsc($ID)), -1);
             return false;
         }
 
@@ -358,18 +358,18 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         // Has the document name and/or namespace changed?
         if ( $opts['newns'] == $opts['ns'] && $opts['newname'] == $opts['name'] ) {
-            msg($this->getLang('pm_nochange'), -1);
+            msg($this->getLang('nochange'), -1);
             return false;
         }
         // Check the page does not already exist
         if ( @file_exists($opts['new_path']) ) {
-            msg(sprintf($this->getLang('pm_existing'), $opts['newname'], ($opts['newns'] == '' ? $this->getLang('pm_root') : $opts['newns'])), -1);
+            msg(sprintf($this->getLang('existing'), $opts['newname'], ($opts['newns'] == '' ? $this->getLang('root') : $opts['newns'])), -1);
             return false;
         }
 
         // Check if the current user can create the new page
         if (auth_quickaclcheck($opts['new_id']) < AUTH_CREATE) {
-            msg(sprintf($this->getLang('pm_notargetperms'), $opts['new_id']), -1);
+            msg(sprintf($this->getLang('notargetperms'), $opts['new_id']), -1);
             return false;
         }
 
@@ -419,13 +419,13 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
             // Save the updated document in its new location
             if ($opts['ns'] == $opts['newns']) {
-                $lang_key = 'pm_renamed';
+                $lang_key = 'renamed';
             }
             elseif ( $opts['name'] == $opts['newname'] ) {
-                $lang_key = 'pm_moved';
+                $lang_key = 'moved';
             }
             else {
-                $lang_key = 'pm_move_rename';
+                $lang_key = 'move_rename';
             }
 
             // Wait a second when the page has just been rewritten
@@ -436,7 +436,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
             // Delete the orginal file
             if (@file_exists(wikiFN($opts['new_id']))) {
-                saveWikiText($ID, '', $this->getLang('pm_delete') );
+                saveWikiText($ID, '', $this->getLang('delete') );
             }
 
             // Move the old revisions
@@ -481,12 +481,12 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         // Check we have rights to move this document
         if ( !file_exists(mediaFN($opts['id']))) {
-            msg(sprintf($this->getLang('pm_medianotexist'), hsc($opts['id'])), -1);
+            msg(sprintf($this->getLang('medianotexist'), hsc($opts['id'])), -1);
             return false;
         }
 
         if ( auth_quickaclcheck($opts['ns'].':*') < AUTH_DELETE ) {
-            msg(sprintf($this->getLang('pm_nomediarights'), hsc($opts['id'])), -1);
+            msg(sprintf($this->getLang('nomediarights'), hsc($opts['id'])), -1);
             return false;
         }
 
@@ -496,18 +496,18 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         // Has the document name and/or namespace changed?
         if ( $opts['newns'] == $opts['ns'] && $opts['newname'] == $opts['name'] ) {
-            msg($this->getLang('pm_nomediachange'), -1);
+            msg($this->getLang('nomediachange'), -1);
             return false;
         }
         // Check the page does not already exist
         if ( @file_exists($opts['new_path']) ) {
-            msg(sprintf($this->getLang('pm_mediaexisting'), $opts['newname'], ($opts['newns'] == '' ? $this->getLang('pm_root') : $opts['newns'])), -1);
+            msg(sprintf($this->getLang('mediaexisting'), $opts['newname'], ($opts['newns'] == '' ? $this->getLang('root') : $opts['newns'])), -1);
             return false;
         }
 
         // Check if the current user can create the new page
         if (auth_quickaclcheck($opts['new_ns'].':*') < AUTH_UPLOAD) {
-            msg(sprintf($this->getLang('pm_nomediatargetperms'), $opts['new_id']), -1);
+            msg(sprintf($this->getLang('nomediatargetperms'), $opts['new_id']), -1);
             return false;
         }
 
@@ -709,7 +709,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
                     // Wait a second if page has just been saved
                     $oldRev = getRevisions($id, -1, 1, 1024); // from changelog
                     if ($oldRev == time()) sleep(1);
-                    saveWikiText($id, $text, $this->getLang('pm_linkchange'));
+                    saveWikiText($id, $text, $this->getLang('linkchange'));
                 }
                 unset($meta['moves']);
                 unset($meta['media_moves']);
@@ -839,18 +839,18 @@ class helper_plugin_move extends DokuWiki_Plugin {
             case 'tryagain':
                 $form->addHidden('continue_namespace_move', true);
                 if ($action == 'tryagain') {
-                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_tryagain')));
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('ns_move_tryagain')));
                 } else {
-                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_continue')));
+                    $form->addElement(form_makeButton('submit', 'admin', $this->getLang('ns_move_continue')));
                 }
                 break;
             case 'skip':
                 $form->addHidden('skip_continue_namespace_move', true);
-                $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_skip')));
+                $form->addElement(form_makeButton('submit', 'admin', $this->getLang('ns_move_skip')));
                 break;
             case 'abort':
                 $form->addHidden('abort_namespace_move', true);
-                $form->addElement(form_makeButton('submit', 'admin', $this->getLang('pm_ns_move_abort')));
+                $form->addElement(form_makeButton('submit', 'admin', $this->getLang('ns_move_abort')));
                 break;
             default:
                 return false;

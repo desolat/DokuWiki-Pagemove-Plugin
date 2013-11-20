@@ -19,7 +19,7 @@ jQuery(function() {
                 } else {
                     previewns = targetns + ':' + newnsname;
                 }
-                $preview.text(LANG['plugins']['move']['pm_previewns'].replace('OLDNS', JSINFO['namespace']).replace('NEWNS', previewns));
+                $preview.text(LANG['plugins']['move']['previewns'].replace('OLDNS', JSINFO['namespace']).replace('NEWNS', previewns));
             } else {
                 var ns_for_page = $this.find('select[name=ns_for_page]').val();
                 var newns = $this.find('input[name=newns]').val();
@@ -34,7 +34,7 @@ jQuery(function() {
                     newid = ns_for_page + ':';
                 }
                 newid += newname;
-                $preview.text(LANG['plugins']['move']['pm_previewpage'].replace('OLDPAGE', JSINFO['id']).replace('NEWPAGE', newid));
+                $preview.text(LANG['plugins']['move']['previewpage'].replace('OLDPAGE', JSINFO['id']).replace('NEWPAGE', newid));
 
             }
         };

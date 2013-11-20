@@ -194,12 +194,12 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
                 ob_start();
                 html_msgarea();
                 if ($remaining === false) {
-                    ptln('<p>'.sprintf($this->getLang('pm_ns_move_error'), $opts['ns'], $opts['newns']).'</p>');
+                    ptln('<p>'.sprintf($this->getLang('ns_move_error'), $opts['ns'], $opts['newns']).'</p>');
                     echo $helper->getNSMoveButton('tryagain', $id);
                     echo $helper->getNSMoveButton('skip', $id);
                     echo $helper->getNSMoveButton('abort', $id);
                 } else {
-                    ptln('<p>'.sprintf($this->getLang('pm_ns_move_continued'), $opts['ns'], $opts['newns'], $remaining).'</p>');
+                    ptln('<p>'.sprintf($this->getLang('ns_move_continued'), $opts['ns'], $opts['newns'], $remaining).'</p>');
                 }
                 $result['html'] = ob_get_clean();
             } else {
