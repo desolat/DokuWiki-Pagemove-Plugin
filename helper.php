@@ -735,7 +735,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         $media_moves = $this->resolve_moves($media_moves, $id);
 
         $handlers = array();
-        $data     = array('id' => $id, 'moves' => &$moves, 'handlers' => &$handlers);
+        $data     = array('id' => $id, 'moves' => &$moves, 'media_moves' => &$media_moves, 'handlers' => &$handlers);
 
         /*
          * MOVE_HANDLERS REGISTER event:
@@ -749,6 +749,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
          * - id, ns: id and namespace of the old page
          * - new_id, new_ns: new id and namespace (can be identical to id and ns)
          * - moves: array of moves, the same as $moves in the event
+         * - media_moves: array of media moves, same as $media_moves in the event
          * - adaptRelativeId($id): adapts the relative $id according to the moves
          */
         trigger_event('MOVE_HANDLERS_REGISTER', $data);
