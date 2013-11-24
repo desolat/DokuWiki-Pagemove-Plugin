@@ -379,7 +379,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
          * End of init (checks)
          */
 
-        $page_meta  = p_get_metadata($ID, 'plugin_move', METADATA_DONT_RENDER);
+        $page_meta  = $this->getMoveMeta($ID);
         if (!$page_meta) $page_meta = array();
         if (!isset($page_meta['old_ids'])) $page_meta['old_ids'] = array();
         $page_meta['old_ids'][$ID] = time();
@@ -448,7 +448,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
             foreach ($affected_pages as $id) {
                 if (!page_exists($id, '', false) || $id == $ID || $id == $opts['new_id']) continue;
                 // we are only interested in persistent metadata, so no need to render anything.
-                $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
+                $meta = $this->getMoveMeta($id);
                 if (!$meta) $meta = array('moves' => array());
                 if (!isset($meta['moves'])) $meta['moves'] = array();
                 $meta['moves'] = $this->resolve_moves($meta['moves'], $id);
@@ -558,8 +558,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
             foreach ($affected_pages as $id) {
                 if (!page_exists($id, '', false)) continue;
-                // we are only interested in persistent metadata, so no need to render anything.
-                $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
+                $meta = $this->getMoveMeta($id);
                 if (!$meta) $meta = array('media_moves' => array());
                 if (!isset($meta['media_moves'])) $meta['media_moves'] = array();
                 $meta['media_moves'] = $this->resolve_moves($meta['media_moves'], '__');
@@ -694,7 +693,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
      * @return string The rewritten content
      */
     public function execute_rewrites($id, $text = null) {
-        $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
+        $meta = $this->getMoveMeta($id);
         if($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
             if(is_null($text)) $text = rawWiki($id);
             $moves = isset($meta['moves']) ? $meta['moves'] : array();
@@ -856,6 +855,27 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 return false;
         }
         return $form->getForm();
+    }
+
+    /**
+     * This function loads and returns the persistent metadata for the move plugin. If there is metadata for the
+     * pagemove plugin (not the old one but the version that immediately preceeded the move plugin) it will be migrated.
+     *
+     * @param string $id The id of the page the metadata shall be loaded for
+     * @return array|null The metadata of the page
+     */
+    public function getMoveMeta($id) {
+        $all_meta = p_get_metadata($id, '', METADATA_DONT_RENDER);
+        // migrate old metadata from the pagemove plugin
+        if (isset($all_meta['plugin_pagemove']) && !is_null($all_meta['plugin_pagemove'])) {
+            if (isset($all_meta['plugin_move'])) {
+                $all_meta['plugin_move'] = array_merge_recursive($all_meta['plugin_pagemove'], $all_meta['plugin_move']);
+            } else {
+                $all_meta['plugin_move'] = $all_meta['plugin_pagemove'];
+            }
+            p_set_metadata($id, array('plugin_move' => $all_meta['plugin_move'], 'plugin_pagemove' => null), false, true);
+        }
+        return isset($all_meta['plugin_move']) ? $all_meta['plugin_move'] : null;
     }
 }
 

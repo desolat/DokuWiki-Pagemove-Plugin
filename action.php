@@ -61,6 +61,7 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
             // the page is locked by the current user
             || checklock($id) !== false || @file_exists(wikiLockFN($id))) return;
 
+        /** @var helper_plugin_move $helper */
         $helper = $this->loadHelper('move', true);
         if(!is_null($helper)) {
             $stack[$id]    = true;
