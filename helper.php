@@ -392,7 +392,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
         // note that old_ids is in the form 'id' => timestamp of move
-        $event = new Doku_Event('MOVE_PAGE_RENAME', $data);
+        $event = new Doku_Event('PLUGIN_MOVE_PAGE_RENAME', $data);
         if ($event->advise_before()) {
             // Open the old document and change forward links
             lock($ID);
@@ -523,7 +523,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         // give plugins the option to add their own meta files to the list of files that need to be moved
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
-        $event = new Doku_Event('MOVE_MEDIA_RENAME', $data);
+        $event = new Doku_Event('PLUGIN_MOVE_MEDIA_RENAME', $data);
         if ($event->advise_before()) {
             // Move the Subscriptions & Indexes
             if (method_exists('Doku_Indexer', 'renamePage')) { // new feature since Spring 2013 release
@@ -738,7 +738,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         $data     = array('id' => $id, 'moves' => &$moves, 'media_moves' => &$media_moves, 'handlers' => &$handlers);
 
         /*
-         * MOVE_HANDLERS REGISTER event:
+         * PLUGIN_MOVE_HANDLERS REGISTER event:
          *
          * Plugin handlers can be registered in the $handlers array, the key is the plugin name as it is given to the handler
          * The handler needs to be a valid callback, it will get the following parameters:
@@ -752,7 +752,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
          * - media_moves: array of media moves, same as $media_moves in the event
          * - adaptRelativeId($id): adapts the relative $id according to the moves
          */
-        trigger_event('MOVE_HANDLERS_REGISTER', $data);
+        trigger_event('PLUGIN_MOVE_HANDLERS_REGISTER', $data);
 
         $modes = p_get_parsermodes();
 
