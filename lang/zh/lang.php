@@ -2,15 +2,15 @@
 /**
  * 中文文件
  *
- * @许可协议    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @作者        Gary Owen <>
- * @翻译        TombCrow <http://wiki.gmly.cn>
+ * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author     Gary Owen <>
+ * @author     TombCrow <http://wiki.gmly.cn>
  */
- 
+
 // 此处设置用户语言
 $lang['encoding']   = 'utf-8';
 $lang['direction']  = 'ltr';
- 
+
 // 若在此处设置，插件不必要求 getMenuText() 模式
 $lang['menu'] = '页面移动/重命名……';
 $lang['desc'] = '页面移动/重命名插件';

@@ -1,6 +1,6 @@
 <?php
 /**
- * Nederlands (Dutch) language file
+ * nederlands (Dutch) language file
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author     Gary Owen <gary@isection.co.uk>
@@ -28,4 +28,3 @@ $lang['filelocked']  = 'Deze file is geblokkeerd - probeer later opnieuw.';
 $lang['linkchange1'] = 'Gelinkt aan %s gewijzigd naar %s';
 $lang['newname']     = 'Nieuwe naam document:';
 $lang['targetns']    = 'Selecteer namespace van het doel:';
-

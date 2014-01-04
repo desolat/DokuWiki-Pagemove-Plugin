@@ -1,16 +1,16 @@
 <?php
 /**
- * French language file
+ * french language file
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Gary Owen <gary@isection.co.uk>
+ * @author     Gary Owen <>
  * @translator Clement Hermann (nodens) <clement.hermann@free.fr>
  */
- 
+
 // settings must be present and set appropriately for the language
 $lang['encoding']   = 'utf-8';
 $lang['direction']  = 'ltr';
- 
+
 // for admin plugins, the menu prompt to be displayed in the admin menu
 // if set here, the plugin doesn't need to override the getMenuText() method
 $lang['menu'] = 'Déplacer/Renommer la page...';
@@ -29,4 +29,3 @@ $lang['filelocked']  = 'Ce fichier est verrouillé - réessayez plus tard.';
 $lang['linkchange'] = 'Les liens vers %s ont été changés vers %s';
 $lang['newname']     = 'Nouveau nom du document :';
 $lang['targetns']    = 'Sélectionnez le nouvel espace de nommage :';
-

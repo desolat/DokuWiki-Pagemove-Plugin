@@ -1,11 +1,10 @@
 <?php
 /**
- * english language file
+ * polish language file
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Gary Owen <gary@isection.co.uk>
- * @translator Wojciech Kazimierczak <w.kazimierczak@gmail.com>
-
+ * @author     Gary Owen <>
+ * @auther     Wojciech Kazimierczak <w.kazimierczak@gmail.com>
  */
 
 // settings must be present and set appropriately for the language
