@@ -53,6 +53,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         }
         unset ($medialist);
 
+        $opts['started']   = time(); // remember when this move started
         $opts['num_media'] = count($media_files);
 
         io_saveFile($files['medialist'], implode("\n", $media_files));
@@ -97,8 +98,10 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 $pageOpts['newns'] = getNS($newID);
                 if (!$this->move_page($pageOpts)) {
                     fclose($pagelist);
+                    $this->log($opts['started'], 'P', $ID, $newID, false);
                     return false;
                 }
+                $this->log($opts['started'], 'P', $ID, $newID, true);
 
                 // update the list of pages and the options after every move
                 ftruncate($pagelist, ftell($pagelist));
@@ -124,8 +127,10 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 $pageOpts['newns'] = getNS($newID);
                 if (!$this->move_media($pageOpts)) {
                     fclose($medialist);
+                    $this->log($opts['started'], 'M', $ID, $newID, false);
                     return false;
                 }
+                $this->log($opts['started'], 'M', $ID, $newID, true);
 
                 // update the list of media files and the options after every move
                 ftruncate($medialist, ftell($medialist));
@@ -238,6 +243,37 @@ class helper_plugin_move extends DokuWiki_Plugin {
             io_saveFile($files['opts'], serialize($opts));
             return $opts['remaining'];
         }
+    }
+
+    /**
+     * Log result of an operation
+     *
+     * @param int $optime
+     * @param string $type
+     * @param string $from
+     * @param string $to
+     * @param bool $success
+     * @author Andreas Gohr <gohr@cosmocode.de>
+     */
+    private function log($optime, $type, $from, $to, $success){
+        global $conf;
+        global $MSG;
+
+
+        $file = $conf['cachedir'].'/move-'.$optime.'.log';
+        $now  = time();
+        $date = date('Y-m-d H:i:s', $now); // for human readability
+
+        if($success) {
+            $ok  = 'success';
+            $msg = '';
+        }else {
+            $ok  = 'failed';
+            $msg = $MSG[count($MSG)-1]['msg']; // get detail from message array
+        }
+
+        $log  = "$now\t$date\t$type\t$from\t$to\t$ok\t$msg\n";
+        io_saveFile($file, $log, true);
     }
 
     /**
