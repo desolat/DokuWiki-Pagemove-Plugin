@@ -12,37 +12,6 @@ if (!defined('DOKU_INC')) die();
  * Helper part of the move plugin.
  */
 class helper_plugin_move extends DokuWiki_Plugin {
-    /**
-     * Move a namespace according to the given options
-     *
-     * @author Bastian Wolf
-     * @param array $opts      Options for moving the namespace
-     * @param bool  $checkonly If only the checks if all pages can be moved shall be executed
-     * @return bool if the move was executed
-     */
-    function move_namespace(&$opts, $checkonly = false) {
-        global $ID;
-        global $conf;
-
-        $pagelist = array();
-        $pathToSearch = utf8_encodeFN(str_replace(':', '/', $opts['ns']));
-        $searchOpts = array('depth' => 0, 'skipacl' => true);
-        search($pagelist, $conf['datadir'], 'search_allpages', $searchOpts, $pathToSearch);
-
-        // FIXME: either use ajax for executing the queue and/or store the queue so it can be resumed when the execution
-        // is aborted.
-        foreach ($pagelist as $page) {
-            $ID = $page['id'];
-            $newID = $this->getNewID($ID, $opts['ns'], $opts['newns']);
-            $pageOpts = $opts;
-            $pageOpts['ns']   = getNS($ID);
-            $pageOpts['name'] = noNS($ID);
-            $pageOpts['newname'] = noNS($ID);
-            $pageOpts['newns'] = getNS($newID);
-            if (!$this->move_page($pageOpts, $checkonly)) return false;
-        }
-        return true;
-    }
 
     /**
      * Start a namespace move by creating the list of all pages and media files that shall be moved
