@@ -77,8 +77,16 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
                 ptln('<p>');
                 ptln(sprintf($this->getLang('ns_move_started'), hsc($this->ns_opts['ns']), hsc($this->ns_opts['newns']), $this->ns_opts['num_pages'], $this->ns_opts['num_media']));
                 ptln('</p>');
+
+                ptln('<div id="move__preview_list">');
+                ptln('<span>'.$this->getLang('preview').'</span>');
+                $this->helper->preview_namespace_move($this->ns_opts);
+                ptln('</div>');
+
+                ptln('<p>');
                 ptln($this->helper->getNSMoveButton('continue'));
                 ptln($this->helper->getNSMoveButton('abort'));
+                ptln('</p>');
                 break;
             case 'error':
                 ptln('<p>');

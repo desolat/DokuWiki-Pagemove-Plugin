@@ -37,6 +37,8 @@ $lang['nomediatargetperms'] = 'You don\'t have the permission to create the medi
 $lang['filelocked']  = 'The page %s is locked. Try again later.';
 $lang['linkchange']  = 'Links adapted because of a move operation';
 
+$lang['preview'] = 'Preview changes to be executed';
+
 $lang['ns_move_in_progress'] = 'There is currently a namespace move of %s page and %s media files from namespace %s to namespace %s in progress.';
 $lang['ns_move_continue'] = 'Continue the namespace move';
 $lang['ns_move_abort'] = 'Abort the namespace move';

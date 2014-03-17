@@ -89,4 +89,18 @@ jQuery(function() {
         };
         $this.submit(submit_handler);
     });
+
+    // hide preview list on namespace move
+    jQuery('#move__preview_list').each(function(){
+        var $this = jQuery(this);
+        $this.find('ul').hide();
+        $this.find('span')
+            .click(function(){
+                console.log('woah');
+                $this.find('ul').dw_toggle();
+                $this.find('span').toggleClass('closed');
+            })
+            .addClass('closed');
+    });
+
 });

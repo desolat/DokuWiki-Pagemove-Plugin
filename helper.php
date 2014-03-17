@@ -147,6 +147,48 @@ class helper_plugin_move extends DokuWiki_Plugin {
     }
 
     /**
+     * Preview all single move operations in a namespace move operation
+     */
+    public function preview_namespace_move() {
+        $files = $this->get_namespace_meta_files();
+
+        if (!@file_exists($files['opts'])) {
+            msg('Error: there are no saved options', -1);
+            return;
+        }
+        $opts = unserialize(file_get_contents($files['opts']));
+
+        echo '<ul>';
+        if (@file_exists($files['pagelist'])) {
+            $pagelist = file($files['pagelist']);
+            foreach($pagelist as $old) {
+                $new = $this->getNewID($old, $opts['ns'], $opts['newns']);
+
+                echo '<li class="page"><div class="li">';
+                echo hsc($old);
+                echo '→';
+                echo hsc($new);
+                echo '</div></li>';
+            }
+        }
+        if (@file_exists($files['medialist'])) {
+            $medialist = file($files['medialist']);
+            foreach($medialist as $old) {
+                $new = $this->getNewID($old, $opts['ns'], $opts['newns']);
+
+                echo '<li class="media"><div class="li">';
+                echo hsc($old);
+                echo '→';
+                echo hsc($new);
+                echo '</div></li>';
+            }
+        }
+        echo '</ul>';
+    }
+
+
+
+    /**
      * Skip the item that would be executed next in the current namespace move
      *
      * @return bool|int False if an error occurred, otherwise the number of remaining moves
