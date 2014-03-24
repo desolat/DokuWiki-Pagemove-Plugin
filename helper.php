@@ -176,7 +176,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         }
 
         // update affected pages
-        if(@file_exists($files['affected']) && (filesize($files['affected']) > 1)) {
+        if($opts['autorewrite'] && @file_exists($files['affected']) && (filesize($files['affected']) > 1)) {
             if(!$opts['affected']) {
                 // this is the first run, clean up the file
                 $affected = io_readFile($files['affected']);
@@ -806,7 +806,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
      *
      * @param string      $id   The id of the page that shall be rewritten
      * @param string|null $text Old content of the page. When null is given the content is loaded from disk.
-     * @return string The rewritten content
+     * @return string|bool The rewritten content, false on error
      */
     public function execute_rewrites($id, $text = null) {
         $meta = $this->getMoveMeta($id);
