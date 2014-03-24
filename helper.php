@@ -82,7 +82,8 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         $opts = unserialize(file_get_contents($files['opts']));
 
-        if (@file_exists($files['pagelist'])) {
+        $nope = false;
+        if (@file_exists($files['pagelist']) && (filesize($files['pagelist']) > 1) ) {
             $pagelist = fopen($files['pagelist'], 'a+');;
 
             for ($i = 0; $i < 10; ++$i) {
@@ -115,8 +116,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
             }
 
             fclose($pagelist);
-            if ($ID === false) unlink($files['pagelist']);
-        } elseif (@file_exists($files['medialist'])) {
+        } elseif (@file_exists($files['medialist']) && (filesize($files['medialist']) > 1) ) {
             $medialist = fopen($files['medialist'], 'a+');
 
             for ($i = 0; $i < 10; ++$i) {
@@ -149,12 +149,13 @@ class helper_plugin_move extends DokuWiki_Plugin {
             }
 
             fclose($medialist);
-            if ($ID === false) {
-                unlink($files['medialist']);
-                unlink($files['opts']);
-            }
         } else {
-            unlink($files['opts']);
+            $nope = true;
+        }
+
+        if ($nope || $opts['remaining'] == 0){
+            // nothing more to do, finish the move
+            $this->abort_namespace_move();
             return 0;
         }
 
