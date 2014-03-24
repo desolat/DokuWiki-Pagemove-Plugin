@@ -156,6 +156,7 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
             $form->addElement(form_makeMenuField('targetns', $ns_select_data, $this->opts['targetns'], $this->getLang('targetns'), '', 'block'));
             $form->addElement(form_makeTextField('newnsname', $this->opts['newnsname'], $this->getLang('newnsname'), '', 'block'));
             $form->addElement(form_makeMenuField('contenttomove', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), $this->opts['contenttomove'], $this->getLang('content_to_move'), '', 'block'));
+            $form->addElement(form_makeCheckboxField('autoskip', '1', $this->getLang('autoskip'), '', ''));
             $form->addElement(form_makeButton('submit', 'admin', $this->getLang('submit')));
             $form->endFieldset();
             $form->printForm();
@@ -247,6 +248,7 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
         if (isset($_POST['targetns'])) $this->opts['targetns'] = cleanID((string)$_POST['targetns']);
         if (isset($_POST['newnsname'])) $this->opts['newnsname'] = cleanID((string)$_POST['newnsname']);
         if (isset($_POST['move_type'])) $this->opts['move_type'] = (string)$_POST['move_type'];
+        if (isset($_POST['autoskip'])) $this->opts['autoskip'] = true;
         if (isset($_POST['contenttomove']) && in_array($_POST['contenttomove'], array('pages', 'media', 'both'), true)) $this->opts['contenttomove'] = $_POST['contenttomove'];
 
         // check the input for completeness

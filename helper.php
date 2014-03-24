@@ -99,6 +99,11 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 if (!$this->move_page($pageOpts)) {
                     fclose($pagelist);
                     $this->log($opts['started'], 'P', $ID, $newID, false);
+
+                    // automatically skip this item if wanted
+                    if($opts['autoskip']) {
+                        return $this->skip_namespace_move_item();
+                    }
                     return false;
                 }
                 $this->log($opts['started'], 'P', $ID, $newID, true);
@@ -128,6 +133,11 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 if (!$this->move_media($pageOpts)) {
                     fclose($medialist);
                     $this->log($opts['started'], 'M', $ID, $newID, false);
+
+                    // automatically skip this item if wanted
+                    if($opts['autoskip']) {
+                        return $this->skip_namespace_move_item();
+                    }
                     return false;
                 }
                 $this->log($opts['started'], 'M', $ID, $newID, true);
