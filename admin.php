@@ -156,7 +156,7 @@ class admin_plugin_move extends DokuWiki_Admin_Plugin {
             $form->addElement(form_makeMenuField('targetns', $ns_select_data, $this->opts['targetns'], $this->getLang('targetns'), '', 'block'));
             $form->addElement(form_makeTextField('newnsname', $this->opts['newnsname'], $this->getLang('newnsname'), '', 'block'));
             $form->addElement(form_makeMenuField('contenttomove', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), $this->opts['contenttomove'], $this->getLang('content_to_move'), '', 'block'));
-            $form->addElement(form_makeCheckboxField('autoskip', '1', $this->getLang('autoskip'), '', ''));
+            $form->addElement(form_makeCheckboxField('autoskip', '1', $this->getLang('autoskip'), '', '', ($this->getConf('autoskip') ? array('checked'=>'checked') : array())));
             $form->addElement(form_makeButton('submit', 'admin', $this->getLang('submit')));
             $form->endFieldset();
             $form->printForm();
