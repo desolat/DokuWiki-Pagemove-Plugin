@@ -14,6 +14,15 @@ if (!defined('DOKU_INC')) die();
 class helper_plugin_move extends DokuWiki_Plugin {
 
     /**
+     * @var array access to the info the last move in execution
+     *
+     * the same as the data passed to the PLUGIN_MOVE_PAGE_RENAME and PLUGIN_MOVE_MEDIA_RENAME events,
+     * used for internal introspection in the move plugin. This is ephemeral data and may be outdated or
+     * misleading when not read directly after a page or media move operation
+     */
+    public $lastmove = array();
+
+    /**
      * Start a namespace move by creating the list of all pages and media files that shall be moved
      *
      * @param array $opts The options for the namespace move
@@ -54,6 +63,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         unset ($medialist);
 
         $opts['started']   = time(); // remember when this move started
+        $opts['affected']  = 0; // will be filled in later
         $opts['num_media'] = count($media_files);
 
         io_saveFile($files['medialist'], implode("\n", $media_files));
@@ -67,7 +77,10 @@ class helper_plugin_move extends DokuWiki_Plugin {
     }
 
     /**
-     * Execute the next steps (moving up to 10 pages or media files) of the currently running namespace move
+     * Execute the next steps of the currently running namespace move
+     *
+     * This function will move up to 10 pages or media files or adjust the links of affected pages.
+     * It is repeatedly called via AJAX (or several clicks from the user if JavaScript is missing)
      *
      * @return bool|int False if an error occurred, otherwise the number of remaining moves
      */
@@ -82,7 +95,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         $opts = unserialize(file_get_contents($files['opts']));
 
-        $nope = false;
+        // handle page moves
         if (@file_exists($files['pagelist']) && (filesize($files['pagelist']) > 1) ) {
             $pagelist = fopen($files['pagelist'], 'a+');;
 
@@ -109,6 +122,9 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 }
                 $this->log($opts['started'], 'P', $ID, $newID, true);
 
+                // remember affected pages
+                io_saveFile($files['affected'], join("\n", $this->lastmove['affected_pages'])."\n", true);
+
                 // update the list of pages and the options after every move
                 ftruncate($pagelist, ftell($pagelist));
                 $opts['remaining']--;
@@ -116,7 +132,11 @@ class helper_plugin_move extends DokuWiki_Plugin {
             }
 
             fclose($pagelist);
-        } elseif (@file_exists($files['medialist']) && (filesize($files['medialist']) > 1) ) {
+            return max(1, $opts['remaining']); // force one more call
+        }
+
+        // handle media moves
+        if (@file_exists($files['medialist']) && (filesize($files['medialist']) > 1) ) {
             $medialist = fopen($files['medialist'], 'a+');
 
             for ($i = 0; $i < 10; ++$i) {
@@ -142,6 +162,9 @@ class helper_plugin_move extends DokuWiki_Plugin {
                 }
                 $this->log($opts['started'], 'M', $ID, $newID, true);
 
+                // remember affected pages
+                io_saveFile($files['affected'], join("\n", $this->lastmove['affected_pages'])."\n", true);
+
                 // update the list of media files and the options after every move
                 ftruncate($medialist, ftell($medialist));
                 $opts['remaining']--;
@@ -149,17 +172,51 @@ class helper_plugin_move extends DokuWiki_Plugin {
             }
 
             fclose($medialist);
-        } else {
-            $nope = true;
+            return max(1, $opts['remaining']); // force one more call
         }
 
-        if ($nope || $opts['remaining'] == 0){
-            // nothing more to do, finish the move
-            $this->abort_namespace_move();
-            return 0;
+        // update affected pages
+        if(@file_exists($files['affected']) && (filesize($files['affected']) > 1)) {
+            if(!$opts['affected']) {
+                // this is the first run, clean up the file
+                $affected = io_readFile($files['affected']);
+                $affected = explode("\n", $affected);
+                $affected = array_unique($affected);
+                $affected = array_filter($affected);
+                sort($affected);
+                if($affected[0] === '') array_shift($affected);
+                io_saveFile($files['affected'], join("\n", $affected));
+
+                $opts['affected'] = count($affected);
+                $opts['remaining'] = $opts['affected']; // something to do again
+                io_saveFile($files['opts'], serialize($opts));
+
+                return max(1, $opts['remaining']); // force one more call
+            }
+
+            // handle affected pages
+            $affectedlist = fopen($files['affected'], 'a+');
+            for ($i = 0; $i < 10; ++$i) {
+                $ID = $this->get_last_id($affectedlist);
+                if ($ID === false) {
+                    break;
+                }
+
+                // rewrite it
+                $this->execute_rewrites($ID, null);
+
+                // update the list of media files and the options after every move
+                ftruncate($affectedlist, ftell($affectedlist));
+                $opts['remaining']--;
+                io_saveFile($files['opts'], serialize($opts));
+            }
+
+            return max(1, $opts['remaining']); // force one more call
         }
 
-        return $opts['remaining'];
+        // still here? the move is completed
+        $this->abort_namespace_move();
+        return 0;
     }
 
     /**
@@ -352,7 +409,8 @@ class helper_plugin_move extends DokuWiki_Plugin {
         return array(
             'opts' => $conf['metadir'].'/__move_opts',
             'pagelist' => $conf['metadir'].'/__move_pagelist',
-            'medialist' => $conf['metadir'].'/__move_medialist'
+            'medialist' => $conf['metadir'].'/__move_medialist',
+            'affected' => $conf['metadir'].'/__move_affected',
         );
     }
 
@@ -445,12 +503,12 @@ class helper_plugin_move extends DokuWiki_Plugin {
         // ft_backlinks() is not used here, as it does a hidden page and acl check but we really need all pages
         $affected_pages = idx_get_indexer()->lookupKey('relation_references', $ID);
 
-        $data = array('opts' => &$opts, 'old_ids' => $page_meta['old_ids'], 'affected_pages' => &$affected_pages);
+        $this->lastmove = array('opts' => &$opts, 'old_ids' => $page_meta['old_ids'], 'affected_pages' => &$affected_pages);
         // give plugins the option to add their own meta files to the list of files that need to be moved
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
         // note that old_ids is in the form 'id' => timestamp of move
-        $event = new Doku_Event('PLUGIN_MOVE_PAGE_RENAME', $data);
+        $event = new Doku_Event('PLUGIN_MOVE_PAGE_RENAME', $this->lastmove);
         if ($event->advise_before()) {
             // Open the old document and change forward links
             lock($ID);
@@ -577,11 +635,11 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
         $affected_pages = idx_get_indexer()->lookupKey('relation_media', $opts['id']);
 
-        $data = array('opts' => &$opts, 'affected_pages' => &$affected_pages);
+        $this->lastmove = array('opts' => &$opts, 'affected_pages' => &$affected_pages);
         // give plugins the option to add their own meta files to the list of files that need to be moved
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
-        $event = new Doku_Event('PLUGIN_MOVE_MEDIA_RENAME', $data);
+        $event = new Doku_Event('PLUGIN_MOVE_MEDIA_RENAME', $this->lastmove);
         if ($event->advise_before()) {
             // Move the Subscriptions & Indexes
             if (method_exists('Doku_Indexer', 'renamePage')) { // new feature since Spring 2013 release

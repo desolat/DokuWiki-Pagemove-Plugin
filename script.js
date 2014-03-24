@@ -67,8 +67,8 @@ jQuery(function() {
                         if (data.remaining === false) {
                             $progressbar.progressbar('option', 'value', false);
                         } else {
-                            $progressbar.progressbar('option', 'value', data.pages + data.media - data.remaining);
-                            $progressbar.progressbar('option', 'max', data.pages + data.media);
+                            $progressbar.progressbar('option', 'value', data.pages + data.media + data.affected - data.remaining);
+                            $progressbar.progressbar('option', 'max', data.pages + data.media + data.affected);
                         }
                         $message.html(data.html);
                         if (data.remaining === false) {
