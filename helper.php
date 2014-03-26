@@ -14,6 +14,11 @@ if (!defined('DOKU_INC')) die();
 class helper_plugin_move extends DokuWiki_Plugin {
 
     /**
+     * @var string symbol to make move operations easily recognizable in change log
+     */
+    public $symbol = '↷';
+
+    /**
      * @var array access to the info the last move in execution
      *
      * the same as the data passed to the PLUGIN_MOVE_PAGE_RENAME and PLUGIN_MOVE_MEDIA_RENAME events,
@@ -562,11 +567,11 @@ class helper_plugin_move extends DokuWiki_Plugin {
             if ($oldRev == time()) sleep(1);
 
             $summary = sprintf($this->getLang($lang_key), $ID, $opts['new_id']);
-            saveWikiText($opts['new_id'], $text, $summary);
+            saveWikiText($opts['new_id'], $text, $this->symbol.' '.$summary);
 
             // Delete the orginal file
             if (@file_exists(wikiFN($opts['new_id']))) {
-                saveWikiText($ID, '', $this->getLang('delete') );
+                saveWikiText($ID, '', $this->symbol.' '.$summary );
             }
 
             // Move the old revisions
@@ -838,7 +843,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
                     // Wait a second if page has just been saved
                     $oldRev = getRevisions($id, -1, 1, 1024); // from changelog
                     if ($oldRev == time()) sleep(1);
-                    saveWikiText($id, $text, $this->getLang('linkchange'));
+                    saveWikiText($id, $text, $this->symbol.' '.$this->getLang('linkchange'));
                 }
                 unset($meta['moves']);
                 unset($meta['media_moves']);
