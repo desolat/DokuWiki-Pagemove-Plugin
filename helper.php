@@ -571,7 +571,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
             // Delete the orginal file
             if (@file_exists(wikiFN($opts['new_id']))) {
-                saveWikiText($ID, '', $this->symbol.' '.$summary );
+                saveWikiText($ID, '', $this->symbol.' '.$summary);
             }
 
             // Move the old revisions
@@ -843,7 +843,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
                     // Wait a second if page has just been saved
                     $oldRev = getRevisions($id, -1, 1, 1024); // from changelog
                     if ($oldRev == time()) sleep(1);
-                    saveWikiText($id, $text, $this->symbol.' '.$this->getLang('linkchange'));
+                    saveWikiText($id, $text, $this->symbol.' '.$this->getLang('linkchange'), $this->getConf('minor'));
                 }
                 unset($meta['moves']);
                 unset($meta['media_moves']);
