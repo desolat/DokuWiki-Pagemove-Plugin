@@ -86,6 +86,8 @@ class helper_plugin_move extends DokuWiki_Plugin {
      */
     public function continue_namespace_move() {
         global $ID;
+        global $conf;
+
         $files = $this->get_namespace_meta_files();
 
         if (!@file_exists($files['opts'])) {
@@ -213,6 +215,18 @@ class helper_plugin_move extends DokuWiki_Plugin {
 
             return max(1, $opts['remaining']); // force one more call
         }
+
+        // move all namespace subscriptions
+        $this->move_files(
+            $conf['metadir'],
+            array(
+                 'ns' => $opts['ns'],
+                 'newns' => $opts['newns'],
+                 'name' => '',
+                 'newname' => ''
+            ),
+            '\.mlist'
+        );
 
         // still here? the move is completed
         $this->abort_namespace_move();
@@ -778,7 +792,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
         $dh = @opendir($old_path);
         if($dh) {
             while(($file = readdir($dh)) !== false) {
-                if (substr($file, 0, 1) == '.') continue;
+                if ($file == '.' || $file == '..') continue;
                 $match = array();
                 if (is_file($old_path.'/'.$file) && preg_match($regex, $file, $match)) {
                     if (!is_dir($new_path)) {
