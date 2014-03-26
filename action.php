@@ -23,6 +23,7 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
         $controller->register_hook('INDEXER_VERSION_GET', 'BEFORE', $this, 'handle_index_version');
         $controller->register_hook('INDEXER_PAGE_ADD', 'BEFORE', $this, 'index_media_use');
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handle_ajax_call');
+        $controller->register_hook('TEMPLATE_PAGETOOLS_DISPLAY', 'BEFORE', $this, 'addbutton');
    }
 
     /**
@@ -165,7 +166,7 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
     }
 
     /**
-     * Handle the plugin_move_ns_continue ajax call
+     * Handle the AJAX calls for our plugin
      *
      * @param Doku_Event $event The event that is handled
      * @param array $params Optional parameters (unused)
@@ -174,45 +175,108 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
         if ($event->data == 'plugin_move_ns_continue') {
             $event->preventDefault();
             $event->stopPropagation();
-
-            /** @var helper_plugin_move $helper */
-            $helper = $this->loadHelper('move', false);
-            $opts = $helper->get_namespace_move_opts();
-            $id = cleanID((string)$_POST['id']);
-            $skip = (string)$_POST['skip'];
-            if ($opts !== false) {
-                if ($skip == 'true') {
-                    $helper->skip_namespace_move_item();
-                }
-                $remaining = $helper->continue_namespace_move();
-                $newid = $helper->getNewID($id, $opts['ns'], $opts['newns']);
-
-                $result = array();
-                $result['remaining'] = $remaining;
-                $result['pages'] = $opts['num_pages'];
-                $result['media'] = $opts['num_media'];
-                $result['redirect_url'] = wl($newid, '', true);
-                ob_start();
-                html_msgarea();
-                if ($remaining === false) {
-                    ptln('<p>'.sprintf($this->getLang('ns_move_error'), $opts['ns'], $opts['newns']).'</p>');
-                    echo $helper->getNSMoveButton('tryagain', $id);
-                    echo $helper->getNSMoveButton('skip', $id);
-                    echo $helper->getNSMoveButton('abort', $id);
-                } else {
-                    ptln('<p>'.sprintf($this->getLang('ns_move_continued'), $opts['ns'], $opts['newns'], $remaining).'</p>');
-                }
-                $result['html'] = ob_get_clean();
-            } else {
-                $result = array();
-                $result['remaining'] = 0;
-                $result['pages'] = 0;
-                $result['media'] = 0;
-                $result['redirect_url'] = wl('', '', true);
-                $result['html'] = '';
-            }
-            $json = new JSON();
-            echo $json->encode($result);
+            $this->ajax_continue();
+        } elseif($event->data == 'plugin_move_rename') {
+            $event->preventDefault();
+            $event->stopPropagation();
+            $this->ajax_rename();
         }
+    }
+
+    /**
+     * Run the next step during a namespace move
+     */
+    protected function ajax_continue() {
+        /** @var helper_plugin_move $helper */
+        $helper = $this->loadHelper('move', false);
+        $opts = $helper->get_namespace_move_opts();
+        $id = cleanID((string)$_POST['id']);
+        $skip = (string)$_POST['skip'];
+        if ($opts !== false) {
+            if ($skip == 'true') {
+                $helper->skip_namespace_move_item();
+            }
+            $remaining = $helper->continue_namespace_move();
+            $newid = $helper->getNewID($id, $opts['ns'], $opts['newns']);
+
+            $result = array();
+            $result['remaining'] = $remaining;
+            $result['pages'] = $opts['num_pages'];
+            $result['media'] = $opts['num_media'];
+            $result['redirect_url'] = wl($newid, '', true);
+            ob_start();
+            html_msgarea();
+            if ($remaining === false) {
+                ptln('<p>'.sprintf($this->getLang('ns_move_error'), $opts['ns'], $opts['newns']).'</p>');
+                echo $helper->getNSMoveButton('tryagain', $id);
+                echo $helper->getNSMoveButton('skip', $id);
+                echo $helper->getNSMoveButton('abort', $id);
+            } else {
+                ptln('<p>'.sprintf($this->getLang('ns_move_continued'), $opts['ns'], $opts['newns'], $remaining).'</p>');
+            }
+            $result['html'] = ob_get_clean();
+        } else {
+            $result = array();
+            $result['remaining'] = 0;
+            $result['pages'] = 0;
+            $result['media'] = 0;
+            $result['redirect_url'] = wl('', '', true);
+            $result['html'] = '';
+        }
+        $json = new JSON();
+        echo $json->encode($result);
+    }
+
+    /**
+     * Rename a single page
+     */
+    protected function ajax_rename() {
+        global $ID;
+        global $MSG;
+
+        $json = new JSON();
+
+        /** @var helper_plugin_move $helper */
+        $helper = $this->loadHelper('move', false);
+        $ID = cleanID((string) $_POST['id']);
+        $newid = cleanID((string) $_POST['newid']);
+
+        $opts = array(
+            'newns' => getNS($newid),
+            'newname' => noNS($newid),
+        );
+
+        header('Content-Type: application/json');
+        if(!$helper->move_page($opts)){
+            echo $json->encode(
+                array(
+                     'error' => $MSG[0]['msg'] // first error
+                )
+            );
+        } else {
+            echo $json->encode(
+                array(
+                     'redirect_url' => wl($newid, '', true, '&')
+                )
+            );
+        }
+    }
+
+    public function addbutton(Doku_Event $event, $params) {
+        global $conf;
+        if ($event->data['view'] != 'main') return;
+
+        switch($conf['template']) {
+                case 'dokuwiki':
+                case 'arago':
+
+                    $newitem = '<li class="plugin_move_page"><a href=""><span>'.$this->getLang('renamepage').'</span></a></li>';
+                    $offset  = count($event->data['items']) - 1;
+                    $event->data['items'] =
+                         array_slice($event->data['items'], 0, $offset, true) +
+                         array( 'plugin_move' => $newitem) +
+                         array_slice($event->data['items'], $offset, NULL, true);
+                   break;
+            }
     }
 }

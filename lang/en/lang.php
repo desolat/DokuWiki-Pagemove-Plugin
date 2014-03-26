@@ -64,3 +64,9 @@ $lang['move_media_and_pages'] = 'Pages and media files';
 // JavaScript preview
 $lang['js']['previewpage'] = 'OLDPAGE will be moved to NEWPAGE';
 $lang['js']['previewns'] = 'All pages and namespaces in the namespace OLDNS will be moved in the namespace NEWNS';
+
+$lang['renamepage'] = 'Rename Page';
+$lang['js']['rename'] = 'Rename';
+$lang['js']['cancel'] = 'Cancel';
+$lang['js']['newname'] = 'New name:';
+$lang['js']['inprogress'] = 'renaming page and adjusting links...';

@@ -4,3 +4,29 @@
         color: @ini_link;
     }
 }
+
+.plugin_move_page {
+    display: none; // will be shown by JavaScript
+}
+
+
+/**
+ * Pagetool icon
+ */
+#dokuwiki__pagetools ul li.plugin_move_page a {
+    background-position: right 0;
+}
+#dokuwiki__pagetools ul li.plugin_move_page a:before {
+    content: url(sprite.png);
+    margin-top: 0;
+}
+#dokuwiki__pagetools:hover ul li.plugin_move_page a,
+#dokuwiki__pagetools ul li.plugin_move_page a:focus,
+#dokuwiki__pagetools ul li.plugin_move_page a:active {
+    background-image: url(sprite.png);
+}
+#dokuwiki__pagetools ul li.plugin_move_page a:hover,
+#dokuwiki__pagetools ul li.plugin_move_page a:active,
+#dokuwiki__pagetools ul li.plugin_move_page a:focus {
+    background-position: right -45px;
+}
