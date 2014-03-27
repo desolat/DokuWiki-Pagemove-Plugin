@@ -104,8 +104,8 @@ jQuery(function() {
     });
 
     // page move dialog
-    // FIXME check permissions
-    jQuery('.plugin_move_page')
+    if(JSINFO.move_renameokay)
+        jQuery('.plugin_move_page')
         .show()
         .click(function(e) {
             e.preventDefault();

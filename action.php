@@ -24,7 +24,19 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
         $controller->register_hook('INDEXER_PAGE_ADD', 'BEFORE', $this, 'index_media_use');
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handle_ajax_call');
         $controller->register_hook('TEMPLATE_PAGETOOLS_DISPLAY', 'BEFORE', $this, 'addbutton');
-   }
+        $controller->register_hook('DOKUWIKI_STARTED', 'AFTER', $this, 'initJS');
+    }
+
+    /**
+     * set JavaScript info if renaming of current page is possible
+     */
+    public function initJS() {
+        global $JSINFO;
+        global $INFO;
+        /** @var helper_plugin_move $hlp */
+        $hlp = plugin_load('helper', 'move');
+        $JSINFO['move_renameokay'] = $hlp->renameOkay($INFO['id']);
+    }
 
     /**
      * Rewrite pages when they are read and they need to be updated.
@@ -233,6 +245,7 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
     protected function ajax_rename() {
         global $ID;
         global $MSG;
+        global $USERINFO;
 
         $json = new JSON();
 
@@ -241,13 +254,25 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
         $ID = cleanID((string) $_POST['id']);
         $newid = cleanID((string) $_POST['newid']);
 
+
+
         $opts = array(
             'newns' => getNS($newid),
             'newname' => noNS($newid),
         );
 
         header('Content-Type: application/json');
-        if(!$helper->move_page($opts)){
+
+
+        if(!auth_isMember($this->getConf('allowrename'),
+                          $_SERVER['REMOTE_USER'],
+                          $USERINFO['grps'])) {
+            echo $json->encode(
+                array(
+                     'error' => 'no permission' // should have never been called - no localization
+                )
+            );
+        } elseif(!$helper->move_page($opts)){
             echo $json->encode(
                 array(
                      'error' => $MSG[0]['msg'] // first error
@@ -262,6 +287,12 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
         }
     }
 
+    /**
+     * Adds a button to the default template
+     *
+     * @param Doku_Event $event
+     * @param $params
+     */
     public function addbutton(Doku_Event $event, $params) {
         global $conf;
         if ($event->data['view'] != 'main') return;

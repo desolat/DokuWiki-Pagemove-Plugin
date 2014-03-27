@@ -454,7 +454,6 @@ class helper_plugin_move extends DokuWiki_Plugin {
         return $newid;
     }
 
-
     /**
      * move page
      *
@@ -1012,6 +1011,36 @@ class helper_plugin_move extends DokuWiki_Plugin {
             p_set_metadata($id, array('plugin_move' => $all_meta['plugin_move'], 'plugin_pagemove' => null), false, true);
         }
         return isset($all_meta['plugin_move']) ? $all_meta['plugin_move'] : null;
+    }
+
+    /**
+     * Determines if it would be okay to show a rename page button for the given page and current user
+     *
+     * @param $id
+     * @return bool
+     */
+    public function renameOkay($id) {
+        global $ACT;
+        global $USERINFO;
+        if ( !($ACT == 'show' || empty($ACT)) ) return false;
+        if (!page_exists($id)) return false;
+        if (auth_quickaclcheck($id) < AUTH_EDIT ) return false;
+        if (checklock($id) !== false || @file_exists(wikiLockFN($id))) return false;
+        if(!auth_isMember($this->getConf('allowrename'), $_SERVER['REMOTE_USER'], $USERINFO['grps'])) return false;
+
+        return true;
+    }
+
+    /**
+     * Use this in your template to add a simple "move this page" link
+     *
+     * Alternatively give anything the class "plugin_move_page" - it will automatically be hidden and shown and
+     * trigger the page move dialog.
+     */
+    public function tpl() {
+        echo '<a href="" class="plugin_move_page">';
+        echo $this->getLang('renamepage');
+        echo '</a>';
     }
 }
 
