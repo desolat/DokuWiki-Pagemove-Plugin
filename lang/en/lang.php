@@ -15,6 +15,8 @@ $lang['direction']  = 'ltr';
 $lang['menu'] = 'Page/Namespace Move/Rename...';
 $lang['desc'] = 'Page/Namespace Move/Rename Plugin';
 
+$lang['treemanager'] = 'Page Move Manager';
+
 $lang['notexist']    = 'The page %s does not exist';
 $lang['medianotexist']    = 'The media file %s does not exist';
 $lang['notwrite']    = 'You do not have sufficient permissions to modify this page';

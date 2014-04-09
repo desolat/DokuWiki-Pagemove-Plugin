@@ -192,6 +192,10 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
             $event->preventDefault();
             $event->stopPropagation();
             $this->ajax_rename();
+        } elseif($event->data == 'plugin_move_tree') {
+            $event->preventDefault();
+            $event->stopPropagation();
+            $this->ajax_tree();
         }
     }
 
@@ -285,6 +289,25 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
                 )
             );
         }
+    }
+
+    protected function ajax_tree() {
+
+        //FIXME user auth
+
+        global $INPUT;
+        $ns = cleanID($INPUT->str('ns'));
+
+        /** @var admin_plugin_move_tree $plugin */
+        $plugin = plugin_load('admin', 'move_tree');
+
+        $data = $plugin->tree($ns, $ns);
+
+        echo html_buildlist(
+            $data, 'plugin_move_tree',
+            array($plugin, 'html_list'),
+            array($plugin, 'html_li')
+        );
     }
 
     /**

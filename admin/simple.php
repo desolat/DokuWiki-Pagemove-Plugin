@@ -13,7 +13,7 @@ if (!defined('DOKU_INC')) die();
 /**
  * Admin component of the move plugin. Provides the user interface.
  */
-class admin_plugin_move extends DokuWiki_Admin_Plugin {
+class admin_plugin_move_simple extends DokuWiki_Admin_Plugin {
 
     var $opts = array();
     private $ns_opts = false;
