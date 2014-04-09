@@ -33,8 +33,8 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
     public function initJS() {
         global $JSINFO;
         global $INFO;
-        /** @var helper_plugin_move $hlp */
-        $hlp = plugin_load('helper', 'move');
+        /** @var helper_plugin_move_general $hlp */
+        $hlp = plugin_load('helper', 'move_general');
         $JSINFO['move_renameokay'] = $hlp->renameOkay($INFO['id']);
     }
 
@@ -74,8 +74,8 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
             // the page is locked by the current user
             || checklock($id) !== false || @file_exists(wikiLockFN($id))) return;
 
-        /** @var helper_plugin_move $helper */
-        $helper = $this->loadHelper('move', true);
+        /** @var helper_plugin_move_general $helper */
+        $helper = $this->loadHelper('move_general', true);
         if(!is_null($helper)) {
             $stack[$id]    = true;
             $event->result = $helper->execute_rewrites($id, $event->result);
@@ -203,8 +203,8 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
      * Run the next step during a namespace move
      */
     protected function ajax_continue() {
-        /** @var helper_plugin_move $helper */
-        $helper = $this->loadHelper('move', false);
+        /** @var helper_plugin_move_general $helper */
+        $helper = $this->loadHelper('move_general', false);
         $opts = $helper->get_namespace_move_opts();
         $id = cleanID((string)$_POST['id']);
         $skip = (string)$_POST['skip'];
@@ -253,8 +253,8 @@ class action_plugin_move extends DokuWiki_Action_Plugin {
 
         $json = new JSON();
 
-        /** @var helper_plugin_move $helper */
-        $helper = $this->loadHelper('move', false);
+        /** @var helper_plugin_move_general $helper */
+        $helper = $this->loadHelper('move_general', false);
         $ID = cleanID((string) $_POST['id']);
         $newid = cleanID((string) $_POST['newid']);
 

@@ -11,7 +11,7 @@ if (!defined('DOKU_INC')) die();
 /**
  * Helper part of the move plugin.
  */
-class helper_plugin_move extends DokuWiki_Plugin {
+class helper_plugin_move_general extends DokuWiki_Plugin {
 
     /**
      * @var string symbol to make move operations easily recognizable in change log
@@ -422,6 +422,7 @@ class helper_plugin_move extends DokuWiki_Plugin {
      * Get the filenames for the metadata of the move plugin
      *
      * @return array The file names for opts, pagelist and medialist
+     * @moved
      */
     protected function get_namespace_meta_files() {
         global $conf;

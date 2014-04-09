@@ -17,7 +17,7 @@ class admin_plugin_move_simple extends DokuWiki_Admin_Plugin {
 
     var $opts = array();
     private $ns_opts = false;
-    /** @var helper_plugin_move $helper */
+    /** @var helper_plugin_move_general $helper */
     private $helper = null;
     /** @var string $ns_move_state The state of the current namespace move (none, started, continued, error) */
     private $ns_move_state = 'none';
@@ -213,7 +213,7 @@ class admin_plugin_move_simple extends DokuWiki_Admin_Plugin {
         $this->opts['move_type']   = 'page';
         $this->opts['contenttomove'] = 'pages';
 
-        $this->helper = $this->loadHelper('move', true);
+        $this->helper = $this->loadHelper('move_general', true);
         if (!$this->helper) return;
 
         $this->ns_opts = $this->helper->get_namespace_move_opts();
