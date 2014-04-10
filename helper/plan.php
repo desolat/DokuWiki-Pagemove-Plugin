@@ -25,7 +25,8 @@ define('PLUGIN_MOVE_CLASS_DOC', 8);
  *   document - refers to either a page or a media file here
  */
 class helper_plugin_move_plan extends DokuWiki_Plugin {
-
+    /** Number of operations per step  */
+    const OPS_PER_RUN = 10;
 
     /**
      * @var array the options for this move plan
@@ -36,9 +37,16 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         'started'   => 0,
 
         // counters
-        'pages' => 0,
-        'media' => 0,
-        'affected' => 0,
+        'pages_all' => 0,
+        'pages_run' => 0,
+        'media_all' => 0,
+        'media_run' => 0,
+        'affpg_all' => 0,
+        'affpg_run' => 0,
+
+        // options
+        'autoskip'  => false,
+        'autorewrite' => false
     );
 
     /**
@@ -61,10 +69,10 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         // set the file locations
         $this->files = array(
-            'opts' => $conf['metadir'] . '/__move_opts',
-            'pagelist' => $conf['metadir'] . '/__move_pagelist',
+            'opts'      => $conf['metadir'] . '/__move_opts',
+            'pagelist'  => $conf['metadir'] . '/__move_pagelist',
             'medialist' => $conf['metadir'] . '/__move_medialist',
-            'affected' => $conf['metadir'] . '/__move_affected',
+            'affected'  => $conf['metadir'] . '/__move_affected',
         );
 
         $this->loadOptions();
@@ -97,10 +105,10 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // FIXME make sure source exists
 
         $this->plan[] = array(
-            'src' => $src,
-            'dst' => $dst,
+            'src'   => $src,
+            'dst'   => $dst,
             'class' => $class,
-            'type' => $type
+            'type'  => $type
         );
     }
 
@@ -148,7 +156,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 // now add all the found documents to our lists
                 foreach($docs as $doc) {
                     $from = $doc['id'];
-                    $to = $move['dst'] . substr($doc['id'], $strip);
+                    $to   = $move['dst'] . substr($doc['id'], $strip);
 
                     if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
                         $this->addToPageList($from, $to);
@@ -160,11 +168,141 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         $this->options['committed'] = true;
-        $this->options['started'] = time();
+        $this->options['started']   = time();
     }
 
-    public function nextStep() {
+    public function nextStep($skip = false) {
         if(!$this->options['commited']) throw new Exception('plan is not committed yet!');
+
+        if (@filesize($this->files['pagelist']) > 1) {
+            $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_PAGES, $skip);
+            if($todo === false) return false;
+            return max($todo, 1); // force one more call
+        }
+
+        if (@filesize($this->files['medialist']) > 1) {
+            $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_MEDIA, $skip);
+            if($todo === false) return false;
+            return max($todo, 1); // force one more call
+        }
+
+        if ($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
+            $todo = $this->stepThroughAffectedPages();
+            if($todo === false) return false;
+            return max($todo, 1); // force one more call
+        }
+
+        // FIXME handle namespace subscription moves
+
+        // FIXME call abort function here
+        return 0;
+    }
+
+    /**
+     * Step through the next bunch of pages or media files
+     *
+     * @param int $type (PLUGIN_MOVE_TYPE_PAGES|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param bool $skip should the first item be skipped?
+     * @return bool|int false on error, otherwise the number of remaining documents
+     */
+    protected function stepThroughDocuments($type = PLUGIN_MOVE_TYPE_PAGES, &$skip = false) {
+        /** @var helper_plugin_move_op $MoveOperator */
+        $MoveOperator = plugin_load('helper', 'move_op');
+
+        if($type == PLUGIN_MOVE_TYPE_PAGES) {
+            $file    = $this->files['pagelist'];
+            $mark    = 'P';
+            $call    = 'movePage';
+            $counter = 'pages_num';
+        } else {
+            $file    = $this->files['medialist'];
+            $mark    = 'M';
+            $call    = 'moveMedia';
+            $counter = 'media_num';
+        }
+
+        $doclist = fopen($file, 'a+');
+        for($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
+            $line = $this->getLastLine($doclist);
+            if($line === false) break;
+            list($src, $dst) = explode("\t", trim($line));
+
+            // should this item be skipped?
+            if($skip) goto FINALLY;
+
+            // move the page
+            if(!$MoveOperator->$call($src, $dst)) {
+                $this->log($mark, $src, $dst, false); // FAILURE!
+
+                // automatically skip this item if wanted...
+                if($this->options['autoskip']) goto FINALLY;
+                // ...otherwise abort the operation
+                fclose($doclist);
+                return false;
+            } else {
+                $this->log($mark, $src, $dst, true); // SUCCESS!
+
+                // remember affected pages
+                $this->addToAffectedPagesList($MoveOperator->getAffectedPages());
+            }
+
+            /*
+             * This adjusts counters and truncates the document list correctly
+             * It is used to finalize a successful or skipped move
+             */
+            FINALLY:
+            $skip = false;
+            ftruncate($doclist, ftell($doclist));
+            $this->options[$counter]--;
+            $this->saveOptions();
+        }
+
+        fclose($doclist);
+        return $this->options[$counter];
+    }
+
+    /**
+     * Step through the next bunch of pages that need link corrections
+     *
+     * @return bool|int false on error, otherwise the number of remaining documents
+     */
+    protected function stepThroughAffectedPages() {
+        /** @var helper_plugin_move_rewrite $Rewriter */
+        $Rewriter = plugin_load('helper', 'move_rewrite');
+
+        // if this is the first run, clean up the file and remove duplicates
+        if($this->options['affpg_all'] == $this->options['affpg_num']) {
+            $affected = io_readFile($this->files['affected']);
+            $affected = explode("\n", $affected);
+            $affected = array_unique($affected);
+            $affected = array_filter($affected);
+            sort($affected);
+            if($affected[0] === '') array_shift($affected);
+            io_saveFile($this->files['affected'], join("\n", $affected));
+
+            $this->options['affpg_all'] = count($affected);
+            $this->options['affpg_num'] = $this->options['affpg_all'];
+
+            $this->saveOptions();
+        }
+
+        // handle affected pages
+        $doclist = fopen($this->files['affected'], 'a+');
+        for ($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
+            $page = $this->getLastLine($doclist);
+            if ($page === false) break;
+
+            // rewrite it
+            $Rewriter->execute_rewrites($page, null);
+
+            // update the list file
+            ftruncate($doclist, ftell($doclist));
+            $this->options['affpg_num']--;
+            $this->saveOptions();
+        }
+
+        fclose($doclist);
+        return $this->options['affpg_num'];
     }
 
     /**
@@ -172,20 +310,24 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * @return bool
      */
-    protected function saveOptions(){
+    protected function saveOptions() {
         return io_saveFile($this->files['opts'], serialize($this->options));
     }
 
     /**
      * Load the current options if any
      *
-     * @return bool
+     * If no options are found, the default options will be extended by any available
+     * config options
      */
     protected function loadOptions() {
         $file = $this->files['opts'];
-        if(!file_exists($file)) return false;
-        $this->options = unserialize(io_readFile($file, false));
-        return true;
+        if(file_exists($file)) {
+            $this->options = unserialize(io_readFile($file, false));
+        } else {
+            $this->options['autoskip'] = $this->getConf('autoskip');
+            $this->options['autorewrite'] = $this->getConf('autorewrite');
+        }
     }
 
     /**
@@ -199,7 +341,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $file = $this->files['pagelist'];
 
         if(io_saveFile($file, "$src\t$dst\n", true)) {
-            $this->options['pages']++;
+            $this->options['pages_all']++;
+            $this->options['pages_run']++;
             return true;
         }
         return false;
@@ -216,10 +359,28 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $file = $this->files['medialist'];
 
         if(io_saveFile($file, "$src\t$dst\n", true)) {
-            $this->options['media']++;
+            $this->options['media_all']++;
+            $this->options['media_run']++;
             return true;
         }
         return false;
+    }
+
+    /**
+     * Add the list of pages to the list of affected pages whose links need adjustment
+     *
+     * This is only done when autorewrite is enabled, otherwise we don't need to track
+     * those pages
+     *
+     * @param array $pages
+     * @return bool
+     */
+    protected function addToAffectedPagesList($pages) {
+        if(!$this->options['autorewrite']) return false;
+
+        $this->options['affpg_all'] += count($pages);
+        $this->options['affpg_num'] = $this->options['affpg_all'];
+        return io_saveFile($this->files['affected'], join("\n", $pages) . "\n", true);
     }
 
     /**
@@ -235,21 +396,20 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $line = '';
 
         // seek one backwards as long as it's possible
-        while (fseek($handle, -1, SEEK_CUR) >= 0) {
+        while(fseek($handle, -1, SEEK_CUR) >= 0) {
             $c = fgetc($handle);
             fseek($handle, -1, SEEK_CUR); // reset the position to the character that was read
 
-            if ($c == "\n") {
+            if($c == "\n") {
                 break;
             }
-            if ($c === false) return false; // EOF, i.e. the file is empty
-            $line = $c.$line;
+            if($c === false) return false; // EOF, i.e. the file is empty
+            $line = $c . $line;
         }
 
-        if ($line === '') return false; // nothing was read i.e. the file is empty
-        return $line;
+        if($line === '') return false; // nothing was read i.e. the file is empty
+        return trim($line);
     }
-
 
     /**
      * Callback for usort to sort the move plan
@@ -293,13 +453,32 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
-     * Get the filenames for the metadata of the move plugin
+     * Log result of an operation
      *
-     * @return array The file names for opts, pagelist and medialist
+     * @param string $type
+     * @param string $from
+     * @param string $to
+     * @param bool $success
+     * @author Andreas Gohr <gohr@cosmocode.de>
      */
-    protected function get_namespace_meta_files() {
+    private function log($type, $from, $to, $success) {
         global $conf;
+        global $MSG;
 
+        $optime = $this->options['started'];
+        $file   = $conf['cachedir'] . '/move-' . $optime . '.log';
+        $now    = time();
+        $date   = date('Y-m-d H:i:s', $now); // for human readability
+
+        if($success) {
+            $ok  = 'success';
+            $msg = '';
+        } else {
+            $ok  = 'failed';
+            $msg = $MSG[count($MSG) - 1]['msg']; // get detail from message array
+        }
+
+        $log = "$now\t$date\t$type\t$from\t$to\t$ok\t$msg\n";
+        io_saveFile($file, $log, true);
     }
-
 }
