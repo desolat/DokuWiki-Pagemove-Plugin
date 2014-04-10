@@ -31,23 +31,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * @var array the options for this move plan
      */
-    protected $options = array(
-        // status
-        'committed' => false,
-        'started'   => 0,
-
-        // counters
-        'pages_all' => 0,
-        'pages_run' => 0,
-        'media_all' => 0,
-        'media_run' => 0,
-        'affpg_all' => 0,
-        'affpg_run' => 0,
-
-        // options
-        'autoskip'  => false,
-        'autorewrite' => false
-    );
+    protected $options = array(); // defaults are set in loadOptions()
 
     /**
      * @var array holds the location of the different list and state files
@@ -76,6 +60,49 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         );
 
         $this->loadOptions();
+    }
+
+    /**
+     * Load the current options if any
+     *
+     * If no options are found, the default options will be extended by any available
+     * config options
+     */
+    protected function loadOptions() {
+        // (re)set defaults
+        $this->options = array(
+            // status
+            'committed'   => false,
+            'started'     => 0,
+
+            // counters
+            'pages_all'   => 0,
+            'pages_run'   => 0,
+            'media_all'   => 0,
+            'media_run'   => 0,
+            'affpg_all'   => 0,
+            'affpg_run'   => 0,
+
+            // options
+            'autoskip'    => $this->getConf('autoskip'),
+            'autorewrite' => $this->getConf('autorewrite')
+        );
+
+        // merge whatever options are saved currently
+        $file = $this->files['opts'];
+        if(file_exists($file)) {
+            $options       = unserialize(io_readFile($file, false));
+            $this->options = array_merge($this->options, $options);
+        }
+    }
+
+    /**
+     * Save the current options
+     *
+     * @return bool
+     */
+    protected function saveOptions() {
+        return io_saveFile($this->files['opts'], serialize($this->options));
     }
 
     /**
@@ -110,6 +137,17 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'class' => $class,
             'type'  => $type
         );
+    }
+
+    /**
+     * Abort any move or plan in progress and reset the helper
+     */
+    public function abort() {
+        foreach ($this->files as $file) {
+            @unlink($file);
+        }
+        $this->plan = array();
+        $this->loadOptions();
     }
 
     /**
@@ -171,22 +209,29 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $this->options['started']   = time();
     }
 
+    /**
+     * Execute the next steps
+     *
+     * @param bool $skip set to true to skip the next first step (skip error)
+     * @return bool|int false on errors, otherwise the number of remaining steps
+     * @throws Exception
+     */
     public function nextStep($skip = false) {
         if(!$this->options['commited']) throw new Exception('plan is not committed yet!');
 
-        if (@filesize($this->files['pagelist']) > 1) {
+        if(@filesize($this->files['pagelist']) > 1) {
             $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_PAGES, $skip);
             if($todo === false) return false;
             return max($todo, 1); // force one more call
         }
 
-        if (@filesize($this->files['medialist']) > 1) {
+        if(@filesize($this->files['medialist']) > 1) {
             $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_MEDIA, $skip);
             if($todo === false) return false;
             return max($todo, 1); // force one more call
         }
 
-        if ($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
+        if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
             $todo = $this->stepThroughAffectedPages();
             if($todo === false) return false;
             return max($todo, 1); // force one more call
@@ -194,7 +239,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         // FIXME handle namespace subscription moves
 
-        // FIXME call abort function here
+        // we're done here, clean up
+        $this->abort();
         return 0;
     }
 
@@ -288,9 +334,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         // handle affected pages
         $doclist = fopen($this->files['affected'], 'a+');
-        for ($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
+        for($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
             $page = $this->getLastLine($doclist);
-            if ($page === false) break;
+            if($page === false) break;
 
             // rewrite it
             $Rewriter->execute_rewrites($page, null);
@@ -303,31 +349,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         fclose($doclist);
         return $this->options['affpg_num'];
-    }
-
-    /**
-     * Save the current options
-     *
-     * @return bool
-     */
-    protected function saveOptions() {
-        return io_saveFile($this->files['opts'], serialize($this->options));
-    }
-
-    /**
-     * Load the current options if any
-     *
-     * If no options are found, the default options will be extended by any available
-     * config options
-     */
-    protected function loadOptions() {
-        $file = $this->files['opts'];
-        if(file_exists($file)) {
-            $this->options = unserialize(io_readFile($file, false));
-        } else {
-            $this->options['autoskip'] = $this->getConf('autoskip');
-            $this->options['autorewrite'] = $this->getConf('autorewrite');
-        }
     }
 
     /**
