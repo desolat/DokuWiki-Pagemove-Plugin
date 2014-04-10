@@ -95,6 +95,20 @@ class helper_plugin_move_file extends DokuWiki_Plugin {
     }
 
     /**
+     * Moves the subscription file for a namespace
+     *
+     * @param string $src_ns
+     * @param string $dst_ns
+     * @return bool
+     */
+    public function moveNamespaceSubscription($src_ns, $dst_ns){
+        global $conf;
+
+        $regex = '\.mlist';
+        return $this->execute($conf['metadir'], $src_ns, '', $dst_ns, '', $regex);
+    }
+
+    /**
      * Executes the move op
      *
      * @param string $dir      The root path of the files (e.g. $conf['metadir'] or $conf['olddir']

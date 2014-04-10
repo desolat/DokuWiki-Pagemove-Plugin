@@ -53,10 +53,11 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         // set the file locations
         $this->files = array(
-            'opts'      => $conf['metadir'] . '/__move_opts',
-            'pagelist'  => $conf['metadir'] . '/__move_pagelist',
-            'medialist' => $conf['metadir'] . '/__move_medialist',
-            'affected'  => $conf['metadir'] . '/__move_affected',
+            'opts'       => $conf['metadir'] . '/__move_opts',
+            'pagelist'   => $conf['metadir'] . '/__move_pagelist',
+            'medialist'  => $conf['metadir'] . '/__move_medialist',
+            'affected'   => $conf['metadir'] . '/__move_affected',
+            'namespaces' => $conf['metadir'] . '/__move_namespaces'
         );
 
         $this->loadOptions();
@@ -202,6 +203,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                         $this->addToMediaList($from, $to);
                     }
                 }
+
+                // remember the namespace move itself
+                if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
+                    // FIXME we use this to move namespace subscriptions later on and for now only do it on
+                    //       page namespace moves, but subscriptions work for both, but what when only one of
+                    //       them is moved? Should it be copied then? Complicated. This is good enough for now
+                    $this->addToNamespaceList($move['src'], $move['dst']);
+                }
             }
         }
 
@@ -237,7 +246,11 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             return max($todo, 1); // force one more call
         }
 
-        // FIXME handle namespace subscription moves
+        if(@filesize($this->files['namespaces']) > 1) {
+            $todo = $this->stepThroughNamespaces();
+            if($todo === false) return false;
+            return max($todo, 1); // force one more call
+        }
 
         // we're done here, clean up
         $this->abort();
@@ -352,6 +365,31 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
+     * Step through all the namespace moves
+     *
+     * Currently moves namespace subscriptions only. This does not step, but handles all namespaces
+     * in one step.
+     *
+     * @return int always 0
+     * @todo maybe add an event so plugins can move more stuff?
+     */
+    protected function stepThroughNamespaces() {
+        /** @var helper_plugin_move_file $FileMover */
+        $FileMover = plugin_load('helper', 'move_file');
+
+        $lines = io_readFile($this->files['namespaces']);
+        $lines = explode("\n", $lines);
+
+        foreach($lines as $line) {
+            list($src, $dst) = explode("\n", trim($line));
+            $FileMover->moveNamespaceSubscription($src, $dst);
+        }
+
+        @unlink($this->files['namespaces']);
+        return 0;
+    }
+
+    /**
      * Appends a page move operation in the list file
      *
      * @param string $src
@@ -385,6 +423,18 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Appends a namespace move operation in the list file
+     *
+     * @param string $src
+     * @param string $dst
+     * @return bool
+     */
+    protected function addToNamespaceList($src, $dst) {
+        $file = $this->files['namespaces'];
+        return io_saveFile($file, "$src\t$dst\n", true);
     }
 
     /**
