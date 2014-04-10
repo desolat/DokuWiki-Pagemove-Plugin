@@ -10,6 +10,9 @@
 // must be run within Dokuwiki
 if(!defined('DOKU_INC')) die();
 
+// load required handler class
+require_once(__DIR__ . '/handler.php');
+
 /**
  * Class helper_plugin_move_rewrite
  *

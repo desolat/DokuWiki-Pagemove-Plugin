@@ -14,8 +14,6 @@ class plugin_move_pagemove_test  extends DokuWikiTest {
     var $currentNsBacklinkingId = 'parent_ns:current_ns:some_page';
     var $otherBacklinkingId = 'level0:level1:other_backlinking_page';
     var $subNsPage = 'parent_ns:current_ns:sub_ns:some_page';
-    /** @var helper_plugin_move $move */
-    private $move = NULL;
 
     // @todo Move page to an ID which already exists
     // @todo Check backlinks of a sub-namespace page (moving same, up, down, different)
@@ -166,34 +164,22 @@ EOT;
         $references = array_keys(p_get_metadata($this->subNsPage, 'relation references', METADATA_RENDER_UNLIMITED));
         idx_get_indexer()->addMetaKeys($this->subNsPage, 'relation_references', $references);
 
-        $this->move = new helper_plugin_move();
         parent::setUp();
     }
 
-#	function testPagemove() {
-#		$this->assertEqual(1,1);
-#	}
-
-// 	function test_pm_getforwardlinks() {
-// 		$origLinkAbsLinkArray = $this->move->_pm_getforwardlinks($this->movedId);
-// 	}
 
 	function test_move_page_in_same_ns() {
 	    global $ID;
+        $newId = getNS($ID).':new_page';
+        $this->movedToId = $newId;
 
-	    $newPagename = 'new_page';
+        /** @var helper_plugin_move_op $MoveOp */
+        $MoveOp = plugin_load('helper', 'move_op');
 
-	    $opts = array();
-	    $opts['page_ns'] = 'page';
-	    $opts['ns']   = getNS($ID);
-        $opts['name'] = noNS($ID);
-        $opts['newns'] = $opts['ns'];
-        $opts['newname'] = $newPagename;
-        $this->movedToId = $opts['newns'].':'.$newPagename;
-	    $this->move->move_page($opts);
+        $result = $MoveOp->movePage($ID, $this->movedToId);
+        $this->assertTrue($result);
 
-	    $newId = $opts['newns'].':'.$opts['newname'];
-	    $newContent = rawWiki($newId);
+	    $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
 [[start|start]]
 [[parallel_page|parallel_page]]
@@ -298,20 +284,16 @@ EOT;
 
 	function test_move_page_to_parallel_ns() {
 	    global $ID;
+        $newId = 'parent_ns:parallel_ns:new_page';
+        $this->movedToId = $newId;
 
-	    $newPagename = 'new_page';
+        /** @var helper_plugin_move_op $MoveOp */
+        $MoveOp = plugin_load('helper', 'move_op');
 
-	    $opts = array();
-	    $opts['page_ns'] = 'page';
-	    $opts['ns']   = getNS($ID);
-	    $opts['name'] = noNS($ID);
-	    $opts['newns'] = 'parent_ns:parallel_ns';
-	    $opts['newname'] = $newPagename;
-	    $this->movedToId = $opts['newns'].':'.$newPagename;
-	    $this->move->move_page($opts);
+        $result = $MoveOp->movePage($ID, $newId);
+        $this->assertTrue($result);
 
-	    $newId = $opts['newns'].':'.$opts['newname'];
-	    $newContent = rawWiki($newId);
+        $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:start|start]]
 [[parent_ns:current_ns:parallel_page|parallel_page]]
@@ -417,20 +399,16 @@ EOT;
 	function test_move_page_to_parent_ns() {
 	    global $ID;
 
-	    $newPagename = 'new_page';
+        $newId = 'parent_ns:new_page';
+        $this->movedToId = $newId;
 
-	    $opts = array();
-	    $opts['page_ns'] = 'page';
-	    $opts['ns']   = getNS($ID);
-	    $opts['name'] = noNS($ID);
-	    $opts['newns'] = 'parent_ns';
-	    $opts['newname'] = $newPagename;
-	    $newId = $opts['newns'].':'.$opts['newname'];
-	    $this->movedToId = $opts['newns'].':'.$newPagename;
+        /** @var helper_plugin_move_op $MoveOp */
+        $MoveOp = plugin_load('helper', 'move_op');
 
-	    $this->move->move_page($opts);
+        $result = $MoveOp->movePage($ID, $newId);
+        $this->assertTrue($result);
 
-	    $newContent = rawWiki($newId);
+        $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
 [[parent_ns:current_ns:start|start]]
 [[parent_ns:current_ns:parallel_page|parallel_page]]
