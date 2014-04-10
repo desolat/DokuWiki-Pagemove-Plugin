@@ -274,14 +274,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             list($src, $dst) = explode("\t", trim($line));
 
             // should this item be skipped?
-            if($skip) goto FINALLY;
+            if($skip) goto FINISH;
 
             // move the page
             if(!$MoveOperator->$call($src, $dst)) {
                 $this->log($mark, $src, $dst, false); // FAILURE!
 
                 // automatically skip this item if wanted...
-                if($this->options['autoskip']) goto FINALLY;
+                if($this->options['autoskip']) goto FINISH;
                 // ...otherwise abort the operation
                 fclose($doclist);
                 return false;
@@ -296,7 +296,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
              * This adjusts counters and truncates the document list correctly
              * It is used to finalize a successful or skipped move
              */
-            FINALLY:
+            FINISH:
             $skip = false;
             ftruncate($doclist, ftell($doclist));
             $this->options[$counter]--;
