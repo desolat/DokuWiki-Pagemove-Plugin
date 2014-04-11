@@ -5,6 +5,9 @@ if (!defined('DOKU_INC')) die();
 
 /**
  * Test cases for namespace move functionality of the move plugin
+ *
+ * @group plugin_move
+ * @group plugins
  */
 class plugin_move_namespace_move_test extends DokuWikiTest {
 

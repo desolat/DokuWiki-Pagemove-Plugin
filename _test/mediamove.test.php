@@ -5,6 +5,9 @@ if (!defined('DOKU_INC')) die();
 
 /**
  * Test cases for the move plugin
+ *
+ * @group plugin_move
+ * @group plugins
  */
 class plugin_move_mediamove_test extends DokuWikiTest {
 
