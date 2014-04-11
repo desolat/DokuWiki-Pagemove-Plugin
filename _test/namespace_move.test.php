@@ -21,17 +21,21 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         idx_addPage('wiki:dokuwiki');
         idx_addPage('wiki:syntax');
 
-        /** @var helper_plugin_move $move  */
-        $move = plugin_load('helper', 'move');
-        $opts = array(
-            'ns' => 'wiki',
-            'newns' => 'foo',
-            'contenttomove' => 'both'
-        );
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
 
-        $this->assertSame(3, $move->start_namespace_move($opts));
-        $this->assertSame(1, $move->continue_namespace_move());
-        $this->assertSame(0, $move->continue_namespace_move());
+        $this->assertFalse($plan->inProgress());
+
+        $plan->addPageNamespaceMove('wiki', 'foo');
+        $plan->addMediaNamespaceMove('wiki', 'foo');
+
+        $plan->commit();
+
+        $this->assertSame(1, $plan->nextStep()); // pages
+        $this->assertSame(1, $plan->nextStep()); // media
+        $this->assertSame(1, $plan->nextStep()); // links
+        $this->assertSame(1, $plan->nextStep()); // namepaces
+        $this->assertSame(0, $plan->nextStep()); // done
 
         $this->assertFileExists(wikiFN('foo:dokuwiki'));
         $this->assertFileNotExists(wikiFN('wiki:syntax'));

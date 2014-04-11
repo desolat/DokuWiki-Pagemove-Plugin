@@ -116,6 +116,46 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
+     * Add a single page to be moved to the plan
+     *
+     * @param string $src
+     * @param string $dst
+     */
+    public function addPageMove($src, $dst) {
+        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_DOC, PLUGIN_MOVE_TYPE_PAGES);
+    }
+
+    /**
+     * Add a single media file to be moved to the plan
+     *
+     * @param string $src
+     * @param string $dst
+     */
+    public function addMediaMove($src, $dst) {
+        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_DOC, PLUGIN_MOVE_TYPE_MEDIA);
+    }
+
+    /**
+     * Add a page namespace to be moved to the plan
+     *
+     * @param string $src
+     * @param string $dst
+     */
+    public function addPageNamespaceMove($src, $dst) {
+        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_NS, PLUGIN_MOVE_TYPE_PAGES);
+    }
+
+    /**
+     * Add a media namespace to be moved to the plan
+     *
+     * @param string $src
+     * @param string $dst
+     */
+    public function addMediaNamespaceMove($src, $dst) {
+        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_NS, PLUGIN_MOVE_TYPE_MEDIA);
+    }
+
+    /**
      * Plans the move of a namespace or document
      *
      * @param string $src ID of the item to move
@@ -124,7 +164,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param int $type (PLUGIN_MOVE_TYPE_PAGE|PLUGIN_MOVE_TYPE_MEDIA)
      * @throws Exception
      */
-    public function addMove($src, $dst, $class = PLUGIN_MOVE_CLASS_NS, $type = PLUGIN_MOVE_TYPE_PAGES) {
+    protected function addMove($src, $dst, $class = PLUGIN_MOVE_CLASS_NS, $type = PLUGIN_MOVE_TYPE_PAGES) {
         if($this->options['commited']) throw new Exception('plan is commited already, can not be added to');
 
         $src = cleanID($src);
@@ -214,7 +254,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             }
         }
 
-        $this->options['committed'] = true;
+        $this->options['commited'] = true;
         $this->options['started']   = time();
     }
 
@@ -469,17 +509,23 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // seek one backwards as long as it's possible
         while(fseek($handle, -1, SEEK_CUR) >= 0) {
             $c = fgetc($handle);
+            if($c === false) return false; // EOF, i.e. the file is empty
             fseek($handle, -1, SEEK_CUR); // reset the position to the character that was read
 
             if($c == "\n") {
-                break;
+                if($line === '') {
+                    continue; // this line was empty, continue
+                } else {
+                    break; // we have a line, finish
+                }
             }
-            if($c === false) return false; // EOF, i.e. the file is empty
-            $line = $c . $line;
+
+            $line = $c . $line; // prepend char to line
         }
 
-        if($line === '') return false; // nothing was read i.e. the file is empty
-        return trim($line);
+        if($line === '') return false; // beginning of file reached and no content
+
+        return $line;
     }
 
     /**
