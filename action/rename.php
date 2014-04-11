@@ -8,6 +8,9 @@
 // must be run within Dokuwiki
 if(!defined('DOKU_INC')) die();
 
+/**
+ * Class action_plugin_move_rename
+ */
 class action_plugin_move_rename extends DokuWiki_Action_Plugin {
 
     /**
