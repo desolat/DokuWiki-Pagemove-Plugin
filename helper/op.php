@@ -83,7 +83,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             msg(sprintf($this->getLang('medianotexist'), hsc($src)), -1);
             return false;
         }
-        if(auth_quickaclcheck($dst) < AUTH_DELETE) {
+        if(auth_quickaclcheck($src) < AUTH_DELETE) {
             msg(sprintf($this->getLang('nomediarights'), hsc($src)), -1);
             return false;
         }
@@ -284,7 +284,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             }
 
             // prepare directory
-            io_createNamespace($src, 'media');
+            io_createNamespace($dst, 'media');
 
             // move it FIXME this does not create a changelog entry!
             if(!io_rename(mediaFN($src), mediaFN($dst))) {
