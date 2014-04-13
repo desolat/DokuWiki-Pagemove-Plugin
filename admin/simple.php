@@ -15,12 +15,8 @@ if (!defined('DOKU_INC')) die();
  */
 class admin_plugin_move_simple extends DokuWiki_Admin_Plugin {
 
-    var $opts = array();
-    private $ns_opts = false;
-    /** @var helper_plugin_move_general $helper */
-    private $helper = null;
     /** @var string $ns_move_state The state of the current namespace move (none, started, continued, error) */
-    private $ns_move_state = 'none';
+    protected $ns_move_state = 'none';
 
     /**
      * Get the sort number that defines the position in the admin menu.
@@ -67,10 +63,26 @@ class admin_plugin_move_simple extends DokuWiki_Admin_Plugin {
      * @author  Gary Owen <gary@isection.co.uk>
      */
     function html() {
-        if (!$this->helper) return;
+        /** @var helper_plugin_move_plan $plan */
+        $plan = plugin_load('helper', 'move_plan');
+
         ptln('<!-- Mmove Plugin start -->');
         ptln( $this->locale_xhtml('move') );
         ptln('<div class="plugin__move_forms">');
+
+        if($plan->inProgress()){
+            if($plan->getLastError()) {
+                ptln('<p>');
+                ptln(sprintf($this->getLang('ns_move_error'), $this->ns_opts['ns'], $this->ns_opts['newns']));
+                ptln('</p>');
+                ptln($this->helper->getNSMoveButton('tryagain'));
+                ptln($this->helper->getNSMoveButton('skip'));
+                ptln($this->helper->getNSMoveButton('abort'));
+            } else {
+
+            }
+
+        }
 
         switch ($this->ns_move_state) {
             case 'started':
@@ -89,12 +101,7 @@ class admin_plugin_move_simple extends DokuWiki_Admin_Plugin {
                 ptln('</p>');
                 break;
             case 'error':
-                ptln('<p>');
-                ptln(sprintf($this->getLang('ns_move_error'), $this->ns_opts['ns'], $this->ns_opts['newns']));
-                ptln('</p>');
-                ptln($this->helper->getNSMoveButton('tryagain'));
-                ptln($this->helper->getNSMoveButton('skip'));
-                ptln($this->helper->getNSMoveButton('abort'));
+
                 break;
             case 'continued':
                 ptln('<p>');

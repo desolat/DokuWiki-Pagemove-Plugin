@@ -86,13 +86,16 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
             // options
             'autoskip'    => $this->getConf('autoskip'),
-            'autorewrite' => $this->getConf('autorewrite')
+            'autorewrite' => $this->getConf('autorewrite'),
+
+            // errors
+            'lasterror'   => false
         );
 
         // merge whatever options are saved currently
         $file = $this->files['opts'];
         if(file_exists($file)) {
-            $options       = unserialize(io_readFile($file, false));
+            $options = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
     }
@@ -107,12 +110,67 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
+     * Return the current state of an option, null for unknown options
+     *
+     * @param $name
+     * @return mixed|null
+     */
+    public function getOption($name) {
+        if(isset($this->options[$name])) {
+            return $this->options[$name];
+        }
+        return null;
+    }
+
+    /**
+     * Set an option
+     *
+     * Note, this otpion will only be set to the current instance of this helper object. It will only
+     * be written to the option file once the plan gets committed
+     *
+     * @param $name
+     * @param $value
+     */
+    public function setOption($name, $value) {
+        $this->options[$name] = $value;
+    }
+
+    /**
+     * Returns the progress of this plan in percent
+     *
+     * @return float
+     */
+    public function getProgress() {
+        $max =
+            $this->options['pages_all'] +
+            $this->options['media_all'] +
+            $this->options['affpg_all'];
+
+        $remain =
+            $this->options['pages_run'] +
+            $this->options['media_run'] +
+            $this->options['affpg_run'];
+
+        if($max == 0) return 0;
+        return round((($max-$remain) * 100) / $max, 2);
+    }
+
+    /**
      * Check if there is a move in progress currently
      *
      * @return bool
      */
     public function inProgress() {
-        return $this->options['committed'];
+        return (bool) $this->options['started'];
+    }
+
+    /**
+     * Check if this plan has been commited, yet
+     *
+     * @return bool
+     */
+    public function isCommited() {
+        return $this->options['commited'];
     }
 
     /**
@@ -158,10 +216,10 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Plans the move of a namespace or document
      *
-     * @param string $src ID of the item to move
+     * @param string $src   ID of the item to move
      * @param string $dst   new ID of item namespace
-     * @param int $class (PLUGIN_MOVE_CLASS_NS|PLUGIN_MOVE_CLASS_DOC)
-     * @param int $type (PLUGIN_MOVE_TYPE_PAGE|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param int    $class (PLUGIN_MOVE_CLASS_NS|PLUGIN_MOVE_CLASS_DOC)
+     * @param int    $type  (PLUGIN_MOVE_TYPE_PAGE|PLUGIN_MOVE_TYPE_MEDIA)
      * @throws Exception
      */
     protected function addMove($src, $dst, $class = PLUGIN_MOVE_CLASS_NS, $type = PLUGIN_MOVE_TYPE_PAGES) {
@@ -184,7 +242,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * Abort any move or plan in progress and reset the helper
      */
     public function abort() {
-        foreach ($this->files as $file) {
+        foreach($this->files as $file) {
             @unlink($file);
         }
         $this->plan = array();
@@ -235,7 +293,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 // now add all the found documents to our lists
                 foreach($docs as $doc) {
                     $from = $doc['id'];
-                    $to   = $move['dst'] . substr($doc['id'], $strip);
+                    $to = $move['dst'] . substr($doc['id'], $strip);
 
                     if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
                         $this->addToPageList($from, $to);
@@ -255,7 +313,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         $this->options['commited'] = true;
-        $this->options['started']   = time();
+        $this->saveOptions();
     }
 
     /**
@@ -268,27 +326,30 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     public function nextStep($skip = false) {
         if(!$this->options['commited']) throw new Exception('plan is not committed yet!');
 
+        // execution has started
+        if(!$this->options['started']) $this->options['started'] = time();
+
         if(@filesize($this->files['pagelist']) > 1) {
             $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_PAGES, $skip);
-            if($todo === false) return false;
+            if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['medialist']) > 1) {
             $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_MEDIA, $skip);
-            if($todo === false) return false;
+            if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
             $todo = $this->stepThroughAffectedPages();
-            if($todo === false) return false;
+            if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['namespaces']) > 1) {
             $todo = $this->stepThroughNamespaces();
-            if($todo === false) return false;
+            if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
@@ -300,7 +361,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Step through the next bunch of pages or media files
      *
-     * @param int $type (PLUGIN_MOVE_TYPE_PAGES|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param int  $type (PLUGIN_MOVE_TYPE_PAGES|PLUGIN_MOVE_TYPE_MEDIA)
      * @param bool $skip should the first item be skipped?
      * @return bool|int false on error, otherwise the number of remaining documents
      */
@@ -309,14 +370,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $MoveOperator = plugin_load('helper', 'move_op');
 
         if($type == PLUGIN_MOVE_TYPE_PAGES) {
-            $file    = $this->files['pagelist'];
-            $mark    = 'P';
-            $call    = 'movePage';
+            $file = $this->files['pagelist'];
+            $mark = 'P';
+            $call = 'movePage';
             $counter = 'pages_num';
         } else {
-            $file    = $this->files['medialist'];
-            $mark    = 'M';
-            $call    = 'moveMedia';
+            $file = $this->files['medialist'];
+            $mark = 'M';
+            $call = 'moveMedia';
             $counter = 'media_num';
         }
 
@@ -427,6 +488,45 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         @unlink($this->files['namespaces']);
         return 0;
+    }
+
+    /**
+     * Retrieve the last error from the MSG array and store it in the options
+     *
+     * @todo rebuild error handling based on exceptions
+     *
+     * @return bool always false
+     */
+    protected function storeError() {
+        global $MSG;
+
+        if(is_array($MSG) && count($MSG)) {
+            $last = array_shift($MSG);
+            $this->options['lasterror'] = $last['msg'];
+            unset($GLOBALS['MSG']);
+        } else {
+            $this->options['lasterror'] = 'Unknown error';
+        }
+        $this->saveOptions();
+
+        return false;
+    }
+
+    /**
+     * Reset the error state
+     */
+    protected function clearError() {
+        $this->options['lasterror'] = false;
+        $this->saveOptions();
+    }
+
+    /**
+     * Get the last error message or false if no error occured
+     *
+     * @return bool|string
+     */
+    public function getLastError() {
+        return $this->options['lasterror'];
     }
 
     /**
@@ -575,23 +675,23 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $type
      * @param string $from
      * @param string $to
-     * @param bool $success
+     * @param bool   $success
      * @author Andreas Gohr <gohr@cosmocode.de>
      */
-    private function log($type, $from, $to, $success) {
+    protected function log($type, $from, $to, $success) {
         global $conf;
         global $MSG;
 
         $optime = $this->options['started'];
-        $file   = $conf['cachedir'] . '/move-' . $optime . '.log';
-        $now    = time();
-        $date   = date('Y-m-d H:i:s', $now); // for human readability
+        $file = $conf['cachedir'] . '/move-' . $optime . '.log';
+        $now = time();
+        $date = date('Y-m-d H:i:s', $now); // for human readability
 
         if($success) {
-            $ok  = 'success';
+            $ok = 'success';
             $msg = '';
         } else {
-            $ok  = 'failed';
+            $ok = 'failed';
             $msg = $MSG[count($MSG) - 1]['msg']; // get detail from message array
         }
 

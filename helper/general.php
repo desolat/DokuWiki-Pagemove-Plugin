@@ -11,7 +11,7 @@ if (!defined('DOKU_INC')) die();
 /**
  * Helper part of the move plugin.
  */
-class helper_plugin_move_general extends DokuWiki_Plugin {
+class helper_plugin_move_generalXXX extends DokuWiki_Plugin {
 
     /**
      * @var string symbol to make move operations easily recognizable in change log

@@ -49,6 +49,15 @@ $lang['ns_move_started'] = 'A namespace move from namespace %s to namespace %s w
 $lang['ns_move_error'] = 'An error occurred while continueing the namespace move from %s to %s.';
 $lang['ns_move_tryagain'] = 'Try again';
 $lang['ns_move_skip'] = 'Skip the current item';
+
+$lang['btn_start'] = 'Start';
+$lang['btn_continue'] = 'Continue';
+$lang['btn_retry'] = 'Retry item';
+$lang['btn_skip'] = 'Skip item';
+$lang['btn_abort'] = 'Abort';
+
+
+
 // Form labels
 $lang['newname']     = 'New page name:';
 $lang['newnsname']   = 'New namespace name:';
