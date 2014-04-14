@@ -83,5 +83,6 @@ $lang['js']['rename'] = 'Rename';
 $lang['js']['cancel'] = 'Cancel';
 $lang['js']['newname'] = 'New name:';
 $lang['js']['inprogress'] = 'renaming page and adjusting links...';
+$lang['cantrename'] = 'The page can\'t be renamed right now. Please try later.';
 
 $lang['js']['complete'] = 'Move operation finished.';

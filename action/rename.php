@@ -77,14 +77,14 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
 
         header('Content-Type: application/json');
 
-        if($this->renameOkay($dst) && $MoveOperator->movePage($src, $dst)) {
+        if($this->renameOkay($src) && $MoveOperator->movePage($src, $dst)) {
             // all went well, redirect
             echo $JSON->encode(array('redirect_url' => wl($dst, '', true, '&')));
         } else {
             if(isset($MSG[0])) {
                 $error = $MSG[0]; // first error
             } else {
-                $error = 'Page can\'t be moved right now'; // FIXME localize
+                $error = $this->getLang('cantrename');
             }
             echo $JSON->encode(array('error' => $error));
         }

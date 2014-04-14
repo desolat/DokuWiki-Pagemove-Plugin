@@ -12,7 +12,7 @@ if(JSINFO.move_renameokay)
             var renameFN = function () {
                 var self = this;
                 var newid = $dialog.find('input[name=id]').val();
-                if (!newid) return;
+                if (!newid) return false;
 
                 // remove buttons and show throbber
                 $dialog.html(
