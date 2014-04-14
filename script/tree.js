@@ -3,7 +3,7 @@
  */
 
 
-jQuery('ul.plugin_move_tree')
+jQuery('#plugin_move__tree').find('ul.tree_list')
     // make folders open and close via AJAX
     .click(function (e) {
         var $link = jQuery(e.target);
@@ -20,11 +20,14 @@ jQuery('ul.plugin_move_tree')
                 $li
                     .removeClass('closed')
                     .addClass('open');
+
+                var is_media = $li.closest('div.tree_root').hasClass('tree_media') ? 1 : 0;
                 jQuery.post(
                     DOKU_BASE + 'lib/exe/ajax.php',
                     {
                         call: 'plugin_move_tree',
-                        ns: $link.attr('href')
+                        ns: $link.attr('href'),
+                        is_media: is_media
                     },
                     function (data) {
                         $li.append(data);

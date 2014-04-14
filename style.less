@@ -1,13 +1,21 @@
+#plugin_move__tree {
 
-.plugin_move_page {
-    display: none; // will be shown by JavaScript
-}
-
-
-ul.plugin_move_tree {
-    .moved {
-        background-color: #b1b100;
+    .tree_pages,
+    .tree_media {
+        width: 49%;
+        float: left;
     }
+
+    .controls {
+        clear: left;
+    }
+
+    ul {
+        .moved {
+            background-color: #b1b100;
+        }
+    }
+
 }
 
 /**
@@ -66,4 +74,11 @@ ul.plugin_move_tree {
 #dokuwiki__pagetools ul li.plugin_move_page a:active,
 #dokuwiki__pagetools ul li.plugin_move_page a:focus {
     background-position: right -45px;
+}
+
+/**
+ * page rename link
+ */
+.plugin_move_page {
+    display: none; // will be shown by JavaScript
 }
