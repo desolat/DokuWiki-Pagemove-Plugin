@@ -36,6 +36,9 @@ jQuery('#plugin_move__progress').each(function () {
         // clear error output
         $this.find('.output').html('');
 
+        $this.find('.controls img').removeClass('hide');
+        setButtons(false);
+
         // execute AJAX
         jQuery.post(
             DOKU_BASE + 'lib/exe/ajax.php',
@@ -45,17 +48,18 @@ jQuery('#plugin_move__progress').each(function () {
             },
             function (data) {
                 $progressbar.progressbar('option', 'value', data.progress);
+                $this.find('.controls img').addClass('hide');
 
                 if (data.error) {
-                    $this.find('.output').html('<div class="error">' + data.error + '</div>');
+                    $this.find('.output').html('<p><div class="error">' + data.error + '</div></p>');
                     setButtons(true);
                 } else if (data.complete) {
+                    $progressbar.progressbar('option', 'value', 100);
                     // redirect to start page
                     alert(LANG.plugins.move.complete);
                     window.location.href = DOKU_BASE;
                 } else {
                     // do it again
-                    setButtons(false);
                     nextStep(skip);
                 }
             }

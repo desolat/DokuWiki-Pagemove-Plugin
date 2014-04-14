@@ -41,7 +41,8 @@ $lang['linkchange']  = 'Links adapted because of a move operation';
 
 $lang['nodst'] = 'No new name given';
 
-$lang['preview'] = 'Preview changes to be executed';
+$lang['intro']   = 'The move operation has not been started, yet!';
+$lang['preview'] = 'Preview changes to be executed.';
 
 $lang['ns_move_in_progress'] = 'There is currently a namespace move of %s page and %s media files from namespace %s to namespace %s in progress.';
 $lang['ns_move_continue'] = 'Continue the namespace move';

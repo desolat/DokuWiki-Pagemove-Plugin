@@ -124,6 +124,9 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
      */
     protected function GUI_simpleForm() {
         global $ID;
+
+        echo $this->locale_xhtml('move');
+
         $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'plugin_move_form'));
         $form->addHidden('page', 'move_main');
         $form->addHidden('id', $ID);
@@ -150,13 +153,16 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
     protected function GUI_progress() {
         echo '<div id="plugin_move__progress">';
 
+        echo $this->locale_xhtml('progress');
+
         $progress = $this->plan->getProgress();
 
         if(!$this->plan->inProgress()) {
-            echo 'Execut plan';
-
             echo '<div id="plugin_move__preview">';
+            echo '<p>';
+            echo '<strong>'.$this->getLang('intro').'</strong> ';
             echo '<span>'.$this->getLang('preview').'</span>';
+            echo '</p>';
             echo $this->plan->previewHTML();
             echo '</div>';
 
@@ -169,12 +175,14 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
 
         echo '<div class="output">';
         if($this->plan->getLastError()) {
-            echo '<div class="error">' . $this->plan->getLastError() . '</div>';
+            echo '<p><div class="error">' . $this->plan->getLastError() . '</div></p>';
         }
         echo '</div>';
 
         // display all buttons but toggle visibility according to state
+        echo '<p></p>';
         echo '<div class="controls">';
+        echo '<img src="'.DOKU_BASE.'lib/images/throbber.gif" class="hide" />';
         $this->btn('start', !$this->plan->inProgress());
         $this->btn('retry', $this->plan->getLastError());
         $this->btn('skip', $this->plan->getLastError());
