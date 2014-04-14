@@ -9,11 +9,6 @@
 // must be run within Dokuwiki
 if(!defined('DOKU_INC')) die();
 
-define('PLUGIN_MOVE_TYPE_PAGES', 1);
-define('PLUGIN_MOVE_TYPE_MEDIA', 2);
-define('PLUGIN_MOVE_CLASS_NS', 4);
-define('PLUGIN_MOVE_CLASS_DOC', 8);
-
 /**
  * Class helper_plugin_move_plan
  *
@@ -27,6 +22,11 @@ define('PLUGIN_MOVE_CLASS_DOC', 8);
 class helper_plugin_move_plan extends DokuWiki_Plugin {
     /** Number of operations per step  */
     const OPS_PER_RUN = 10;
+
+    const TYPE_PAGES = 1;
+    const TYPE_MEDIA = 2;
+    const CLASS_NS = 4;
+    const CLASS_DOC = 8;
 
     /**
      * @var array the options for this move plan
@@ -95,7 +95,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // merge whatever options are saved currently
         $file = $this->files['opts'];
         if(file_exists($file)) {
-            $options       = unserialize(io_readFile($file, false));
+            $options = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
     }
@@ -180,7 +180,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $dst
      */
     public function addPageMove($src, $dst) {
-        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_DOC, PLUGIN_MOVE_TYPE_PAGES);
+        $this->addMove($src, $dst, self::CLASS_DOC, self::TYPE_PAGES);
     }
 
     /**
@@ -190,7 +190,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $dst
      */
     public function addMediaMove($src, $dst) {
-        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_DOC, PLUGIN_MOVE_TYPE_MEDIA);
+        $this->addMove($src, $dst, self::CLASS_DOC, self::TYPE_MEDIA);
     }
 
     /**
@@ -200,7 +200,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $dst
      */
     public function addPageNamespaceMove($src, $dst) {
-        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_NS, PLUGIN_MOVE_TYPE_PAGES);
+        $this->addMove($src, $dst, self::CLASS_NS, self::TYPE_PAGES);
     }
 
     /**
@@ -210,7 +210,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $dst
      */
     public function addMediaNamespaceMove($src, $dst) {
-        $this->addMove($src, $dst, PLUGIN_MOVE_CLASS_NS, PLUGIN_MOVE_TYPE_MEDIA);
+        $this->addMove($src, $dst, self::CLASS_NS, self::TYPE_MEDIA);
     }
 
     /**
@@ -218,11 +218,11 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * @param string $src   ID of the item to move
      * @param string $dst   new ID of item namespace
-     * @param int $class (PLUGIN_MOVE_CLASS_NS|PLUGIN_MOVE_CLASS_DOC)
-     * @param int $type  (PLUGIN_MOVE_TYPE_PAGE|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param int    $class (self::CLASS_NS|self::CLASS_DOC)
+     * @param int    $type  (PLUGIN_MOVE_TYPE_PAGE|self::TYPE_MEDIA)
      * @throws Exception
      */
-    protected function addMove($src, $dst, $class = PLUGIN_MOVE_CLASS_NS, $type = PLUGIN_MOVE_TYPE_PAGES) {
+    protected function addMove($src, $dst, $class = self::CLASS_NS, $type = self::TYPE_PAGES) {
         if($this->options['commited']) throw new Exception('plan is commited already, can not be added to');
 
         $src = cleanID($src);
@@ -264,9 +264,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         // get all the documents to be moved and store them in their lists
         foreach($this->plan as $move) {
-            if($move['class'] == PLUGIN_MOVE_CLASS_DOC) {
+            if($move['class'] == self::CLASS_DOC) {
                 // these can just be added
-                if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
+                if($move['type'] == self::TYPE_PAGES) {
                     $this->addToPageList($move['src'], $move['dst']);
                 } else {
                     $this->addToMediaList($move['src'], $move['dst']);
@@ -276,7 +276,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 $docs = array();
                 $path = utf8_encodeFN(str_replace(':', '/', $move['src']));
                 $opts = array('depth' => 0, 'skipacl' => true);
-                if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
+                if($move['type'] == self::TYPE_PAGES) {
                     search($docs, $conf['datadir'], 'search_allpages', $opts, $path);
                 } else {
                     search($docs, $conf['mediadir'], 'search_media', $opts, $path);
@@ -293,9 +293,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 // now add all the found documents to our lists
                 foreach($docs as $doc) {
                     $from = $doc['id'];
-                    $to   = $move['dst'] . substr($doc['id'], $strip);
+                    $to = $move['dst'] . substr($doc['id'], $strip);
 
-                    if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
+                    if($move['type'] == self::TYPE_PAGES) {
                         $this->addToPageList($from, $to);
                     } else {
                         $this->addToMediaList($from, $to);
@@ -303,7 +303,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 }
 
                 // remember the namespace move itself
-                if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
+                if($move['type'] == self::TYPE_PAGES) {
                     // FIXME we use this to move namespace subscriptions later on and for now only do it on
                     //       page namespace moves, but subscriptions work for both, but what when only one of
                     //       them is moved? Should it be copied then? Complicated. This is good enough for now
@@ -330,13 +330,13 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         if(!$this->options['started']) $this->options['started'] = time();
 
         if(@filesize($this->files['pagelist']) > 1) {
-            $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_PAGES, $skip);
+            $todo = $this->stepThroughDocuments(self::TYPE_PAGES, $skip);
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['medialist']) > 1) {
-            $todo = $this->stepThroughDocuments(PLUGIN_MOVE_TYPE_MEDIA, $skip);
+            $todo = $this->stepThroughDocuments(self::TYPE_MEDIA, $skip);
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
@@ -399,23 +399,23 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Step through the next bunch of pages or media files
      *
-     * @param int $type (PLUGIN_MOVE_TYPE_PAGES|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param int  $type (self::TYPE_PAGES|self::TYPE_MEDIA)
      * @param bool $skip should the first item be skipped?
      * @return bool|int false on error, otherwise the number of remaining documents
      */
-    protected function stepThroughDocuments($type = PLUGIN_MOVE_TYPE_PAGES, &$skip = false) {
+    protected function stepThroughDocuments($type = self::TYPE_PAGES, &$skip = false) {
         /** @var helper_plugin_move_op $MoveOperator */
         $MoveOperator = plugin_load('helper', 'move_op');
 
-        if($type == PLUGIN_MOVE_TYPE_PAGES) {
-            $file    = $this->files['pagelist'];
-            $mark    = 'P';
-            $call    = 'movePage';
+        if($type == self::TYPE_PAGES) {
+            $file = $this->files['pagelist'];
+            $mark = 'P';
+            $call = 'movePage';
             $counter = 'pages_num';
         } else {
-            $file    = $this->files['medialist'];
-            $mark    = 'M';
-            $call    = 'moveMedia';
+            $file = $this->files['medialist'];
+            $mark = 'M';
+            $call = 'moveMedia';
             $counter = 'media_num';
         }
 
@@ -539,7 +539,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         if(is_array($MSG) && count($MSG)) {
-            $last                       = array_shift($MSG);
+            $last = array_shift($MSG);
             $this->options['lasterror'] = $last['msg'];
             unset($GLOBALS['MSG']);
         } else {
@@ -678,18 +678,18 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      */
     public function planSorter($a, $b) {
         // do page moves before namespace moves
-        if($a['class'] == PLUGIN_MOVE_CLASS_DOC && $b['class'] == PLUGIN_MOVE_CLASS_NS) {
+        if($a['class'] == self::CLASS_DOC && $b['class'] == self::CLASS_NS) {
             return 1;
         }
-        if($a['class'] == PLUGIN_MOVE_CLASS_NS && $b['class'] == PLUGIN_MOVE_CLASS_DOC) {
+        if($a['class'] == self::CLASS_NS && $b['class'] == self::CLASS_DOC) {
             return -1;
         }
 
         // do pages before media
-        if($a['type'] == PLUGIN_MOVE_TYPE_PAGES && $b['type'] == PLUGIN_MOVE_TYPE_MEDIA) {
+        if($a['type'] == self::TYPE_PAGES && $b['type'] == self::TYPE_MEDIA) {
             return 1;
         }
-        if($a['type'] == PLUGIN_MOVE_TYPE_MEDIA && $b['type'] == PLUGIN_MOVE_TYPE_PAGES) {
+        if($a['type'] == self::TYPE_MEDIA && $b['type'] == self::TYPE_PAGES) {
             return -1;
         }
 
@@ -713,7 +713,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $type
      * @param string $from
      * @param string $to
-     * @param bool $success
+     * @param bool   $success
      * @author Andreas Gohr <gohr@cosmocode.de>
      */
     protected function log($type, $from, $to, $success) {
@@ -721,15 +721,15 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         $optime = $this->options['started'];
-        $file   = $conf['cachedir'] . '/move-' . $optime . '.log';
-        $now    = time();
-        $date   = date('Y-m-d H:i:s', $now); // for human readability
+        $file = $conf['cachedir'] . '/move-' . $optime . '.log';
+        $now = time();
+        $date = date('Y-m-d H:i:s', $now); // for human readability
 
         if($success) {
-            $ok  = 'success';
+            $ok = 'success';
             $msg = '';
         } else {
-            $ok  = 'failed';
+            $ok = 'failed';
             $msg = $MSG[count($MSG) - 1]['msg']; // get detail from message array
         }
 
