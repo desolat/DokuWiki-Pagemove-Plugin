@@ -95,7 +95,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // merge whatever options are saved currently
         $file = $this->files['opts'];
         if(file_exists($file)) {
-            $options = unserialize(io_readFile($file, false));
+            $options       = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
     }
@@ -152,7 +152,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $this->options['affpg_run'];
 
         if($max == 0) return 0;
-        return round((($max-$remain) * 100) / $max, 2);
+        return round((($max - $remain) * 100) / $max, 2);
     }
 
     /**
@@ -218,8 +218,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * @param string $src   ID of the item to move
      * @param string $dst   new ID of item namespace
-     * @param int    $class (PLUGIN_MOVE_CLASS_NS|PLUGIN_MOVE_CLASS_DOC)
-     * @param int    $type  (PLUGIN_MOVE_TYPE_PAGE|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param int $class (PLUGIN_MOVE_CLASS_NS|PLUGIN_MOVE_CLASS_DOC)
+     * @param int $type  (PLUGIN_MOVE_TYPE_PAGE|PLUGIN_MOVE_TYPE_MEDIA)
      * @throws Exception
      */
     protected function addMove($src, $dst, $class = PLUGIN_MOVE_CLASS_NS, $type = PLUGIN_MOVE_TYPE_PAGES) {
@@ -293,7 +293,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 // now add all the found documents to our lists
                 foreach($docs as $doc) {
                     $from = $doc['id'];
-                    $to = $move['dst'] . substr($doc['id'], $strip);
+                    $to   = $move['dst'] . substr($doc['id'], $strip);
 
                     if($move['type'] == PLUGIN_MOVE_TYPE_PAGES) {
                         $this->addToPageList($from, $to);
@@ -359,9 +359,47 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
+     * Returns the list of page and media moves as a HTML list
+     *
+     * @return string
+     */
+    public function previewHTML() {
+        $html = '';
+
+        $html .= '<ul>';
+        if(@file_exists($this->files['pagelist'])) {
+            $pagelist = file($this->files['pagelist']);
+            foreach($pagelist as $line) {
+                list($old, $new) = explode("\t", trim($line));
+
+                $html .= '<li class="page"><div class="li">';
+                $html .= hsc($old);
+                $html .= '→';
+                $html .= hsc($new);
+                $html .= '</div></li>';
+            }
+        }
+        if(@file_exists($this->files['medialist'])) {
+            $medialist = file($this->files['medialist']);
+            foreach($medialist as $line) {
+                list($old, $new) = explode("\t", trim($line));
+
+                $html .= '<li class="media"><div class="li">';
+                $html .= hsc($old);
+                $html .= '→';
+                $html .= hsc($new);
+                $html .= '</div></li>';
+            }
+        }
+        $html .= '</ul>';
+
+        return $html;
+    }
+
+    /**
      * Step through the next bunch of pages or media files
      *
-     * @param int  $type (PLUGIN_MOVE_TYPE_PAGES|PLUGIN_MOVE_TYPE_MEDIA)
+     * @param int $type (PLUGIN_MOVE_TYPE_PAGES|PLUGIN_MOVE_TYPE_MEDIA)
      * @param bool $skip should the first item be skipped?
      * @return bool|int false on error, otherwise the number of remaining documents
      */
@@ -370,14 +408,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $MoveOperator = plugin_load('helper', 'move_op');
 
         if($type == PLUGIN_MOVE_TYPE_PAGES) {
-            $file = $this->files['pagelist'];
-            $mark = 'P';
-            $call = 'movePage';
+            $file    = $this->files['pagelist'];
+            $mark    = 'P';
+            $call    = 'movePage';
             $counter = 'pages_num';
         } else {
-            $file = $this->files['medialist'];
-            $mark = 'M';
-            $call = 'moveMedia';
+            $file    = $this->files['medialist'];
+            $mark    = 'M';
+            $call    = 'moveMedia';
             $counter = 'media_num';
         }
 
@@ -501,7 +539,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         if(is_array($MSG) && count($MSG)) {
-            $last = array_shift($MSG);
+            $last                       = array_shift($MSG);
             $this->options['lasterror'] = $last['msg'];
             unset($GLOBALS['MSG']);
         } else {
@@ -675,7 +713,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $type
      * @param string $from
      * @param string $to
-     * @param bool   $success
+     * @param bool $success
      * @author Andreas Gohr <gohr@cosmocode.de>
      */
     protected function log($type, $from, $to, $success) {
@@ -683,15 +721,15 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         $optime = $this->options['started'];
-        $file = $conf['cachedir'] . '/move-' . $optime . '.log';
-        $now = time();
-        $date = date('Y-m-d H:i:s', $now); // for human readability
+        $file   = $conf['cachedir'] . '/move-' . $optime . '.log';
+        $now    = time();
+        $date   = date('Y-m-d H:i:s', $now); // for human readability
 
         if($success) {
-            $ok = 'success';
+            $ok  = 'success';
             $msg = '';
         } else {
-            $ok = 'failed';
+            $ok  = 'failed';
             $msg = $MSG[count($MSG) - 1]['msg']; // get detail from message array
         }
 

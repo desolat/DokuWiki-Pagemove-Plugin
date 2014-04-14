@@ -1,9 +1,3 @@
-#move__preview_list {
-    span {
-        cursor: pointer;
-        color: @ini_link;
-    }
-}
 
 .plugin_move_page {
     display: none; // will be shown by JavaScript
@@ -16,7 +10,27 @@ ul.plugin_move_tree {
     }
 }
 
+/**
+ * The progress page
+ */
+#plugin_move__progress {
 
+    .hide {
+        display: none;
+    }
+
+
+    #plugin_move__preview {
+        span {
+            cursor: pointer;
+            color: @ini_link;
+        }
+    }
+}
+
+/**
+ * The admin form
+ */
 .dokuwiki .plugin_move_form {
     label.block {
         text-align: left;

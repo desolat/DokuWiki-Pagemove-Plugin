@@ -131,9 +131,9 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         $form->startFieldset($this->getLang('legend'));
 
         $form->addElement(form_makeRadioField('class', 'page', $this->getLang('movepage') . ' <code>'.$ID.'</code>', '', 'block radio click-page', array('checked' => 'checked')));
-        $form->addElement(form_makeRadioField('class', 'namepsace', $this->getLang('movens') . ' <code>'.getNS($ID).'</code>', '', 'block radio click-ns'));
-        $form->addElement(form_makeTextField('dst', $ID, $this->getLang('dst'), '', 'block indent'));
+        $form->addElement(form_makeRadioField('class', 'namespace', $this->getLang('movens') . ' <code>'.getNS($ID).'</code>', '', 'block radio click-ns'));
 
+        $form->addElement(form_makeTextField('dst', $ID, $this->getLang('dst'), '', 'block indent'));
         $form->addElement(form_makeMenuField('type', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), 'both', $this->getLang('content_to_move'), '', 'block indent select'));
 
         $form->addElement(form_makeCheckboxField('autoskip', '1', $this->getLang('autoskip'), '', 'block', ($this->getConf('autoskip') ? array('checked' => 'checked') : array())));
@@ -144,18 +144,25 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         $form->printForm();
     }
 
-    protected function GUI_previewPlan() {
-        $this->createPlanFromInput();
-
-    }
-
     /**
      * Display the GUI while the move progresses
      */
     protected function GUI_progress() {
+        echo '<div id="plugin_move__progress">';
+
         $progress = $this->plan->getProgress();
 
-        // FIXME add intro here depending on start or progress
+        if(!$this->plan->inProgress()) {
+            echo 'Execut plan';
+
+            echo '<div id="plugin_move__preview">';
+            echo '<span>'.$this->getLang('preview').'</span>';
+            echo $this->plan->previewHTML();
+            echo '</div>';
+
+        } else {
+            echo "continue plan";
+        }
 
         echo '<div class="progress" data-progress="' . $progress . '">' . $progress . '%</div>';
 
@@ -166,17 +173,15 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         }
         echo '</div>';
 
-
+        // display all buttons but toggle visibility according to state
         echo '<div class="controls">';
-        if(!$this->plan->inProgress()) {
-            $this->btn('start');
-        } else if($this->plan->getLastError()) {
-            $this->btn('skip');
-            $this->btn('retry');
-        } else {
-            $this->btn('continue');
-        }
+        $this->btn('start', !$this->plan->inProgress());
+        $this->btn('retry', $this->plan->getLastError());
+        $this->btn('skip', $this->plan->getLastError());
+        $this->btn('continue', $this->plan->inProgress() && !$this->plan->getLastError());
         $this->btn('abort');
+        echo '</div>';
+
         echo '</div>';
     }
 
@@ -188,19 +193,29 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
      * skip - skip error and continue
      *
      * @param string $control
+     * @param bool $show should this control be visible?
      */
-    protected function btn($control) {
+    protected function btn($control, $show=true) {
         global $ID;
 
+        $skip = 0;
         $label = $this->getLang('btn_' . $control);
+        $id    = $control;
         if($control == 'start') $control = 'continue';
-        if($control == 'retry') $control = 'continue';
+        if($control == 'retry'){
+            $control = 'continue';
+            $skip = 1;
+        }
 
-        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'move__control'));
+        $class = 'move__control ctlfrm-'.$id;
+        if(!$show) $class .= ' hide';
+
+        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => $class));
         $form->addHidden('page', 'move_main');
         $form->addHidden('id', $ID);
         $form->addHidden('ctl', $control);
-        $form->addElement(form_makeButton('submit', 'admin', $label));
+        $form->addHidden('skip', $skip);
+        $form->addElement(form_makeButton('submit', 'admin', $label, array('class' => 'btn ctl-'.$control)));
         $form->printForm();
     }
 }

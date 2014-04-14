@@ -82,3 +82,5 @@ $lang['js']['rename'] = 'Rename';
 $lang['js']['cancel'] = 'Cancel';
 $lang['js']['newname'] = 'New name:';
 $lang['js']['inprogress'] = 'renaming page and adjusting links...';
+
+$lang['js']['complete'] = 'Move operation finished.';
