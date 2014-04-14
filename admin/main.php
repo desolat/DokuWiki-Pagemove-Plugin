@@ -86,17 +86,23 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         $this->plan->setOption('autorewrite', $INPUT->bool('autorewrite'));
 
         if($ID && $INPUT->has('dst')) {
+            $dst = trim($INPUT->str('dst'));
+            if($dst == '') {
+                msg($this->getLang('nodst'), -1);
+                return false;
+            }
+
             // input came from form
             if($INPUT->str('class') == 'namespace') {
                 $src = getNS($ID);
 
                 if($INPUT->str('type') == 'both') {
-                    $this->plan->addPageNamespaceMove($src, $INPUT->str('dst'));
-                    $this->plan->addMediaNamespaceMove($src, $INPUT->str('dst'));
+                    $this->plan->addPageNamespaceMove($src, $dst);
+                    $this->plan->addMediaNamespaceMove($src, $dst);
                 } else if($INPUT->str('type') == 'page') {
-                    $this->plan->addPageNamespaceMove($src, $INPUT->str('dst'));
+                    $this->plan->addPageNamespaceMove($src, $dst);
                 } else if($INPUT->str('type') == 'media') {
-                    $this->plan->addMediaNamespaceMove($src, $INPUT->str('dst'));
+                    $this->plan->addMediaNamespaceMove($src, $dst);
                 }
             } else {
                 $this->plan->addPageMove($ID, $INPUT->str('dst'));
@@ -113,23 +119,27 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         return false;
     }
 
+    /**
+     * Display the simple move form
+     */
     protected function GUI_simpleForm() {
         global $ID;
-        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'move__form'));
+        $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'plugin_move_form'));
         $form->addHidden('page', 'move_main');
         $form->addHidden('id', $ID);
 
-        $form->startFieldset('FIMXE');
+        $form->startFieldset($this->getLang('legend'));
 
-        $form->addElement(form_makeRadioField('class', 'page', $this->getLang('movepage')));
-        $form->addElement(form_makeRadioField('class', 'namepsace', $this->getLang('movens')));
-        $form->addElement(form_makeTextField('dst', $ID, 'new name*'));
+        $form->addElement(form_makeRadioField('class', 'page', $this->getLang('movepage') . ' <code>'.$ID.'</code>', '', 'block radio click-page', array('checked' => 'checked')));
+        $form->addElement(form_makeRadioField('class', 'namepsace', $this->getLang('movens') . ' <code>'.getNS($ID).'</code>', '', 'block radio click-ns'));
+        $form->addElement(form_makeTextField('dst', $ID, $this->getLang('dst'), '', 'block indent'));
 
-        $form->addElement(form_makeMenuField('type', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), $this->opts['contenttomove'], $this->getLang('content_to_move'), '', 'block'));
+        $form->addElement(form_makeMenuField('type', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), 'both', $this->getLang('content_to_move'), '', 'block indent select'));
+
         $form->addElement(form_makeCheckboxField('autoskip', '1', $this->getLang('autoskip'), '', 'block', ($this->getConf('autoskip') ? array('checked' => 'checked') : array())));
         $form->addElement(form_makeCheckboxField('autorewrite', '1', $this->getLang('autorewrite'), '', 'block', ($this->getConf('autorewrite') ? array('checked' => 'checked') : array())));
 
-        $form->addElement(form_makeButton('submit', 'admin', 'preview'));
+        $form->addElement(form_makeButton('submit', 'admin', $this->getLang('btn_start')));
         $form->endFieldset();
         $form->printForm();
     }

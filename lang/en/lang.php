@@ -39,6 +39,8 @@ $lang['nomediatargetperms'] = 'You don\'t have the permission to create the medi
 $lang['filelocked']  = 'The page %s is locked. Try again later.';
 $lang['linkchange']  = 'Links adapted because of a move operation';
 
+$lang['nodst'] = 'No new name given';
+
 $lang['preview'] = 'Preview changes to be executed';
 
 $lang['ns_move_in_progress'] = 'There is currently a namespace move of %s page and %s media files from namespace %s to namespace %s in progress.';
@@ -59,19 +61,18 @@ $lang['btn_abort'] = 'Abort';
 
 
 // Form labels
-$lang['newname']     = 'New page name:';
-$lang['newnsname']   = 'New namespace name:';
-$lang['targetns']    = 'Select new namespace:';
-$lang['newtargetns'] = 'Create a new namespace:';
+$lang['legend'] = 'Move current page or namespace';
+
 $lang['movepage']	= 'Move page';
 $lang['movens']		= 'Move namespace';
-$lang['submit']      = 'Submit';
+$lang['dst']        = 'New name:';
 $lang['content_to_move'] = 'Content to move:';
 $lang['autoskip']    = 'Ignore errors and skip pages that can\'t be moved';
 $lang['autorewrite']    = 'Rewrite links right after the move completed';
 $lang['move_pages']  = 'Pages';
 $lang['move_media']  = 'Media files';
 $lang['move_media_and_pages'] = 'Pages and media files';
+
 // JavaScript preview
 $lang['js']['previewpage'] = 'OLDPAGE will be moved to NEWPAGE';
 $lang['js']['previewns'] = 'All pages and namespaces in the namespace OLDNS will be moved in the namespace NEWNS';
