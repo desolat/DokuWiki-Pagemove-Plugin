@@ -84,3 +84,4 @@ $lang['pages']          = 'Pages';
 $lang['media']          = 'Media';
 $lang['noscript']       = 'This feature requires JavaScript';
 $lang['moveinprogress'] = 'There is another move operation in progress currently, you can\'t use this tool right now.';
+$lang['js']['renameitem'] = 'Rename this item';

@@ -140,6 +140,9 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
             $ret .= noNS($item['id']);
             $ret .= '</a>';
         }
+
+        if($item['id']) $ret .= '<img src="'. DOKU_BASE .'lib/plugins/move/rename.png" />';
+
         return $ret;
     }
 
@@ -159,7 +162,8 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         $params['data-name']   = noNS($item['id']);
         $params['data-id']     = $item['id'];
         $attr                  = buildAttributes($params);
-        return "<li $attr>";
+
+        return  "<li $attr>";
     }
 
 }

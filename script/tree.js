@@ -7,14 +7,29 @@ var $GUI = jQuery('#plugin_move__tree');
 $GUI.show();
 jQuery('#plugin_move__treelink').show();
 
-$GUI.find('ul.tree_list')
-    // make folders open and close via AJAX
-    .click(function (e) {
-        var $link = jQuery(e.target);
-        if ($link.attr('href')) {
-            e.stopPropagation();
-            var $li = $link.parent().parent();
+var checkForMovement = function($li) {
+    var newparent = $li.parent().closest('li').attr('data-id');
+    var newname   = $li.attr('data-name');
+    var oldid     = $li.attr('data-id');
+    var newid     = (newparent+':'+newname).replace(/^:+/, '');
 
+    if (newid != oldid) {
+        $li.addClass('moved');
+        $li.children('div').attr('title', oldid+' -> '+newid);
+    } else {
+        $li.removeClass('moved');
+        $li.children('div').attr('title', '');
+    }
+};
+
+
+$GUI.find('ul.tree_list')
+    .click(function (e) {
+        var $clicky = jQuery(e.target);
+        var $li = $clicky.parent().parent();
+
+        if ($clicky.attr('href')) {  // Click on folder - open and close via AJAX
+            e.stopPropagation();
             if ($li.hasClass('open')) {
                 $li
                     .removeClass('open')
@@ -32,7 +47,7 @@ $GUI.find('ul.tree_list')
                         DOKU_BASE + 'lib/exe/ajax.php',
                         {
                             call: 'plugin_move_tree',
-                            ns: $link.attr('href'),
+                            ns: $clicky.attr('href'),
                             is_media: is_media
                         },
                         function (data) {
@@ -41,6 +56,16 @@ $GUI.find('ul.tree_list')
                     );
                 }
             }
+        } else if ($clicky[0].tagName == 'IMG') { // Click on IMG - do rename
+            e.stopPropagation();
+            var $a  = $clicky.parent().find('a');
+
+            var newname = window.prompt(LANG.plugins.move.renameitem, $li.attr('data-name'));
+            if(newname) {
+                $li.attr('data-name', newname);
+                $a.text(newname);
+                checkForMovement($li);
+            }
         }
         e.preventDefault();
     })
@@ -48,18 +73,11 @@ $GUI.find('ul.tree_list')
     .find('ul').sortable({
         items: 'li',
         stop: function (e, ui) {
-            var newparent = ui.item.parent().closest('li').attr('data-id');
-            var oldparent = ui.item.attr('data-parent');
-
-            console.log(newparent);
-
-            if (newparent != oldparent) {
-                ui.item.addClass('moved');
-            } else {
-                ui.item.removeClass('moved');
-            }
+            checkForMovement(ui.item);
         }
-    });
+    })
+    // add title to rename icon
+    .find('img').attr('title', LANG.plugins.move.renameitem);
 
 /**
  * Gather all moves from the trees and put them as JSON into the form before submit
