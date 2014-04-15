@@ -5,12 +5,18 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
     const TYPE_PAGES = 1;
     const TYPE_MEDIA = 2;
 
+    /**
+     * @param $language
+     * @return bool
+     */
     public function getMenuText($language) {
-        return $this->getLang('treemanager');
+        return false; // do not show in Admin menu
     }
 
+    /**
+     * no-op
+     */
     public function handle() {
-
     }
 
     public function html() {

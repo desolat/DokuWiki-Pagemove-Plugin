@@ -10,13 +10,9 @@
 $lang['encoding']  = 'utf-8';
 $lang['direction'] = 'ltr';
 
-// for admin plugins, the menu prompt to be displayed in the admin menu
-// if set here, the plugin doesn't need to override the getMenuText() method
-$lang['menu'] = 'Page/Namespace Move/Rename...';
-$lang['desc'] = 'Page/Namespace Move/Rename Plugin';
-$lang['treemanager'] = 'Page Move Manager';
-
-
+$lang['menu']        = 'Move pages and namespaces';
+$lang['inprogress']  = '(move pending)';
+$lang['treelink']    = 'Alternatively to this simple form you can manage complex restructuring of your wiki using the <a href="%s">tree-based move manager</a>.';
 
 $lang['notexist']           = 'The page %s does not exist';
 $lang['medianotexist']      = 'The media file %s does not exist';

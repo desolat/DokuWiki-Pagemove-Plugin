@@ -23,12 +23,23 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
     }
 
     /**
+     * @param $language
+     * @return string
+     */
+    public function getMenuText($language) {
+        $label = $this->getLang('menu');
+        if($this->plan->isCommited()) $label .= ' '.$this->getLang('inprogress');
+        return $label;
+    }
+
+
+    /**
      * Get the sort number that defines the position in the admin menu.
      *
      * @return int The sort number
      */
     function getMenuSort() {
-        return 1000;
+        return 1011;
     }
 
     /**
@@ -151,6 +162,11 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         global $ID;
 
         echo $this->locale_xhtml('move');
+
+        $treelink = wl($ID, array('do'=>'admin', 'page'=>'move_tree'));
+        echo '<p id="plugin_move__treelink">';
+        printf($this->getLang('treelink'), $treelink);
+        echo '</p>';
 
         $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => 'plugin_move_form'));
         $form->addHidden('page', 'move_main');

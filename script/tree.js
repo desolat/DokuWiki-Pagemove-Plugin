@@ -5,6 +5,7 @@
 var $GUI = jQuery('#plugin_move__tree');
 
 $GUI.show();
+jQuery('#plugin_move__treelink').show();
 
 $GUI.find('ul.tree_list')
     // make folders open and close via AJAX
