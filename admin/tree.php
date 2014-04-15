@@ -14,20 +14,37 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
     }
 
     public function html() {
+        global $ID;
+
+        echo $this->locale_xhtml('tree');
+
+        echo '<noscript><div class="error">' . $this->getLang('noscript') . '</div></noscript>';
+
         echo '<div id="plugin_move__tree">';
 
         echo '<div class="tree_root tree_pages">';
-        echo '<h3>Pages</h3>'; // FIXME localize
+        echo '<h3>' . $this->getLang('pages') . '</h3>';
         $this->htmlTree(self::TYPE_PAGES);
         echo '</div>';
 
         echo '<div class="tree_root tree_media">';
-        echo '<h3>Media</h3>'; // FIXME localize
+        echo '<h3>' . $this->getLang('media') . '</h3>';
         $this->htmlTree(self::TYPE_MEDIA);
         echo '</div>';
 
+        /** @var helper_plugin_move_plan $plan */
+        $plan = plugin_load('helper', 'move_plan');
         echo '<div class="controls">';
-        echo '<button class="plugin_move_tree_exec">go</button>';
+        if($plan->isCommited()) {
+            echo '<div class="error">' . $this->getLang('moveinprogress') . '</div>';
+        } else {
+            $form = new Doku_Form(array('action' => wl($ID), 'id' => 'plugin_move__tree_execute'));
+            $form->addHidden('id', $ID);
+            $form->addHidden('page', 'move_main');
+            $form->addHidden('json', '');
+            $form->addElement(form_makeButton('submit', 'admin', $this->getLang('btn_start')));
+            $form->printForm();
+        }
         echo '</div>';
 
         echo '</div>';
@@ -44,12 +61,12 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         // wrap a list with the root level around the other namespaces
         array_unshift(
             $data, array(
-                     'level' => 0, 'id' => '*', 'type' => 'd',
-                     'open'  => 'true', 'label' => $this->getLang('root')
-                 )
+                        'level' => 0, 'id' => '*', 'type' => 'd',
+                        'open'  => 'true', 'label' => $this->getLang('root')
+                   )
         );
         echo html_buildlist(
-            $data, 'tree_list',
+            $data, 'tree_list idx',
             array($this, 'html_list'),
             array($this, 'html_li')
         );
@@ -59,7 +76,7 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
      * Build a tree info structure from media or page directories
      *
      * @param int    $type
-     * @param string $open The hierarchy to open
+     * @param string $open The hierarchy to open FIXME not supported yet
      * @param string $base The namespace to start from
      * @return array
      */
@@ -69,11 +86,20 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         $opendir = utf8_encodeFN(str_replace(':', '/', $open));
         $basedir = utf8_encodeFN(str_replace(':', '/', $base));
 
+        $opts = array(
+            'pagesonly' => ($type == self::TYPE_PAGES),
+            'listdirs'  => true,
+            'listfiles' => true,
+            'sneakyacl' => $conf['sneaky_index'],
+            'showmsg'   => false,
+            'depth'     => 1
+        );
+
         $data = array();
         if($type == self::TYPE_PAGES) {
-            search($data, $conf['datadir'], 'search_index', array('ns' => $opendir), $basedir);
+            search($data, $conf['datadir'], 'search_universal', $opts, $basedir);
         } elseif($type == self::TYPE_MEDIA) {
-            search($data, $conf['mediadir'], 'search_index', array('ns' => $opendir), $basedir);
+            search($data, $conf['mediadir'], 'search_universal', $opts, $basedir);
         }
 
         return $data;
@@ -120,12 +146,13 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
     function html_li($item) {
         if($item['id'] == '*') $item['id'] = '';
 
-        $params = array();
-        $params['class'] = ($item['open'] ? 'open' : 'closed') . ' type-' . $item['type'];
+        $params          = array();
+        $params['class'] = ' type-' . $item['type'];
+        if($item['type'] == 'd') $params['class'] .= ' ' . ($item['open'] ? 'open' : 'closed');
         $params['data-parent'] = getNS($item['id']);
-        $params['data-name'] = noNS($item['id']);
-        $params['data-id'] = $item['id'];
-        $attr = buildAttributes($params);
+        $params['data-name']   = noNS($item['id']);
+        $params['data-id']     = $item['id'];
+        $attr                  = buildAttributes($params);
         return "<li $attr>";
     }
 

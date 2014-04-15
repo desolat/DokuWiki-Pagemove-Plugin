@@ -228,8 +228,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $src = cleanID($src);
         $dst = cleanID($dst);
 
-        // FIXME make sure source exists
-
         $this->plan[] = array(
             'src'   => $src,
             'dst'   => $dst,
@@ -254,6 +252,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * the plan is reordered an the needed move operations are gathered and stored in the appropriate
      * list files
+     *
+     * @throws Exception if you try to commit a plan twice
+     * @return bool true if the plan was commited
      */
     public function commit() {
         global $conf;
@@ -312,8 +313,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             }
         }
 
+        if(!$this->options['pages_all'] && !$this->options['media_all']) {
+            msg($this->getLang('noaction'), -1);
+            return false;
+        }
+
         $this->options['commited'] = true;
         $this->saveOptions();
+        return true;
     }
 
     /**

@@ -1,5 +1,7 @@
 #plugin_move__tree {
 
+    display: none; // will be enabled via JavaScript
+
     .tree_pages,
     .tree_media {
         width: 49%;
@@ -8,13 +10,30 @@
 
     .controls {
         clear: left;
+        display: block;
     }
 
-    ul {
-        .moved {
-            background-color: #b1b100;
+    ul.tree_list ul {
+        .moved div {
+            background-color: @ini_background_neu;
+        }
+
+        li {
+            cursor: move;
+        }
+
+        li div:hover {
+            background-color: @ini_background_alt;
+        }
+
+        li.closed {
+            ul {
+                display: none;
+            }
         }
     }
+
+
 
 }
 

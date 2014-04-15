@@ -33,12 +33,16 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
 
     /**
      * If this admin plugin is for admins only
+     *
      * @return bool false
      */
     function forAdminOnly() {
         return false;
     }
 
+    /**
+     * Handle the input
+     */
     function handle() {
         global $INPUT;
 
@@ -61,6 +65,9 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         }
     }
 
+    /**
+     * Display the interface
+     */
     function html() {
         // decide what to do based on the plan's state
         if($this->plan->isCommited()) {
@@ -72,7 +79,7 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
     }
 
     /**
-     * Create a plan from input
+     * Get input variables and create a move plan from them
      *
      * @return bool
      */
@@ -111,7 +118,25 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
             return true;
         } elseif($INPUT->has('json')) {
             // input came via JSON from tree manager
-            // FIXME
+            $json = new JSON(JSON_LOOSE_TYPE);
+            $data = $json->decode($INPUT->str('json'));
+
+            foreach((array) $data as $entry) {
+                if($entry['class'] == 'ns') {
+                    if($entry['type'] == 'page') {
+                        $this->plan->addPageNamespaceMove($entry['src'], $entry['dst']);
+                    } elseif($entry['type'] == 'media') {
+                        $this->plan->addMediaNamespaceMove($entry['src'], $entry['dst']);
+                    }
+                } elseif($entry['class'] == 'doc') {
+                    if($entry['type'] == 'page') {
+                        $this->plan->addPageMove($entry['src'], $entry['dst']);
+                    } elseif($entry['type'] == 'media') {
+                        $this->plan->addMediaMove($entry['src'], $entry['dst']);
+                    }
+                }
+            }
+
             $this->plan->commit();
             return true;
         }
@@ -133,8 +158,8 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
 
         $form->startFieldset($this->getLang('legend'));
 
-        $form->addElement(form_makeRadioField('class', 'page', $this->getLang('movepage') . ' <code>'.$ID.'</code>', '', 'block radio click-page', array('checked' => 'checked')));
-        $form->addElement(form_makeRadioField('class', 'namespace', $this->getLang('movens') . ' <code>'.getNS($ID).'</code>', '', 'block radio click-ns'));
+        $form->addElement(form_makeRadioField('class', 'page', $this->getLang('movepage') . ' <code>' . $ID . '</code>', '', 'block radio click-page', array('checked' => 'checked')));
+        $form->addElement(form_makeRadioField('class', 'namespace', $this->getLang('movens') . ' <code>' . getNS($ID) . '</code>', '', 'block radio click-ns'));
 
         $form->addElement(form_makeTextField('dst', $ID, $this->getLang('dst'), '', 'block indent'));
         $form->addElement(form_makeMenuField('type', array('pages' => $this->getLang('move_pages'), 'media' => $this->getLang('move_media'), 'both' => $this->getLang('move_media_and_pages')), 'both', $this->getLang('content_to_move'), '', 'block indent select'));
@@ -160,8 +185,8 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         if(!$this->plan->inProgress()) {
             echo '<div id="plugin_move__preview">';
             echo '<p>';
-            echo '<strong>'.$this->getLang('intro').'</strong> ';
-            echo '<span>'.$this->getLang('preview').'</span>';
+            echo '<strong>' . $this->getLang('intro') . '</strong> ';
+            echo '<span>' . $this->getLang('preview') . '</span>';
             echo '</p>';
             echo $this->plan->previewHTML();
             echo '</div>';
@@ -172,7 +197,6 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
 
         echo '<div class="progress" data-progress="' . $progress . '">' . $progress . '%</div>';
 
-
         echo '<div class="output">';
         if($this->plan->getLastError()) {
             echo '<p><div class="error">' . $this->plan->getLastError() . '</div></p>';
@@ -182,7 +206,7 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         // display all buttons but toggle visibility according to state
         echo '<p></p>';
         echo '<div class="controls">';
-        echo '<img src="'.DOKU_BASE.'lib/images/throbber.gif" class="hide" />';
+        echo '<img src="' . DOKU_BASE . 'lib/images/throbber.gif" class="hide" />';
         $this->btn('start', !$this->plan->inProgress());
         $this->btn('retry', $this->plan->getLastError());
         $this->btn('skip', $this->plan->getLastError());
@@ -201,21 +225,21 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
      * skip - skip error and continue
      *
      * @param string $control
-     * @param bool $show should this control be visible?
+     * @param bool   $show should this control be visible?
      */
-    protected function btn($control, $show=true) {
+    protected function btn($control, $show = true) {
         global $ID;
 
-        $skip = 0;
+        $skip  = 0;
         $label = $this->getLang('btn_' . $control);
         $id    = $control;
         if($control == 'start') $control = 'continue';
-        if($control == 'retry'){
+        if($control == 'retry') {
             $control = 'continue';
-            $skip = 1;
+            $skip    = 1;
         }
 
-        $class = 'move__control ctlfrm-'.$id;
+        $class = 'move__control ctlfrm-' . $id;
         if(!$show) $class .= ' hide';
 
         $form = new Doku_Form(array('action' => wl($ID), 'method' => 'post', 'class' => $class));
@@ -223,7 +247,7 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         $form->addHidden('id', $ID);
         $form->addHidden('ctl', $control);
         $form->addHidden('skip', $skip);
-        $form->addElement(form_makeButton('submit', 'admin', $label, array('class' => 'btn ctl-'.$control)));
+        $form->addElement(form_makeButton('submit', 'admin', $label, array('class' => 'btn ctl-' . $control)));
         $form->printForm();
     }
 }
