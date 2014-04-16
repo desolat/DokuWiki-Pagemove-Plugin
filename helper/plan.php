@@ -366,12 +366,17 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
-     * Returns the list of page and media moves as a HTML list
+     * Returns the list of page and media moves and the affected pages as a HTML list
+     *
+     * @fixme This will gather affected pages on its own, maybe it would be better to make this somehow part of
+     *        commit() process as it would also make the progress bar behave better
      *
      * @return string
      */
     public function previewHTML() {
         $html = '';
+
+        $affected = array();
 
         $html .= '<ul>';
         if(@file_exists($this->files['pagelist'])) {
@@ -384,6 +389,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 $html .= '→';
                 $html .= hsc($new);
                 $html .= '</div></li>';
+
+                // get all pages linking to the original page
+                $affected = array_merge($affected, idx_get_indexer()->lookupKey('relation_references', $old));
             }
         }
         if(@file_exists($this->files['medialist'])) {
@@ -396,7 +404,18 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 $html .= '→';
                 $html .= hsc($new);
                 $html .= '</div></li>';
+
+                // get all pages using this media
+                $affected = array_merge($affected, idx_get_indexer()->lookupKey('relation_media', $old));
             }
+        }
+        $affected = array_unique($affected);
+        sort($affected);
+        foreach($affected as $page) {
+            $html .= '<li class="affected"><div class="li">';
+            $html .= '↷';
+            $html .= hsc($page);
+            $html .= '</div></li>';
         }
         $html .= '</ul>';
 
