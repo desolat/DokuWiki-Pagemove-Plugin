@@ -33,9 +33,15 @@ class action_plugin_move_progress extends DokuWiki_Action_Plugin {
         $event->stopPropagation();
 
         global $INPUT;
+        global $USERINFO;
+
+        if(!auth_ismanager($_SERVER['REMOTE_USER'], $USERINFO['grps'])) {
+            http_status(403);
+            exit;
+        }
 
         $return = array(
-            'error' => '',
+            'error'    => '',
             'complete' => false,
             'progress' => 0
         );
@@ -47,9 +53,9 @@ class action_plugin_move_progress extends DokuWiki_Action_Plugin {
             // There is no plan. Something went wrong
             $return['complete'] = true;
         } else {
-            $todo = $plan->nextStep($INPUT->bool('skip'));
+            $todo               = $plan->nextStep($INPUT->bool('skip'));
             $return['progress'] = $plan->getProgress();
-            $return['error'] = $plan->getLastError();
+            $return['error']    = $plan->getLastError();
             if($todo === 0) $return['complete'] = true;
         }
 

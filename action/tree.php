@@ -33,15 +33,19 @@ class action_plugin_move_tree extends DokuWiki_Action_Plugin {
         $event->preventDefault();
         $event->stopPropagation();
 
-        //FIXME user auth
-
         global $INPUT;
+        global $USERINFO;
+
+        if(!auth_ismanager($_SERVER['REMOTE_USER'], $USERINFO['grps'])) {
+            http_status(403);
+            exit;
+        }
 
         /** @var admin_plugin_move_tree $plugin */
         $plugin = plugin_load('admin', 'move_tree');
 
         $ns = cleanID($INPUT->str('ns'));
-        if($INPUT->bool('is_media')){
+        if($INPUT->bool('is_media')) {
             $type = admin_plugin_move_tree::TYPE_MEDIA;
         } else {
             $type = admin_plugin_move_tree::TYPE_PAGES;
