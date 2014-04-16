@@ -1,3 +1,6 @@
+/**
+ * Tree Manager
+ */
 #plugin_move__tree {
 
     display: none; // will be enabled via JavaScript
@@ -47,7 +50,6 @@
     display: none; // will be enabled via JavaScript
 }
 
-
 /**
  * The progress page
  */
@@ -62,6 +64,18 @@
         span {
             cursor: pointer;
             color: @ini_link;
+        }
+
+        ul {
+            li.page {
+                list-style-image: url(images/page.png);
+            }
+            li.media {
+                list-style-image: url(images/disk.png);
+            }
+            li.affected {
+                list-style-image: url(images/page_link.png);
+            }
         }
     }
 }
@@ -92,13 +106,13 @@
     background-position: right 0;
 }
 #dokuwiki__pagetools ul li.plugin_move_page a:before {
-    content: url(sprite.png);
+    content: url(images/sprite.png);
     margin-top: 0;
 }
 #dokuwiki__pagetools:hover ul li.plugin_move_page a,
 #dokuwiki__pagetools ul li.plugin_move_page a:focus,
 #dokuwiki__pagetools ul li.plugin_move_page a:active {
-    background-image: url(sprite.png);
+    background-image: url(images/sprite.png);
 }
 #dokuwiki__pagetools ul li.plugin_move_page a:hover,
 #dokuwiki__pagetools ul li.plugin_move_page a:active,
