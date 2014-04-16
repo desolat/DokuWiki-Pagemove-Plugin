@@ -7,22 +7,51 @@ var $GUI = jQuery('#plugin_move__tree');
 $GUI.show();
 jQuery('#plugin_move__treelink').show();
 
+/**
+ * Checks if the given list item was moved in the tree
+ *
+ * Moved elements are highlighted and a title shows where they came from
+ *
+ * @param $li
+ */
 var checkForMovement = function($li) {
-    var newparent = $li.parent().closest('li').attr('data-id');
-    var newname   = $li.attr('data-name');
-    var oldid     = $li.attr('data-id');
-    var newid     = (newparent+':'+newname).replace(/^:+/, '');
+    // we need to check this LI and all previously moved sub LIs
+    var $all = $li.add($li.find('li.moved'));
+    $all.each(function(){
+        var $this = jQuery(this);
+        var oldid = $this.attr('data-id');
+        var newid = determineNewID($this);
 
-    if (newid != oldid) {
-        $li.addClass('moved');
-        $li.children('div').attr('title', oldid+' -> '+newid);
+        if (newid != oldid) {
+            $this.addClass('moved');
+            $this.children('div').attr('title', oldid+' -> '+newid);
+        } else {
+            $this.removeClass('moved');
+            $this.children('div').attr('title', '');
+        }
+    });
+};
+
+/**
+ * Returns the new ID of a given list item
+ *
+ * @param $li
+ * @returns {string}
+ */
+var determineNewID = function($li) {
+    var myname = $li.attr('data-name');
+
+    var $parent = $li.parent().closest('li');
+    if($parent.length) {
+         return (determineNewID($parent) + ':' + myname).replace(/^:/, '');
     } else {
-        $li.removeClass('moved');
-        $li.children('div').attr('title', '');
+        return myname;
     }
 };
 
-
+/**
+ * Attach event listeners to the tree
+ */
 $GUI.find('ul.tree_list')
     .click(function (e) {
         var $clicky = jQuery(e.target);
@@ -81,30 +110,32 @@ $GUI.find('ul.tree_list')
 
 /**
  * Gather all moves from the trees and put them as JSON into the form before submit
+ *
+ * @fixme has some duplicate code
  */
 jQuery('#plugin_move__tree_execute').submit(function (e) {
     var data = [];
 
     $GUI.find('.tree_pages .moved').each(function (idx, el) {
         var $el = jQuery(el);
-        var newparent = $el.parent().closest('li').attr('data-id');
+        var newid = determineNewID($el);
 
         data[data.length] = {
             class: $el.hasClass('type-d') ? 'ns' : 'doc',
             type: 'page',
             src: $el.attr('data-id'),
-            dst: newparent + ':' + $el.attr('data-name')
+            dst: newid
         };
     });
     $GUI.find('.tree_media .moved').each(function (idx, el) {
         var $el = jQuery(el);
-        var newparent = $el.parent().closest('li').attr('data-id');
+        var newid = determineNewID($el);
 
         data[data.length] = {
             class: $el.hasClass('type-d') ? 'ns' : 'doc',
             type: 'media',
             src: $el.attr('data-id'),
-            dst: newparent + ':' + $el.attr('data-name')
+            dst: newid
         };
     });
 

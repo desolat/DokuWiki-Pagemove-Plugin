@@ -163,7 +163,6 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         $params          = array();
         $params['class'] = ' type-' . $item['type'];
         if($item['type'] == 'd') $params['class'] .= ' ' . ($item['open'] ? 'open' : 'closed');
-        $params['data-parent'] = getNS($item['id']);
         $params['data-name']   = noNS($item['id']);
         $params['data-id']     = $item['id'];
         $attr                  = buildAttributes($params);
