@@ -723,7 +723,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // we sort by depth of namespace, deepest namespaces first
 
         $alen = substr_count($a['src'], ':');
-        $blen = substr_count($a['src'], ':');
+        $blen = substr_count($b['src'], ':');
 
         if($alen > $blen) {
             return 1;
