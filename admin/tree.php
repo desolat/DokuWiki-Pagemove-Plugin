@@ -48,6 +48,11 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
             $form->addHidden('id', $ID);
             $form->addHidden('page', 'move_main');
             $form->addHidden('json', '');
+            $form->addElement(form_makeCheckboxField('autoskip', '1', $this->getLang('autoskip'), '', '', ($this->getConf('autoskip') ? array('checked' => 'checked') : array())));
+            $form->addElement('<br />');
+            $form->addElement(form_makeCheckboxField('autorewrite', '1', $this->getLang('autorewrite'), '', '', ($this->getConf('autorewrite') ? array('checked' => 'checked') : array())));
+            $form->addElement('<br />');
+            $form->addElement('<br />');
             $form->addElement(form_makeButton('submit', 'admin', $this->getLang('btn_start')));
             $form->printForm();
         }
