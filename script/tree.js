@@ -50,6 +50,22 @@ var determineNewID = function($li) {
 };
 
 /**
+ * Very simplistic cleanID() in JavaScript
+ *
+ * Strips out namespaces
+ */
+var cleanID = function (id) {
+    if (!id) return '';
+
+    id = id.replace(/[!"#$%§&\'()+,/;<=>?@\[\]^`\{|\}~\\;:\/\*]+/g, '_');
+    id = id.replace(/^_+/, '');
+    id = id.replace(/_+$/, '');
+    id = id.toLowerCase();
+
+    return id;
+};
+
+/**
  * Attach event listeners to the tree
  */
 $GUI.find('ul.tree_list')
@@ -90,6 +106,7 @@ $GUI.find('ul.tree_list')
             var $a  = $clicky.parent().find('a');
 
             var newname = window.prompt(LANG.plugins.move.renameitem, $li.attr('data-name'));
+            newname = cleanID(newname);
             if(newname) {
                 $li.attr('data-name', newname);
                 $a.text(newname);
