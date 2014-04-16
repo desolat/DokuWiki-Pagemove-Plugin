@@ -13,7 +13,13 @@ if(!defined('DOKU_INC')) die();
  * Class helper_plugin_move_plan
  *
  * This thing prepares and keeps progress info on complex move operations (eg. where more than a single
- * object is affected.
+ * object is affected).
+ *
+ * Please note: this has not a complex move resolver. Move operations may not depend on each other (eg. you
+ * can not use a namespace as source that will only be created by a different move operation) instead all given
+ * operations should be operations on the current state to come to a wanted future state. The tree manager takes
+ * care of that by abstracting all moves on a DOM representation first, then submitting the needed changes (eg.
+ * differences between now and wanted).
  *
  * Glossary:
  *
@@ -25,8 +31,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
     const TYPE_PAGES = 1;
     const TYPE_MEDIA = 2;
-    const CLASS_NS = 4;
-    const CLASS_DOC = 8;
+    const CLASS_NS   = 4;
+    const CLASS_DOC  = 8;
 
     /**
      * @var array the options for this move plan
@@ -42,6 +48,15 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @var array the planned moves
      */
     protected $plan = array();
+
+    /**
+     * @var array temporary holder of document lists
+     */
+    protected $tmpstore = array(
+        'pages' => array(),
+        'media' => array(),
+        'ns'    => array(),
+    );
 
     /**
      * Constructor
@@ -95,7 +110,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // merge whatever options are saved currently
         $file = $this->files['opts'];
         if(file_exists($file)) {
-            $options = unserialize(io_readFile($file, false));
+            $options       = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
     }
@@ -267,11 +282,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         foreach($this->plan as $move) {
             if($move['class'] == self::CLASS_DOC) {
                 // these can just be added
-                if($move['type'] == self::TYPE_PAGES) {
-                    $this->addToPageList($move['src'], $move['dst']);
-                } else {
-                    $this->addToMediaList($move['src'], $move['dst']);
-                }
+                $this->addToDocumentList($move['src'], $move['dst'], $move['type']);
             } else {
                 // here we need a list of content first, search for it
                 $docs = array();
@@ -294,13 +305,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 // now add all the found documents to our lists
                 foreach($docs as $doc) {
                     $from = $doc['id'];
-                    $to = $move['dst'] . substr($doc['id'], $strip);
-
-                    if($move['type'] == self::TYPE_PAGES) {
-                        $this->addToPageList($from, $to);
-                    } else {
-                        $this->addToMediaList($from, $to);
-                    }
+                    $to   = $move['dst'] . substr($doc['id'], $strip);
+                    $this->addToDocumentList($from, $to, $move['type']);
                 }
 
                 // remember the namespace move itself
@@ -308,10 +314,12 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     // FIXME we use this to move namespace subscriptions later on and for now only do it on
                     //       page namespace moves, but subscriptions work for both, but what when only one of
                     //       them is moved? Should it be copied then? Complicated. This is good enough for now
-                    $this->addToNamespaceList($move['src'], $move['dst']);
+                    $this->addToDocumentList($move['src'], $move['dst'], self::CLASS_NS);
                 }
             }
         }
+
+        $this->storeDocumentLists();
 
         if(!$this->options['pages_all'] && !$this->options['media_all']) {
             msg($this->getLang('noaction'), -1);
@@ -320,6 +328,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         $this->options['commited'] = true;
         $this->saveOptions();
+
         return true;
     }
 
@@ -434,14 +443,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $MoveOperator = plugin_load('helper', 'move_op');
 
         if($type == self::TYPE_PAGES) {
-            $file = $this->files['pagelist'];
-            $mark = 'P';
-            $call = 'movePage';
+            $file    = $this->files['pagelist'];
+            $mark    = 'P';
+            $call    = 'movePage';
             $counter = 'pages_num';
         } else {
-            $file = $this->files['medialist'];
-            $mark = 'M';
-            $call = 'moveMedia';
+            $file    = $this->files['medialist'];
+            $mark    = 'M';
+            $call    = 'moveMedia';
             $counter = 'media_num';
         }
 
@@ -565,7 +574,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         if(is_array($MSG) && count($MSG)) {
-            $last = array_shift($MSG);
+            $last                       = array_shift($MSG);
             $this->options['lasterror'] = $last['msg'];
             unset($GLOBALS['MSG']);
         } else {
@@ -596,49 +605,64 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Appends a page move operation in the list file
      *
-     * @param string $src
-     * @param string $dst
-     * @return bool
-     */
-    protected function addToPageList($src, $dst) {
-        $file = $this->files['pagelist'];
-
-        if(io_saveFile($file, "$src\t$dst\n", true)) {
-            $this->options['pages_all']++;
-            $this->options['pages_run']++;
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Appends a media move operation in the list file
+     * If the src has been added before, this is ignored. This makes sure you can move a single page
+     * out of a namespace first, then move the namespace somewhere else.
      *
      * @param string $src
      * @param string $dst
-     * @return bool
+     * @param int    $type
+     * @throws Exception
      */
-    protected function addToMediaList($src, $dst) {
-        $file = $this->files['medialist'];
-
-        if(io_saveFile($file, "$src\t$dst\n", true)) {
-            $this->options['media_all']++;
-            $this->options['media_run']++;
-            return true;
+    protected function addToDocumentList($src, $dst, $type = self::TYPE_PAGES) {
+        if($type == self::TYPE_PAGES) {
+            $store = 'pages';
+        } else if($type == self::TYPE_MEDIA) {
+            $store = 'media';
+        } else if($type == self::CLASS_NS) {
+            $store = 'ns';
+        } else {
+            throw new Exception('Unknown type '.$type);
         }
-        return false;
+
+        if(!isset($this->tmpstore[$store][$src])) {
+            $this->tmpstore[$store][$src] = $dst;
+        }
     }
 
     /**
-     * Appends a namespace move operation in the list file
+     * Store the aggregated document lists in the file system and reset the internal storage
      *
-     * @param string $src
-     * @param string $dst
-     * @return bool
+     * @throws Exception
      */
-    protected function addToNamespaceList($src, $dst) {
-        $file = $this->files['namespaces'];
-        return io_saveFile($file, "$src\t$dst\n", true);
+    protected function storeDocumentLists() {
+        $lists = array(
+            'pages' => $this->files['pagelist'],
+            'media' => $this->files['medialist'],
+            'ns'    => $this->files['namespaces']
+        );
+
+        foreach($lists as $store => $file) {
+            // anything to do?
+            $count = count($this->tmpstore[$store]);
+            if(!$count) continue;
+
+            // prepare and save content
+            $data                   = '';
+            $this->tmpstore[$store] = array_reverse($this->tmpstore[$store]); // store in reverse order
+            foreach($this->tmpstore[$store] as $src => $dst) {
+                $data .= "$src\t$dst\n";
+            }
+            io_saveFile($file, $data);
+
+            // set counters
+            if($store != 'ns') {
+                $this->options[$store . '_all'] = $count;
+                $this->options[$store . '_run'] = $count;
+            }
+
+            // reset the list
+            $this->tmpstore[$store] = array();
+        }
     }
 
     /**
@@ -695,9 +719,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Callback for usort to sort the move plan
      *
-     * Note that later on all lists will be worked on in reversed order, so we reverse what we
-     * do from what we want here
-     *
      * @param $a
      * @param $b
      * @return int
@@ -705,18 +726,18 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     public function planSorter($a, $b) {
         // do page moves before namespace moves
         if($a['class'] == self::CLASS_DOC && $b['class'] == self::CLASS_NS) {
-            return 1;
+            return -1;
         }
         if($a['class'] == self::CLASS_NS && $b['class'] == self::CLASS_DOC) {
-            return -1;
+            return 1;
         }
 
         // do pages before media
         if($a['type'] == self::TYPE_PAGES && $b['type'] == self::TYPE_MEDIA) {
-            return 1;
+            return -1;
         }
         if($a['type'] == self::TYPE_MEDIA && $b['type'] == self::TYPE_PAGES) {
-            return -1;
+            return 1;
         }
 
         // from here on we compare only apples to apples
@@ -726,9 +747,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $blen = substr_count($b['src'], ':');
 
         if($alen > $blen) {
-            return 1;
-        } elseif($alen < $blen) {
             return -1;
+        } elseif($alen < $blen) {
+            return 1;
         }
         return 0;
     }
@@ -747,15 +768,15 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         $optime = $this->options['started'];
-        $file = $conf['cachedir'] . '/move-' . $optime . '.log';
-        $now = time();
-        $date = date('Y-m-d H:i:s', $now); // for human readability
+        $file   = $conf['cachedir'] . '/move-' . $optime . '.log';
+        $now    = time();
+        $date   = date('Y-m-d H:i:s', $now); // for human readability
 
         if($success) {
-            $ok = 'success';
+            $ok  = 'success';
             $msg = '';
         } else {
-            $ok = 'failed';
+            $ok  = 'failed';
             $msg = $MSG[count($MSG) - 1]['msg']; // get detail from message array
         }
 
