@@ -32,11 +32,11 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
     public function checkPage($src, $dst) {
         // Check we have rights to move this document
         if(!page_exists($src)) {
-            msg(sprintf($this->getLang('notexist'), hsc($src)), -1);
+            msg(sprintf($this->getLang('notexist'), $src), -1);
             return false;
         }
         if(auth_quickaclcheck($src) < AUTH_EDIT) {
-            msg(sprintf($this->getLang('norights'), hsc($src)), -1);
+            msg(sprintf($this->getLang('norights'), $src), -1);
             return false;
         }
 
@@ -45,19 +45,19 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
         // the file exists check checks if the page is reported unlocked if a lock exists which means that
         // the page is locked by the current user
         if(checklock($src) !== false || @file_exists(wikiLockFN($src))) {
-            msg(sprintf($this->getLang('filelocked'), hsc($src)), -1);
+            msg(sprintf($this->getLang('filelocked'), $src), -1);
             return false;
         }
 
         // Has the document name and/or namespace changed?
         if($src == $dst) {
-            msg($this->getLang('nochange'), -1);
+            msg(sprintf($this->getLang('notchanged'), $src), -1);
             return false;
         }
 
         // Check the page does not already exist
         if(page_exists($dst)) {
-            msg(sprintf($this->getLang('existing'), $dst), -1); // FIXME adjust string
+            msg(sprintf($this->getLang('exists'), $src, $dst), -1);
             return false;
         }
 
@@ -80,23 +80,23 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
     public function checkMedia($src, $dst) {
         // Check we have rights to move this document
         if(!file_exists(mediaFN($src))) {
-            msg(sprintf($this->getLang('medianotexist'), hsc($src)), -1);
+            msg(sprintf($this->getLang('medianotexist'), $src), -1);
             return false;
         }
         if(auth_quickaclcheck($src) < AUTH_DELETE) {
-            msg(sprintf($this->getLang('nomediarights'), hsc($src)), -1);
+            msg(sprintf($this->getLang('nomediarights'), $src), -1);
             return false;
         }
 
         // Has the document name and/or namespace changed?
         if($src == $dst) {
-            msg($this->getLang('nomediachange'), -1);
+            msg(sprintf($this->getLang('medianotchanged'), $src), -1);
             return false;
         }
 
         // Check the page does not already exist
         if(@file_exists(mediaFN($dst))) {
-            msg(sprintf($this->getLang('mediaexisting'), $dst), -1); // FIXME adjust string
+            msg(sprintf($this->getLang('mediaexists'), $src, $dst), -1);
             return false;
         }
 

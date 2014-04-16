@@ -29,12 +29,12 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         echo '<div id="plugin_move__tree">';
 
         echo '<div class="tree_root tree_pages">';
-        echo '<h3>' . $this->getLang('pages') . '</h3>';
+        echo '<h3>' . $this->getLang('move_pages') . '</h3>';
         $this->htmlTree(self::TYPE_PAGES);
         echo '</div>';
 
         echo '<div class="tree_root tree_media">';
-        echo '<h3>' . $this->getLang('media') . '</h3>';
+        echo '<h3>' . $this->getLang('move_media') . '</h3>';
         $this->htmlTree(self::TYPE_MEDIA);
         echo '</div>';
 
