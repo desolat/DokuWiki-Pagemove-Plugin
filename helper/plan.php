@@ -158,13 +158,16 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     public function getProgress() {
         $max =
             $this->options['pages_all'] +
-            $this->options['media_all'] +
-            $this->options['affpg_all'];
+            $this->options['media_all'];
 
         $remain =
             $this->options['pages_run'] +
-            $this->options['media_run'] +
-            $this->options['affpg_run'];
+            $this->options['media_run'];
+
+        if($this->options['autorewrite']) {
+            $max += $this->options['affpg_all'];
+            $remain += $this->options['affpg_run'];
+        }
 
         if($max == 0) return 0;
         return round((($max - $remain) * 100) / $max, 2);
@@ -317,6 +320,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     $this->addToDocumentList($move['src'], $move['dst'], self::CLASS_NS);
                 }
             }
+            // store what pages are affected by this move
+            $this->findAffectedPages($move['src'], $move['class'], $move['type']);
         }
 
         $this->storeDocumentLists();
@@ -357,14 +362,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             return max($todo, 1); // force one more call
         }
 
-        if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
-            $todo = $this->stepThroughAffectedPages();
+        if(@filesize($this->files['namespaces']) > 1) {
+            $todo = $this->stepThroughNamespaces();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
-        if(@filesize($this->files['namespaces']) > 1) {
-            $todo = $this->stepThroughNamespaces();
+        if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
+            $todo = $this->stepThroughAffectedPages();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
@@ -377,15 +382,10 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Returns the list of page and media moves and the affected pages as a HTML list
      *
-     * @fixme This will gather affected pages on its own, maybe it would be better to make this somehow part of
-     *        commit() process as it would also make the progress bar behave better
-     *
      * @return string
      */
     public function previewHTML() {
         $html = '';
-
-        $affected = array();
 
         $html .= '<ul>';
         if(@file_exists($this->files['pagelist'])) {
@@ -398,9 +398,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 $html .= '→';
                 $html .= hsc($new);
                 $html .= '</div></li>';
-
-                // get all pages linking to the original page
-                $affected = array_merge($affected, idx_get_indexer()->lookupKey('relation_references', $old));
             }
         }
         if(@file_exists($this->files['medialist'])) {
@@ -413,18 +410,16 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 $html .= '→';
                 $html .= hsc($new);
                 $html .= '</div></li>';
-
-                // get all pages using this media
-                $affected = array_merge($affected, idx_get_indexer()->lookupKey('relation_media', $old));
             }
         }
-        $affected = array_unique($affected);
-        sort($affected);
-        foreach($affected as $page) {
-            $html .= '<li class="affected"><div class="li">';
-            $html .= '↷';
-            $html .= hsc($page);
-            $html .= '</div></li>';
+        if(@file_exists($this->files['affected'])) {
+            $medialist = file($this->files['affected']);
+            foreach($medialist as $page) {
+                $html .= '<li class="affected"><div class="li">';
+                $html .= '↷';
+                $html .= hsc($page);
+                $html .= '</div></li>';
+            }
         }
         $html .= '</ul>';
 
@@ -446,12 +441,12 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $file    = $this->files['pagelist'];
             $mark    = 'P';
             $call    = 'movePage';
-            $counter = 'pages_num';
+            $counter = 'pages_run';
         } else {
             $file    = $this->files['medialist'];
             $mark    = 'M';
             $call    = 'moveMedia';
-            $counter = 'media_num';
+            $counter = 'media_run';
         }
 
         $doclist = fopen($file, 'a+');
@@ -474,9 +469,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 return false;
             } else {
                 $this->log($mark, $src, $dst, true); // SUCCESS!
-
-                // remember affected pages
-                $this->addToAffectedPagesList($MoveOperator->getAffectedPages());
             }
 
             /*
@@ -503,22 +495,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         /** @var helper_plugin_move_rewrite $Rewriter */
         $Rewriter = plugin_load('helper', 'move_rewrite');
 
-        // if this is the first run, clean up the file and remove duplicates
-        if($this->options['affpg_all'] == $this->options['affpg_num']) {
-            $affected = io_readFile($this->files['affected']);
-            $affected = explode("\n", $affected);
-            $affected = array_unique($affected);
-            $affected = array_filter($affected);
-            sort($affected);
-            if($affected[0] === '') array_shift($affected);
-            io_saveFile($this->files['affected'], join("\n", $affected));
-
-            $this->options['affpg_all'] = count($affected);
-            $this->options['affpg_num'] = $this->options['affpg_all'];
-
-            $this->saveOptions();
-        }
-
         // handle affected pages
         $doclist = fopen($this->files['affected'], 'a+');
         for($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
@@ -530,19 +506,20 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
             // update the list file
             ftruncate($doclist, ftell($doclist));
-            $this->options['affpg_num']--;
+            $this->options['affpg_run']--;
             $this->saveOptions();
         }
 
         fclose($doclist);
-        return $this->options['affpg_num'];
+        return $this->options['affpg_run'];
     }
 
     /**
      * Step through all the namespace moves
      *
-     * Currently moves namespace subscriptions only. This does not step, but handles all namespaces
-     * in one step.
+     * This does not step currently, but handles all namespaces in one step.
+     *
+     * Currently moves namespace subscriptions only.
      *
      * @return int always 0
      * @todo maybe add an event so plugins can move more stuff?
@@ -621,12 +598,53 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         } else if($type == self::CLASS_NS) {
             $store = 'ns';
         } else {
-            throw new Exception('Unknown type '.$type);
+            throw new Exception('Unknown type ' . $type);
         }
 
         if(!isset($this->tmpstore[$store][$src])) {
             $this->tmpstore[$store][$src] = $dst;
         }
+    }
+
+    /**
+     * Add the list of pages to the list of affected pages whose links need adjustment
+     *
+     * @param string|array $pages
+     */
+    protected function addToAffectedPagesList($pages) {
+        if(!is_array($pages)) $pages = array($pages);
+
+        foreach($pages as $page) {
+            if(!isset($this->tmpstore['affpg'][$page])) {
+                $this->tmpstore['affpg'][$page] = true;
+            }
+        }
+    }
+
+    /**
+     * Looks up pages that will be affected by a move of $src
+     *
+     * Calls addToAffectedPagesList() directly to store the result
+     *
+     * @param string $src
+     * @param int    $class
+     * @param int    $type
+     */
+    protected function findAffectedPages($src, $class, $type) {
+        $idx = idx_get_indexer();
+
+        if($class == self::CLASS_NS) {
+            $src = "$src:*"; // use wildcard lookup for namespaces
+        }
+
+        $pages = array();
+        if($type == self::TYPE_PAGES) {
+            $pages = $idx->lookupKey('relation_references', $src);
+        } else if($type == self::TYPE_MEDIA) {
+            $pages = $idx->lookupKey('relation_media', $src);
+        }
+
+        $this->addToAffectedPagesList($pages);
     }
 
     /**
@@ -638,7 +656,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $lists = array(
             'pages' => $this->files['pagelist'],
             'media' => $this->files['medialist'],
-            'ns'    => $this->files['namespaces']
+            'ns'    => $this->files['namespaces'],
+            'affpg' => $this->files['affected']
         );
 
         foreach($lists as $store => $file) {
@@ -650,7 +669,12 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $data                   = '';
             $this->tmpstore[$store] = array_reverse($this->tmpstore[$store]); // store in reverse order
             foreach($this->tmpstore[$store] as $src => $dst) {
-                $data .= "$src\t$dst\n";
+                if($dst === true) {
+                    $data .= "$src\n"; // for affected pages only one ID is saved
+                } else {
+                    $data .= "$src\t$dst\n";
+                }
+
             }
             io_saveFile($file, $data);
 
@@ -663,23 +687,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             // reset the list
             $this->tmpstore[$store] = array();
         }
-    }
-
-    /**
-     * Add the list of pages to the list of affected pages whose links need adjustment
-     *
-     * This is only done when autorewrite is enabled, otherwise we don't need to track
-     * those pages
-     *
-     * @param array $pages
-     * @return bool
-     */
-    protected function addToAffectedPagesList($pages) {
-        if(!$this->options['autorewrite']) return false;
-
-        $this->options['affpg_all'] += count($pages);
-        $this->options['affpg_num'] = $this->options['affpg_all'];
-        return io_saveFile($this->files['affected'], join("\n", $pages) . "\n", true);
     }
 
     /**
