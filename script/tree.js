@@ -12,19 +12,19 @@ jQuery('#plugin_move__treelink').show();
  *
  * Moved elements are highlighted and a title shows where they came from
  *
- * @param $li
+ * @param {jQuery} $li
  */
-var checkForMovement = function($li) {
+var checkForMovement = function ($li) {
     // we need to check this LI and all previously moved sub LIs
     var $all = $li.add($li.find('li.moved'));
-    $all.each(function(){
+    $all.each(function () {
         var $this = jQuery(this);
         var oldid = $this.attr('data-id');
         var newid = determineNewID($this);
 
         if (newid != oldid) {
             $this.addClass('moved');
-            $this.children('div').attr('title', oldid+' -> '+newid);
+            $this.children('div').attr('title', oldid + ' -> ' + newid);
         } else {
             $this.removeClass('moved');
             $this.children('div').attr('title', '');
@@ -33,17 +33,39 @@ var checkForMovement = function($li) {
 };
 
 /**
+ * Check if the given name is allowed in the given parent
+ *
+ * @param {jQuery} $li the edited or moved LI
+ * @param {string} name the (new) name to check
+ * @returns {boolean}
+ */
+var checkNameAllowed = function ($li, name) {
+    $parent = $li.parent();
+
+    var ok = true;
+    $parent.children('li').each(function () {
+        if (this === $li[0]) return;
+        var cname = 'type-f';
+        if ($li.hasClass('type-d')) cname = 'type-d';
+
+        var $this = jQuery(this);
+        if ($this.attr('data-name') == name && $this.hasClass(cname)) ok = false;
+    });
+    return ok;
+};
+
+/**
  * Returns the new ID of a given list item
  *
- * @param $li
+ * @param {jQuery} $li
  * @returns {string}
  */
-var determineNewID = function($li) {
+var determineNewID = function ($li) {
     var myname = $li.attr('data-name');
 
     var $parent = $li.parent().closest('li');
-    if($parent.length) {
-         return (determineNewID($parent) + ':' + myname).replace(/^:/, '');
+    if ($parent.length) {
+        return (determineNewID($parent) + ':' + myname).replace(/^:/, '');
     } else {
         return myname;
     }
@@ -53,6 +75,8 @@ var determineNewID = function($li) {
  * Very simplistic cleanID() in JavaScript
  *
  * Strips out namespaces
+ *
+ * @param {string} id
  */
 var cleanID = function (id) {
     if (!id) return '';
@@ -103,14 +127,18 @@ $GUI.find('ul.tree_list')
             }
         } else if ($clicky[0].tagName == 'IMG') { // Click on IMG - do rename
             e.stopPropagation();
-            var $a  = $clicky.parent().find('a');
+            var $a = $clicky.parent().find('a');
 
             var newname = window.prompt(LANG.plugins.move.renameitem, $li.attr('data-name'));
             newname = cleanID(newname);
-            if(newname) {
-                $li.attr('data-name', newname);
-                $a.text(newname);
-                checkForMovement($li);
+            if (newname) {
+                if (checkNameAllowed($li, newname)) {
+                    $li.attr('data-name', newname);
+                    $a.text(newname);
+                    checkForMovement($li);
+                } else {
+                    alert(LANG.plugins.move.duplicate.replace('%s', newname));
+                }
             }
         }
         e.preventDefault();
@@ -119,6 +147,11 @@ $GUI.find('ul.tree_list')
     .find('ul').sortable({
         items: 'li',
         stop: function (e, ui) {
+            if (!checkNameAllowed(ui.item, ui.item.attr('data-name'))) {
+                jQuery(this).sortable('cancel');
+                alert(LANG.plugins.move.duplicate.replace('%s', ui.item.attr('data-name')));
+            }
+
             checkForMovement(ui.item);
         }
     })
