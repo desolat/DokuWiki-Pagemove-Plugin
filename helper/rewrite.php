@@ -21,6 +21,11 @@ require_once(__DIR__ . '/handler.php');
 class helper_plugin_move_rewrite extends DokuWiki_Plugin {
 
     /**
+     * Under what key is move data to be saved in metadata
+     */
+    const METAKEY = 'plugin_move';
+
+    /**
      * @var string symbol to make move operations easily recognizable in change log
      */
     public $symbol = '↷';
@@ -36,23 +41,60 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         $all_meta = p_get_metadata($id, '', METADATA_DONT_RENDER);
         // migrate old metadata from the pagemove plugin
         if(isset($all_meta['plugin_pagemove']) && !is_null($all_meta['plugin_pagemove'])) {
-            if(isset($all_meta['plugin_move'])) {
-                $all_meta['plugin_move'] = array_merge_recursive($all_meta['plugin_pagemove'], $all_meta['plugin_move']);
+            if(isset($all_meta[self::METAKEY])) {
+                $all_meta[self::METAKEY] = array_merge_recursive($all_meta['plugin_pagemove'], $all_meta[self::METAKEY]);
             } else {
-                $all_meta['plugin_move'] = $all_meta['plugin_pagemove'];
+                $all_meta[self::METAKEY] = $all_meta['plugin_pagemove'];
             }
-            p_set_metadata($id, array('plugin_move' => $all_meta['plugin_move'], 'plugin_pagemove' => null), false, true);
+            p_set_metadata($id, array(self::METAKEY => $all_meta[self::METAKEY], 'plugin_pagemove' => null), false, true);
         }
-        return isset($all_meta['plugin_move']) ? $all_meta['plugin_move'] : null;
+        return isset($all_meta[self::METAKEY]) ? $all_meta[self::METAKEY] : null;
+    }
+
+    /**
+     * Add info about a moved document to the metadata of an affected page
+     *
+     * @param string $id   affected page
+     * @param string $src  moved document's original id
+     * @param string $dst  moved document's new id
+     * @param string $type 'media' or 'page'
+     * @throws Exception on wrong argument
+     */
+    public function setMoveMeta($id, $src, $dst, $type) {
+        if($type != 'page' && $type != 'media') throw new Exception('wrong type specified');
+        if(!page_exists($id, '', false)) return;
+
+        $meta = $this->getMoveMeta($id);
+        if(!isset($meta[$type])) $meta[$type] = array();
+        // FIXME resolve here?
+        $meta[$type][] = array($src, $dst);
+
+        p_set_metadata($id, array(self::METAKEY => $meta), false, true);
+    }
+
+    /**
+     * Store info about the move of a page in its own meta data
+     *
+     * This has to be called before the move is executed
+     *
+     * @param string $id moved page's original (and still current) id
+     */
+    public function setSelfMoveMeta($id) {
+        $meta = $this->getMoveMeta($id);
+        // was this page moved multiple times? keep the orignal name til rewriting occured
+        if(isset($meta['original']) && $meta['original'] !== '') return;
+        $meta['original'] = $id;
+
+        p_set_metadata($id, array(self::METAKEY => $meta), false, true);
     }
 
     /**
      * Rewrite a text in order to fix the content after the given moves.
      *
-     * @param string $text   The wiki text that shall be rewritten
-     * @param string $id     The id of the wiki page, if the page itself was moved the old id
-     * @param array $moves  Array of all page moves, the keys are the old ids, the values the new ids
-     * @param array $media_moves Array of all media moves.
+     * @param string $text        The wiki text that shall be rewritten
+     * @param string $id          The id of the wiki page, if the page itself was moved the old id
+     * @param array  $moves       Array of all page moves, the keys are the old ids, the values the new ids
+     * @param array  $media_moves Array of all media moves.
      * @return string        The rewritten wiki text
      */
     public function rewrite_content($text, $id, $moves, $media_moves = array()) {
@@ -98,7 +140,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     /**
      * Resolves the provided moves, i.e. it calculates for each page the final page it was moved to.
      *
-     * @param array $moves The moves
+     * @param array  $moves The moves
      * @param string $id
      * @return array The resolved moves
      */
@@ -144,31 +186,30 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         $meta = $this->getMoveMeta($id);
         if($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
             if(is_null($text)) $text = rawWiki($id);
-            $moves = isset($meta['moves']) ? $meta['moves'] : array();
+            $moves       = isset($meta['moves']) ? $meta['moves'] : array();
             $media_moves = isset($meta['media_moves']) ? $meta['media_moves'] : array();
 
             $old_text = $text;
-            $text = $this->rewrite_content($text, $id, $moves, $media_moves);
-            $changed = ($old_text != $text);
-            $file = wikiFN($id, '', false);
+            $text     = $this->rewrite_content($text, $id, $moves, $media_moves);
+            $changed  = ($old_text != $text);
+            $file     = wikiFN($id, '', false);
             if(is_writable($file) || !$changed) {
-                if ($changed) {
+                if($changed) {
                     // Wait a second when the page has just been rewritten
                     $oldRev = filemtime(wikiFN($id));
                     if($oldRev == time()) sleep(1);
 
-                    saveWikiText($id, $text, $this->symbol.' '.$this->getLang('linkchange'), $this->getConf('minor'));
+                    saveWikiText($id, $text, $this->symbol . ' ' . $this->getLang('linkchange'), $this->getConf('minor'));
                 }
                 unset($meta['moves']);
                 unset($meta['media_moves']);
                 p_set_metadata($id, array('plugin_move' => $meta), false, true);
             } else { // FIXME: print error here or fail silently?
-                msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
+                msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
             }
         }
 
         return $text;
     }
-
 
 }

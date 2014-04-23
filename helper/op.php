@@ -123,10 +123,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
         $Rewriter = plugin_load('helper', 'move_rewrite');
 
         // remember what this page was called before the move in meta data
-        $page_meta = $Rewriter->getMoveMeta($src);
-        if(!$page_meta) $page_meta = array();
-        if(!isset($page_meta['old_ids'])) $page_meta['old_ids'] = array();
-        $page_meta['old_ids'][$src] = time();
+        $Rewriter->setSelfMoveMeta($src);
 
         // ft_backlinks() is not used here, as it does a hidden page and acl check but we really need all pages
         $affected_pages = idx_get_indexer()->lookupKey('relation_references', $src);
@@ -145,7 +142,6 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
                 'newns'   => $dst_ns,
                 'newname' => $dst_name,
             ),
-            'old_ids'        => $page_meta['old_ids'],
             'affected_pages' => &$affected_pages,
             'src_id'         => $src,
             'dst_id'         => $dst,
@@ -154,17 +150,12 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
         // give plugins the option to add their own meta files to the list of files that need to be moved
         // to the oldfiles/newfiles array or to adjust their own metadata, database, ...
         // and to add other pages to the affected pages
-        // note that old_ids is in the form 'id' => timestamp of move
         $event = new Doku_Event('PLUGIN_MOVE_PAGE_RENAME', $eventdata);
         if($event->advise_before()) {
             lock($src);
 
             /** @var helper_plugin_move_file $FileMover */
             $FileMover = plugin_load('helper', 'move_file');
-
-            // Open the old document and change forward links
-            $text = rawWiki($src);
-            $text = $Rewriter->rewrite_content($text, $src, array($src => $dst));
 
             // Move the Subscriptions & Indexes (new feature since Spring 2013 release)
             $Indexer = idx_get_indexer();
@@ -194,6 +185,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             if($oldRev == time()) sleep(1);
 
             // Save the updated document in its new location
+            $text = rawWiki($src);
             saveWikiText($dst, $text, $summary);
 
             // Delete the orginal file
@@ -209,16 +201,8 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
 
             // Add meta data to all affected pages, so links get updated later
             foreach($affected_pages as $id) {
-                if(!page_exists($id, '', false) || $id == $src || $id == $dst) continue;
-                // we are only interested in persistent metadata, so no need to render anything.
-                $meta = $Rewriter->getMoveMeta($id);
-                if(!$meta) $meta = array('moves' => array());
-                if(!isset($meta['moves'])) $meta['moves'] = array();
-                $meta['moves']       = $Rewriter->resolve_moves($meta['moves'], $id);
-                $meta['moves'][$src] = $dst;
-                p_set_metadata($id, array('plugin_move' => $meta), false, true);
+                $Rewriter->setMoveMeta($id, $src, $dst, 'page');
             }
-            p_set_metadata($dst, array('plugin_move' => $page_meta), false, true);
 
             unlock($src);
         }
@@ -303,13 +287,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
 
             // Add meta data to all affected pages, so links get updated later
             foreach($affected_pages as $id) {
-                if(!page_exists($id, '', false)) continue;
-                $meta = $Rewriter->getMoveMeta($id);
-                if(!$meta) $meta = array('media_moves' => array());
-                if(!isset($meta['media_moves'])) $meta['media_moves'] = array();
-                $meta['media_moves']       = $Rewriter->resolve_moves($meta['media_moves'], '__');
-                $meta['media_moves'][$src] = $dst;
-                p_set_metadata($id, array('plugin_move' => $meta), false, true);
+                $Rewriter->setMoveMeta($id, $src, $dst, 'media');
             }
         }
         $event->advise_after();

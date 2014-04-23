@@ -16,35 +16,101 @@ if(!defined('DOKU_INC')) die();
  */
 class helper_plugin_move_handler {
     public $calls = '';
-    public $id;
-    public $ns;
-    public $new_id;
-    public $new_ns;
-    public $moves;
-    public $media_moves;
-    private $handlers;
+
+    protected $id;
+    protected $ns;
+    protected $origID;
+    protected $origNS;
+    protected $page_moves;
+    protected $media_moves;
+    protected $handlers;
 
     /**
      * Construct the move handler.
      *
-     * @param string $id       The id of the text that is passed to the handler
-     * @param array $moves    Moves that shall be considered in the form $old => $new ($old can be $id)
-     * @param array $media_moves Moves of media files that shall be considered in the form $old => $new
-     * @param array $handlers Handlers for plugin content in the form $plugin_anme => $callback
+     * @param string $id            The id of the text that is passed to the handler
+     * @param string $original      The name of the original ID of this page. Same as $id if this page wasn't moved
+     * @param array  $page_moves    Moves that shall be considered in the form [[$old,$new],...] ($old can be $original)
+     * @param array  $media_moves   Moves of media files that shall be considered in the form $old => $new
+     * @param array  $handlers      Handlers for plugin content in the form $plugin_name => $callback
      */
-    public function __construct($id, $moves, $media_moves, $handlers) {
-        $this->id = $id;
-        $this->ns = getNS($id);
-        $this->moves = $moves;
+    public function __construct($id, $original, $page_moves, $media_moves, $handlers) {
+        $this->id          = $id;
+        $this->ns          = getNS($id);
+        $this->origID      = $original;
+        $this->origNS      = getNS($original);
+        $this->page_moves  = $page_moves;
         $this->media_moves = $media_moves;
-        $this->handlers = $handlers;
-        if (isset($moves[$id])) {
-            $this->new_id = $moves[$id];
-            $this->new_ns = getNS($moves[$id]);
-        } else {
-            $this->new_id = $id;
-            $this->new_ns = $this->ns;
+        $this->handlers    = $handlers;
+    }
+
+    /**
+     * Go through the list of moves and find the new value for the given old ID
+     *
+     * @param string $old  the old, full qualified ID
+     * @param string $type 'media' or 'page'
+     * @throws Exception on bad argument
+     * @return string the new full qualified ID
+     */
+    protected function resolveMoves($old, $type) {
+        global $conf;
+
+        if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
+
+        $old = str_replace('/', ':', $old);
+        $old = resolve_id($this->ns, $old, false);
+        // FIXME this simply assumes that the link pointed to :$conf['start'], but it could also point to another page
+        // resolve_pageid does a lot more here, but we can't really assume this as the original pages might have been
+        // deleted already
+        if(substr($old, -1) === ':') $old .= $conf['start'];
+        $old = cleanID($old);
+
+        foreach($this->page_moves as $move) {
+            if($move[0] == $old) $old = $move[1];
         }
+        return $old; // this is now new
+    }
+
+    /**
+     * Construct a new ID relative to the current page's location
+     *
+     * Uses a relative link only if the original was relative, too. This function is for
+     * pages and media files.
+     *
+     * @param string $relold  the old, possibly relative ID
+     * @param string $new     the new, full qualified ID
+     * @return string
+     */
+    protected function relativeLink($relold, $new) {
+        // check if the link was relative
+        if(strpos($relold, ':') === false || $relold{0} == '.') {
+            $wasrel = true;
+        } else {
+            $wasrel = false;
+        }
+        // if it wasn't relative then, leave it absolute now, too
+        if(!$wasrel) return $new;
+
+        // split the paths and see how much common parts there are
+        $selfpath = explode(':', $this->ns);
+        $goalpath = explode(':', getNS($new));
+        $min      = min(count($selfpath), count($goalpath));
+        for($common = 0; $common < $min; $common++) {
+            if($selfpath[$common] != $goalpath[$common]) break;
+        }
+        // we now have the non-common part and a number of uppers
+        $remainder = array_slice($goalpath, $common);
+        $upper     = array_fill(0, $common, '..');
+
+        // build the new relative path
+        $newrel = join(':', $upper) . ':' . join(':', $remainder) . ':' . noNS($new);
+        $newrel = cleanID($newrel);
+        if($this->ns) $newrel = '.' . $newrel;
+
+        // don't use relative paths if it is ridicoulus:
+        if(strlen($newrel) > strlen($new)) $newrel = $new;
+
+        return $newrel;
     }
 
     /**
@@ -56,30 +122,21 @@ class helper_plugin_move_handler {
      * @return bool If parsing should be continued
      */
     public function camelcaselink($match, $state, $pos) {
-        if ($this->ns)
-            $old = cleanID($this->ns.':'.$match);
-        else
-            $old = cleanID($match);
-        if (isset($this->moves[$old]) || $this->id != $this->new_id) {
-            if (isset($this->moves[$old])) {
-                $new = $this->moves[$old];
-            } else {
-                $new = $old;
-            }
-            $new_ns = getNS($new);
-            // preserve capitalization either in the link or in the title
-            if (noNS($new) == noNS($old)) {
-                // camelcase link still seems to work
-                if ($new_ns == $this->new_ns) {
-                    $this->calls .= $match;
-                } else { // just the namespace was changed, the camelcase word is a valid id
-                    $this->calls .= "[[$new_ns:$match]]";
-                }
-            } else {
-                $this->calls .= "[[$new|$match]]";
-            }
-        } else {
+        $oldID = cleanID($this->origNS . ':' . $match);
+        $newID = $this->resolveMoves($oldID, 'page');
+        $newNS = getNS($newID);
+
+        if($oldID == $newID || $this->origNS == $newNS) {
+            // link is still valid as is
             $this->calls .= $match;
+        } else {
+            if(noNS($oldID) == noNS($newID)) {
+                // only namespace changed, keep CamelCase in link
+                $this->calls .= "[[$newNS:$match]]";
+            } else {
+                // all new, keep CamelCase in title
+                $this->calls .= "[[$newID|$match]]";
+            }
         }
         return true;
     }
@@ -94,16 +151,16 @@ class helper_plugin_move_handler {
      */
     public function internallink($match, $state, $pos) {
         // Strip the opening and closing markup
-        $link = preg_replace(array('/^\[\[/','/\]\]$/u'),'',$match);
+        $link = preg_replace(array('/^\[\[/', '/\]\]$/u'), '', $match);
 
         // Split title from URL
-        $link = explode('|',$link,2);
-        if ( !isset($link[1]) ) {
-            $link[1] = NULL;
-        } else if ( preg_match('/^\{\{[^\}]+\}\}$/',$link[1]) ) {
+        $link = explode('|', $link, 2);
+        if(!isset($link[1])) {
+            $link[1] = null;
+        } else if(preg_match('/^\{\{[^\}]+\}\}$/', $link[1])) {
             // If the title is an image, rewrite it
             $old_title = $link[1];
-            $link[1] = $this->rewrite_media($link[1]);
+            $link[1]   = $this->rewrite_media($link[1]);
             // do a simple replace of the first match so really only the id is changed and not e.g. the alignment
             $oldpos = strpos($match, $old_title);
             $oldlen = strlen($old_title);
@@ -111,66 +168,64 @@ class helper_plugin_move_handler {
         }
         $link[0] = trim($link[0]);
 
-
         //decide which kind of link it is
 
-        if ( preg_match('/^[a-zA-Z0-9\.]+>{1}.*$/u',$link[0]) ) {
+        if(preg_match('/^[a-zA-Z0-9\.]+>{1}.*$/u', $link[0])) {
             // Interwiki
             $this->calls .= $match;
-        }elseif ( preg_match('/^\\\\\\\\[^\\\\]+?\\\\/u',$link[0]) ) {
+        } elseif(preg_match('/^\\\\\\\\[^\\\\]+?\\\\/u', $link[0])) {
             // Windows Share
             $this->calls .= $match;
-        }elseif ( preg_match('#^([a-z0-9\-\.+]+?)://#i',$link[0]) ) {
+        } elseif(preg_match('#^([a-z0-9\-\.+]+?)://#i', $link[0])) {
             // external link (accepts all protocols)
             $this->calls .= $match;
-        }elseif ( preg_match('<'.PREG_PATTERN_VALID_EMAIL.'>',$link[0]) ) {
+        } elseif(preg_match('<' . PREG_PATTERN_VALID_EMAIL . '>', $link[0])) {
             // E-Mail (pattern above is defined in inc/mail.php)
             $this->calls .= $match;
-        }elseif ( preg_match('!^#.+!',$link[0]) ){
-            // local link
+        } elseif(preg_match('!^#.+!', $link[0])) {
+            // local hash link
             $this->calls .= $match;
-        }else{
+        } else {
             $id = $link[0];
 
-            $hash = '';
+            $hash  = '';
             $parts = explode('#', $id, 2);
-            if (count($parts) === 2) {
-                $id = $parts[0];
+            if(count($parts) === 2) {
+                $id   = $parts[0];
                 $hash = $parts[1];
             }
 
             $params = '';
-            $parts = explode('?', $id, 2);
-            if (count($parts) === 2) {
-                $id = $parts[0];
+            $parts  = explode('?', $id, 2);
+            if(count($parts) === 2) {
+                $id     = $parts[0];
                 $params = $parts[1];
             }
 
+            $new_id = $this->resolveMoves($id, 'page');
+            $new_id = $this->relativeLink($id, $new_id);
 
-            $new_id = $this->adaptRelativeId($id);
-
-            if ($id == $new_id) {
+            if($id == $new_id) {
                 $this->calls .= $match;
             } else {
-                if ($params !== '') {
-                    $new_id.= '?'.$params;
+                if($params !== '') {
+                    $new_id .= '?' . $params;
                 }
 
-                if ($hash !== '') {
-                    $new_id .= '#'.$hash;
+                if($hash !== '') {
+                    $new_id .= '#' . $hash;
                 }
 
-                if ($link[1] != NULL) {
-                    $new_id .= '|'.$link[1];
+                if($link[1] != null) {
+                    $new_id .= '|' . $link[1];
                 }
 
-                $this->calls .= '[['.$new_id.']]';
+                $this->calls .= '[[' . $new_id . ']]';
             }
 
         }
 
         return true;
-
     }
 
     /**
@@ -194,9 +249,12 @@ class helper_plugin_move_handler {
      */
     protected function rewrite_media($match) {
         $p = Doku_Handler_Parse_Media($match);
-        if ($p['type'] == 'internalmedia') { // else: external media
-            $new_src = $this->adaptRelativeId($p['src'], true);
-            if ($new_src !== $p['src']) {
+        if($p['type'] == 'internalmedia') { // else: external media
+
+            $new_src = $this->resolveMoves($p['src'], 'media');
+            $new_src = $this->relativeLink($p['src'], $new_src);
+
+            if($new_src !== $p['src']) {
                 // do a simple replace of the first match so really only the id is changed and not e.g. the alignment
                 $srcpos = strpos($match, $p['src']);
                 $srclen = strlen($p['src']);
@@ -209,14 +267,14 @@ class helper_plugin_move_handler {
     /**
      * Handle rewriting of plugin syntax, calls the registered handlers
      *
-     * @param string $match  The text match
-     * @param string $state  The starte of the parser
-     * @param int    $pos    The position in the input
+     * @param string $match      The text match
+     * @param string $state      The starte of the parser
+     * @param int    $pos        The position in the input
      * @param string $pluginname The name of the plugin
      * @return bool If parsing should be continued
      */
     public function plugin($match, $state, $pos, $pluginname) {
-        if (isset($this->handlers[$pluginname])) {
+        if(isset($this->handlers[$pluginname])) {
             $this->calls .= call_user_func($this->handlers[$pluginname], $match, $state, $pos, $pluginname, $this);
         } else {
             $this->calls .= $match;
@@ -227,16 +285,16 @@ class helper_plugin_move_handler {
     /**
      * Catchall handler for the remaining syntax
      *
-     * @param string $name Function name that was called
+     * @param string $name   Function name that was called
      * @param array  $params Original parameters
      * @return bool If parsing should be continue
      */
     public function __call($name, $params) {
-        if (count($params) == 3) {
+        if(count($params) == 3) {
             $this->calls .= $params[0];
             return true;
         } else {
-            trigger_error('Error, handler function '.hsc($name).' with '.count($params).' parameters called which isn\'t implemented', E_USER_ERROR);
+            trigger_error('Error, handler function ' . hsc($name) . ' with ' . count($params) . ' parameters called which isn\'t implemented', E_USER_ERROR);
             return false;
         }
     }
@@ -246,94 +304,4 @@ class helper_plugin_move_handler {
         $this->calls = substr($this->calls, 1, -1);
     }
 
-    /**
-     * Adapts a link respecting all moves and making it a relative link according to the new id
-     *
-     * @param string $id A relative id
-     * @param bool $media If the id is a media id
-     * @return string The relative id, adapted according to the new/old id and the moves
-     */
-    public function adaptRelativeId($id, $media = false) {
-        global $conf;
-
-        if ($id === '') {
-            return $id;
-        }
-
-        $abs_id = str_replace('/', ':', $id);
-        $abs_id = resolve_id($this->ns, $abs_id, false);
-        if (substr($abs_id, -1) === ':')
-            $abs_id .= $conf['start'];
-        $clean_id = cleanID($abs_id);
-        // FIXME this simply assumes that the link pointed to :$conf['start'], but it could also point to another page
-        // resolve_pageid does a lot more here, but we can't really assume this as the original pages might have been
-        // deleted already
-        if (substr($clean_id, -1) === ':')
-            $clean_id .= $conf['start'];
-
-        if (($media ? isset($this->media_moves[$clean_id]) : isset($this->moves[$clean_id])) || $this->ns !== $this->new_ns) {
-            if (!$media && isset($this->moves[$clean_id])) {
-                $new = $this->moves[$clean_id];
-            } elseif ($media && isset($this->media_moves[$clean_id])) {
-                $new = $this->media_moves[$clean_id];
-            } else {
-                $new = $clean_id;
-
-                // only the namespace was changed so if the link still resolves to the same absolute id, we can skip the rest
-                $new_abs_id = str_replace('/', ':', $id);
-                $new_abs_id = resolve_id($this->new_ns, $new_abs_id, false);
-                if (substr($new_abs_id, -1) === ':')
-                    $new_abs_id .= $conf['start'];
-                if ($new_abs_id == $abs_id) return $id;
-            }
-            $new_link = $new;
-            $new_ns = getNS($new);
-            // try to keep original pagename
-            if ($this->noNS($new) == $this->noNS($clean_id)) {
-                if ($new_ns == $this->new_ns) {
-                    $new_link = $this->noNS($id);
-                    if ($new_link === false) $new_link = $this->noNS($new);
-                    if ($id == ':')
-                        $new_link = ':';
-                    else if ($id == '/')
-                        $new_link = '/';
-                } else if ($new_ns != false) {
-                    $new_link = $new_ns.':'.$this->noNS($id);
-                } else {
-                    $new_link = $this->noNS($id);
-                    if ($new_link === false) $new_link = $new;
-                }
-            } else if ($new_ns == $this->new_ns) {
-                $new_link = $this->noNS($new_link);
-            } else if (strpos($new_ns, $this->ns.':') === 0) {
-                $new_link = '.:'.substr($new_link, strlen($this->ns)+1);
-            }
-
-            if ($this->new_ns != '' && $new_ns == false) {
-                $new_link = ':'.$new_link;
-            }
-
-            return $new_link;
-        } else {
-            return $id;
-        }
-    }
-
-    /**
-     * Remove the namespace from the given id like noNS(), but handles '/' as namespace separator
-     * @param string $id the id
-     * @return string the id without the namespace
-     */
-    private function noNS($id) {
-        $pos = strrpos($id, ':');
-        $spos = strrpos($id, '/');
-        if ($pos === false) $pos = $spos;
-        if ($spos === false) $spos = $pos;
-        $pos = max($pos, $spos);
-        if ($pos!==false) {
-            return substr($id, $pos+1);
-        } else {
-            return $id;
-        }
-    }
 }
