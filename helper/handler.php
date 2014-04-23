@@ -58,14 +58,21 @@ class helper_plugin_move_handler {
         if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
 
         $old = str_replace('/', ':', $old);
-        $old = resolve_id($this->ns, $old, false);
+        $old = resolve_id($this->origNS, $old, false);
+
         // FIXME this simply assumes that the link pointed to :$conf['start'], but it could also point to another page
         // resolve_pageid does a lot more here, but we can't really assume this as the original pages might have been
         // deleted already
         if(substr($old, -1) === ':') $old .= $conf['start'];
         $old = cleanID($old);
 
-        foreach($this->page_moves as $move) {
+        if($type == 'page') {
+            $moves = $this->page_moves;
+        } else {
+            $moves = $this->media_moves;
+        }
+
+        foreach($moves as $move) {
             if($move[0] == $old) $old = $move[1];
         }
         return $old; // this is now new

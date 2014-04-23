@@ -13,8 +13,7 @@ require_once(__DIR__ . '/../helper/handler.php');
 class plugin_move_handler_test extends DokuWikiTest {
 
     public function test_relativeLink() {
-
-        $handler = new test_helper_plugin_move_handler('deep:namespace:page', 'deep:namespace:page', array(), array(), array());
+        $handler = new test_helper_plugin_move_handler('deep:namespace:page', 'used:to:be:here', array(), array(), array());
 
         $tests = array(
             'deep:namespace:new1' => 'new1',
@@ -27,9 +26,38 @@ class plugin_move_handler_test extends DokuWikiTest {
         foreach($tests as $new => $rel) {
             $this->assertEquals($rel, $handler->relativeLink('foo', $new));
         }
-
     }
 
+    public function test_resolveMoves() {
+        $handler = new test_helper_plugin_move_handler(
+            'deep:namespace:page',
+            'used:to:be:here',
+            array(
+                 array('used:to:be:here', 'deep:namespace:page'),
+                 array('foo', 'bar'),
+                 array('used:to:be:this1', 'used:to:be:that1'),
+                 array('used:to:be:this2', 'deep:namespace:that1'),
+                 array('used:to:be:this3', 'deep:that3'),
+                 array('deep:that3', 'but:got:moved3'),
+            ),
+            array(),
+            array()
+        );
+
+        $tests = array(
+            'used:to:be:here' => 'deep:namespace:page', // full link to self
+            ':foo' => 'bar', // absolute link that moved
+            ':bang' => 'bang', // absolute link that did not move
+            'foo' => 'used:to:be:foo', // relative link that did not move
+            'this1' => 'used:to:be:that1', // relative link that did not move but is in move list
+            'this2' => 'deep:namespace:that1', // relative link that moved
+            'this3' => 'but:got:moved3', // relative link that moved twice
+        );
+
+        foreach($tests as $match => $id) {
+            $this->assertEquals($id, $handler->resolveMoves($match, 'page'));
+        }
+    }
 
 }
 
@@ -43,4 +71,9 @@ class test_helper_plugin_move_handler extends helper_plugin_move_handler {
     public function relativeLink($relold, $new) {
         return parent::relativeLink($relold, $new);
     }
+
+    public function resolveMoves($old, $type) {
+        return parent::resolveMoves($old, $type);
+    }
+
 }
