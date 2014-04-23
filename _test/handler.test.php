@@ -13,7 +13,7 @@ require_once(__DIR__ . '/../helper/handler.php');
 class plugin_move_handler_test extends DokuWikiTest {
 
     public function test_relativeLink() {
-        $handler = new test_helper_plugin_move_handler('deep:namespace:page', 'used:to:be:here', array(), array(), array());
+        $handler = new helper_plugin_move_handler('deep:namespace:page', 'used:to:be:here', array(), array(), array());
 
         $tests = array(
             'deep:namespace:new1' => 'new1',
@@ -29,7 +29,7 @@ class plugin_move_handler_test extends DokuWikiTest {
     }
 
     public function test_resolveMoves() {
-        $handler = new test_helper_plugin_move_handler(
+        $handler = new helper_plugin_move_handler(
             'deep:namespace:page',
             'used:to:be:here',
             array(
@@ -57,23 +57,6 @@ class plugin_move_handler_test extends DokuWikiTest {
         foreach($tests as $match => $id) {
             $this->assertEquals($id, $handler->resolveMoves($match, 'page'));
         }
-    }
-
-}
-
-
-/**
- * Class test_helper_plugin_move_handler
- *
- * gives access to some internal stuff of the class
- */
-class test_helper_plugin_move_handler extends helper_plugin_move_handler {
-    public function relativeLink($relold, $new) {
-        return parent::relativeLink($relold, $new);
-    }
-
-    public function resolveMoves($old, $type) {
-        return parent::resolveMoves($old, $type);
     }
 
 }

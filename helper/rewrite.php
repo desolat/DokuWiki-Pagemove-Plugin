@@ -39,7 +39,8 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public function getMoveMeta($id) {
         $all_meta = p_get_metadata($id, '', METADATA_DONT_RENDER);
-        // migrate old metadata from the pagemove plugin
+
+        /* todo migrate old move data
         if(isset($all_meta['plugin_pagemove']) && !is_null($all_meta['plugin_pagemove'])) {
             if(isset($all_meta[self::METAKEY])) {
                 $all_meta[self::METAKEY] = array_merge_recursive($all_meta['plugin_pagemove'], $all_meta[self::METAKEY]);
@@ -48,7 +49,23 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
             }
             p_set_metadata($id, array(self::METAKEY => $all_meta[self::METAKEY], 'plugin_pagemove' => null), false, true);
         }
-        return isset($all_meta[self::METAKEY]) ? $all_meta[self::METAKEY] : null;
+        */
+
+        $meta = isset($all_meta[self::METAKEY]) ? $all_meta[self::METAKEY] : array();
+        if(!isset($meta['origin'])) $meta['origin'] = '';
+        if(!isset($meta['pages'])) $meta['pages'] = array();
+        if(!isset($meta['media'])) $meta['media'] = array();
+
+        return $meta;
+    }
+
+    /**
+     * Remove any existing move meta data for the given page
+     *
+     * @param $id
+     */
+    public function unsetMoveMeta($id) {
+        p_set_metadata($id, array(self::METAKEY => array()), false, true);
     }
 
     /**
@@ -61,7 +78,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      * @throws Exception on wrong argument
      */
     public function setMoveMeta($id, $src, $dst, $type) {
-        if($type != 'page' && $type != 'media') throw new Exception('wrong type specified');
+        if($type != 'pages' && $type != 'media') throw new Exception('wrong type specified');
         if(!page_exists($id, '', false)) return;
 
         $meta = $this->getMoveMeta($id);
@@ -82,8 +99,8 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public function setSelfMoveMeta($id) {
         $meta = $this->getMoveMeta($id);
         // was this page moved multiple times? keep the orignal name til rewriting occured
-        if(isset($meta['original']) && $meta['original'] !== '') return;
-        $meta['original'] = $id;
+        if(isset($meta['origin']) && $meta['origin'] !== '') return;
+        $meta['origin'] = $id;
 
         p_set_metadata($id, array(self::METAKEY => $meta), false, true);
     }
@@ -91,18 +108,26 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     /**
      * Rewrite a text in order to fix the content after the given moves.
      *
-     * @param string $text        The wiki text that shall be rewritten
-     * @param string $id          The id of the wiki page, if the page itself was moved the old id
-     * @param array  $moves       Array of all page moves, the keys are the old ids, the values the new ids
-     * @param array  $media_moves Array of all media moves.
+     * @param string $id   The id of the wiki page, if the page itself was moved the old id
+     * @param string $text The text to be rewritten
      * @return string        The rewritten wiki text
      */
-    public function rewrite_content($text, $id, $moves, $media_moves = array()) {
-        $moves       = $this->resolve_moves($moves, $id);
-        $media_moves = $this->resolve_moves($media_moves, $id);
+    public function rewrite($id, $text) {
+        $meta = $this->getMoveMeta($id);
 
         $handlers = array();
-        $data     = array('id' => $id, 'moves' => &$moves, 'media_moves' => &$media_moves, 'handlers' => &$handlers);
+        $pages    = $meta['pages'];
+        $media    = $meta['media'];
+        $origin   = $meta['origin'];
+        if($origin == '') $origin = $id;
+
+        $data = array(
+            'id'          => $id,
+            'origin'      => &$origin,
+            'pages'       => &$pages,
+            'media_moves' => &$media,
+            'handlers'    => &$handlers
+        );
 
         /*
          * PLUGIN_MOVE_HANDLERS REGISTER event:
@@ -111,13 +136,8 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
          * The handler needs to be a valid callback, it will get the following parameters:
          * $match, $state, $pos, $pluginname, $handler. The first three parameters are equivalent to the parameters
          * of the handle()-function of syntax plugins, the $pluginname is just the plugin name again so handler functions
-         * that handle multiple plugins can distinguish for which the match is. The last parameter is the handler object.
-         * It has the following properties and functions that can be used:
-         * - id, ns: id and namespace of the old page
-         * - new_id, new_ns: new id and namespace (can be identical to id and ns)
-         * - moves: array of moves, the same as $moves in the event
-         * - media_moves: array of media moves, same as $media_moves in the event
-         * - adaptRelativeId($id): adapts the relative $id according to the moves
+         * that handle multiple plugins can distinguish for which the match is. The last parameter is the handler object
+         * which is an instance of helper_plugin_move_handle
          */
         trigger_event('PLUGIN_MOVE_HANDLERS_REGISTER', $data);
 
@@ -127,7 +147,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         $Parser = new Doku_Parser();
 
         // Add the Handler
-        $Parser->Handler = new helper_plugin_move_handler($id, $moves, $media_moves, $handlers);
+        $Parser->Handler = new helper_plugin_move_handler($id, $origin, $pages, $media, $handlers);
 
         //add modes to parser
         foreach($modes as $mode) {
@@ -138,61 +158,22 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     }
 
     /**
-     * Resolves the provided moves, i.e. it calculates for each page the final page it was moved to.
-     *
-     * @param array  $moves The moves
-     * @param string $id
-     * @return array The resolved moves
-     */
-    public function resolve_moves($moves, $id) {
-        // resolve moves of pages that were moved more than once
-        $tmp_moves = array();
-        foreach($moves as $old => $new) {
-            if($old != $id && isset($moves[$new]) && $moves[$new] != $new) {
-                // write to temp array in order to correctly handle rename circles
-                $tmp_moves[$old] = $moves[$new];
-            }
-        }
-
-        $changed = !empty($tmp_moves);
-
-        // this correctly resolves rename circles by moving forward one step a time
-        while($changed) {
-            $changed = false;
-            foreach($tmp_moves as $old => $new) {
-                if($old != $new && isset($moves[$new]) && $moves[$new] != $new && $tmp_moves[$new] != $new) {
-                    $tmp_moves[$old] = $moves[$new];
-                    $changed         = true;
-                }
-            }
-        }
-
-        // manual merge, we can't use array_merge here as ids can be numeric
-        foreach($tmp_moves as $old => $new) {
-            if($old == $new) unset($moves[$old]);
-            else $moves[$old] = $new;
-        }
-        return $moves;
-    }
-
-    /**
      * Rewrite the text of a page according to the recorded moves, the rewritten text is saved
      *
      * @param string      $id   The id of the page that shall be rewritten
-     * @param string|null $text Old content of the page. When null is given the content is loaded from disk.
+     * @param string|null $text Old content of the page. When null is given the content is loaded from disk
      * @return string|bool The rewritten content, false on error
      */
-    public function execute_rewrites($id, $text = null) {
+    public function rewritePage($id, $text = null) {
         $meta = $this->getMoveMeta($id);
-        if($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
-            if(is_null($text)) $text = rawWiki($id);
-            $moves       = isset($meta['moves']) ? $meta['moves'] : array();
-            $media_moves = isset($meta['media_moves']) ? $meta['media_moves'] : array();
+        if(is_null($text)) $text = rawWiki($id);
+        if($meta['pages'] || $meta['media']) {
 
             $old_text = $text;
-            $text     = $this->rewrite_content($text, $id, $moves, $media_moves);
-            $changed  = ($old_text != $text);
-            $file     = wikiFN($id, '', false);
+            $text     = $this->rewrite($id, $text);
+
+            $changed = ($old_text != $text);
+            $file    = wikiFN($id, '', false);
             if(is_writable($file) || !$changed) {
                 if($changed) {
                     // Wait a second when the page has just been rewritten
@@ -201,11 +182,11 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
 
                     saveWikiText($id, $text, $this->symbol . ' ' . $this->getLang('linkchange'), $this->getConf('minor'));
                 }
-                unset($meta['moves']);
-                unset($meta['media_moves']);
-                p_set_metadata($id, array('plugin_move' => $meta), false, true);
-            } else { // FIXME: print error here or fail silently?
+                $this->unsetMoveMeta($id);
+            } else {
+                // FIXME: print error here or fail silently?
                 msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
+                return false;
             }
         }
 

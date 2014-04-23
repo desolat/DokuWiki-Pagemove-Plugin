@@ -502,7 +502,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             if($page === false) break;
 
             // rewrite it
-            $Rewriter->execute_rewrites($page, null);
+            $Rewriter->rewritePage($page);
 
             // update the list file
             ftruncate($doclist, ftell($doclist));

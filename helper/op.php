@@ -201,7 +201,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
 
             // Add meta data to all affected pages, so links get updated later
             foreach($affected_pages as $id) {
-                $Rewriter->setMoveMeta($id, $src, $dst, 'page');
+                $Rewriter->setMoveMeta($id, $src, $dst, 'pages');
             }
 
             unlock($src);

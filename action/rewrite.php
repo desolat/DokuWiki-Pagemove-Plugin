@@ -36,7 +36,7 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
         if($event->data[3]) return;
 
         $id = $event->data[2];
-        if($event->data[1]) $id = $event->data[1].':'.$id;
+        if($event->data[1]) $id = $event->data[1] . ':' . $id;
 
         if(!$id) {
             // try to reconstruct the id from the filename
@@ -64,7 +64,7 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
         $helper = plugin_load('helper', 'move_rewrite', true);
         if(!is_null($helper)) {
             $stack[$id]    = true;
-            $event->result = $helper->execute_rewrites($id, $event->result);
+            $event->result = $helper->rewritePage($id, $event->result);
             unset($stack[$id]);
         }
     }
@@ -95,7 +95,7 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
                 if(is_writable($file))
                     $cache->depends['purge'] = true;
                 else // FIXME: print error here or fail silently?
-                msg('Error: Page '.hsc($id).' needs to be rewritten because of page renames but is not writable.', -1);
+                    msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
             }
         }
     }

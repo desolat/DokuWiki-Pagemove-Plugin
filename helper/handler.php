@@ -28,11 +28,11 @@ class helper_plugin_move_handler {
     /**
      * Construct the move handler.
      *
-     * @param string $id            The id of the text that is passed to the handler
-     * @param string $original      The name of the original ID of this page. Same as $id if this page wasn't moved
-     * @param array  $page_moves    Moves that shall be considered in the form [[$old,$new],...] ($old can be $original)
-     * @param array  $media_moves   Moves of media files that shall be considered in the form $old => $new
-     * @param array  $handlers      Handlers for plugin content in the form $plugin_name => $callback
+     * @param string $id          The id of the text that is passed to the handler
+     * @param string $original    The name of the original ID of this page. Same as $id if this page wasn't moved
+     * @param array  $page_moves  Moves that shall be considered in the form [[$old,$new],...] ($old can be $original)
+     * @param array  $media_moves Moves of media files that shall be considered in the form $old => $new
+     * @param array  $handlers    Handlers for plugin content in the form $plugin_name => $callback
      */
     public function __construct($id, $original, $page_moves, $media_moves, $handlers) {
         $this->id          = $id;
@@ -52,7 +52,7 @@ class helper_plugin_move_handler {
      * @throws Exception on bad argument
      * @return string the new full qualified ID
      */
-    protected function resolveMoves($old, $type) {
+    public function resolveMoves($old, $type) {
         global $conf;
 
         if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
@@ -84,11 +84,11 @@ class helper_plugin_move_handler {
      * Uses a relative link only if the original was relative, too. This function is for
      * pages and media files.
      *
-     * @param string $relold  the old, possibly relative ID
-     * @param string $new     the new, full qualified ID
+     * @param string $relold the old, possibly relative ID
+     * @param string $new    the new, full qualified ID
      * @return string
      */
-    protected function relativeLink($relold, $new) {
+    public function relativeLink($relold, $new) {
         // check if the link was relative
         if(strpos($relold, ':') === false || $relold{0} == '.') {
             $wasrel = true;
@@ -107,7 +107,7 @@ class helper_plugin_move_handler {
         }
 
         // we now have the non-common part and a number of uppers
-        $ups = max(count($selfpath) - $common, 0);
+        $ups       = max(count($selfpath) - $common, 0);
         $remainder = array_slice($goalpath, $common);
         $upper     = $ups ? array_fill(0, $ups, '..') : array();
 
@@ -117,9 +117,9 @@ class helper_plugin_move_handler {
         if($newrel{0} != '.' && $this->ns && getNS($newrel)) $newrel = '.' . $newrel;
 
         // don't use relative paths if it is ridicoulus:
-        if(strlen($newrel) > strlen($new)){
+        if(strlen($newrel) > strlen($new)) {
             $newrel = $new;
-            if($this->ns && !getNS($new)) $newrel = ':'.$newrel;
+            if($this->ns && !getNS($new)) $newrel = ':' . $newrel;
         }
 
         return $newrel;
@@ -128,9 +128,9 @@ class helper_plugin_move_handler {
     /**
      * Handle camelcase links
      *
-     * @param string $match  The text match
-     * @param string $state  The starte of the parser
-     * @param int    $pos    The position in the input
+     * @param string $match The text match
+     * @param string $state The starte of the parser
+     * @param int    $pos   The position in the input
      * @return bool If parsing should be continued
      */
     public function camelcaselink($match, $state, $pos) {
@@ -156,9 +156,9 @@ class helper_plugin_move_handler {
     /**
      * Handle rewriting of internal links
      *
-     * @param string $match  The text match
-     * @param string $state  The starte of the parser
-     * @param int    $pos    The position in the input
+     * @param string $match The text match
+     * @param string $state The starte of the parser
+     * @param int    $pos   The position in the input
      * @return bool If parsing should be continued
      */
     public function internallink($match, $state, $pos) {
@@ -243,9 +243,9 @@ class helper_plugin_move_handler {
     /**
      * Handle rewriting of media links
      *
-     * @param string $match  The text match
-     * @param string $state  The starte of the parser
-     * @param int    $pos    The position in the input
+     * @param string $match The text match
+     * @param string $state The starte of the parser
+     * @param int    $pos   The position in the input
      * @return bool If parsing should be continued
      */
     public function media($match, $state, $pos) {
