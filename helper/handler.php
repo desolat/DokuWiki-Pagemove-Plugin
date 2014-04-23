@@ -98,17 +98,22 @@ class helper_plugin_move_handler {
         for($common = 0; $common < $min; $common++) {
             if($selfpath[$common] != $goalpath[$common]) break;
         }
+
         // we now have the non-common part and a number of uppers
+        $ups = max(count($selfpath) - $common, 0);
         $remainder = array_slice($goalpath, $common);
-        $upper     = array_fill(0, $common, '..');
+        $upper     = $ups ? array_fill(0, $ups, '..') : array();
 
         // build the new relative path
         $newrel = join(':', $upper) . ':' . join(':', $remainder) . ':' . noNS($new);
-        $newrel = cleanID($newrel);
-        if($this->ns) $newrel = '.' . $newrel;
+        $newrel = str_replace('::', ':', trim($newrel, ':'));
+        if($newrel{0} != '.' && $this->ns && getNS($newrel)) $newrel = '.' . $newrel;
 
         // don't use relative paths if it is ridicoulus:
-        if(strlen($newrel) > strlen($new)) $newrel = $new;
+        if(strlen($newrel) > strlen($new)){
+            $newrel = $new;
+            if($this->ns && !getNS($new)) $newrel = ':'.$newrel;
+        }
 
         return $newrel;
     }
