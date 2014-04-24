@@ -116,7 +116,9 @@ class helper_plugin_move_handler {
         $upper     = $ups ? array_fill(0, $ups, '..') : array();
 
         // build the new relative path
-        $newrel = join(':', $upper) . ':' . join(':', $remainder) . ':' . noNS($new);
+        $newrel = join(':', $upper);
+        if($remainder) $newrel .= join(':', $remainder) . ':';
+        $newrel .= noNS($new);
         $newrel = str_replace('::', ':', trim($newrel, ':'));
         if($newrel{0} != '.' && $this->ns && getNS($newrel)) $newrel = '.' . $newrel;
 
