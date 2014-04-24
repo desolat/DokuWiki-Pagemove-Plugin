@@ -60,13 +60,13 @@ class helper_plugin_move_handler {
         $old = str_replace('/', ':', $old);
         $old = resolve_id($this->origNS, $old, false);
 
-        // FIXME this simply assumes that the link pointed to :$conf['start'], but it could also point to another page
-        // resolve_pageid does a lot more here, but we can't really assume this as the original pages might have been
-        // deleted already
-        if(substr($old, -1) === ':') $old .= $conf['start'];
-        $old = cleanID($old);
-
         if($type == 'page') {
+            // FIXME this simply assumes that the link pointed to :$conf['start'], but it could also point to another page
+            // resolve_pageid does a lot more here, but we can't really assume this as the original pages might have been
+            // deleted already
+            if(substr($old, -1) === ':') $old .= $conf['start'];
+            $old = cleanID($old);
+
             $moves = $this->page_moves;
         } else {
             $moves = $this->media_moves;
@@ -86,12 +86,27 @@ class helper_plugin_move_handler {
      *
      * @param string $relold the old, possibly relative ID
      * @param string $new    the new, full qualified ID
+     * @param string $type 'media' or 'page'
+     * @throws Exception on bad argument
      * @return string
      */
-    public function relativeLink($relold, $new) {
+    public function relativeLink($relold, $new, $type) {
         global $conf;
+        if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
 
         $relold = str_replace('/', ':', $relold);
+
+        // first check if the old link still resolves
+        $exists = false;
+        $old    = $relold;
+        if($type == 'page') {
+            resolve_pageid($this->ns, $old, $exists);
+        } else {
+            resolve_mediaid($this->ns, $old, $exists);
+        }
+        if($old == $new) {
+            return $relold; // old link still resolves, keep as is
+        }
 
         // check if the link was relative
         if(strpos($relold, ':') === false || $relold{0} == '.' || substr($relold, -1) == ':') {
@@ -123,7 +138,7 @@ class helper_plugin_move_handler {
         if($newrel{0} != '.' && $this->ns && getNS($newrel)) $newrel = '.' . $newrel;
 
         // if the old link ended with a colon and the new one is a start page, adjust
-        if(substr($relold, -1) == ':') {
+        if($type == 'page' && substr($relold, -1) == ':') {
             $len = strlen($conf['start']);
             if($newrel == $conf['start']) {
                 $newrel = '.:';
@@ -231,7 +246,7 @@ class helper_plugin_move_handler {
             }
 
             $new_id = $this->resolveMoves($id, 'page');
-            $new_id = $this->relativeLink($id, $new_id);
+            $new_id = $this->relativeLink($id, $new_id, 'page');
 
             if($id == $new_id) {
                 $this->calls .= $match;
@@ -280,7 +295,7 @@ class helper_plugin_move_handler {
         if($p['type'] == 'internalmedia') { // else: external media
 
             $new_src = $this->resolveMoves($p['src'], 'media');
-            $new_src = $this->relativeLink($p['src'], $new_src);
+            $new_src = $this->relativeLink($p['src'], $new_src, 'media');
 
             if($new_src !== $p['src']) {
                 // do a simple replace of the first match so really only the id is changed and not e.g. the alignment
