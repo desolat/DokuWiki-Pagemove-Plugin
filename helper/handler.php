@@ -57,7 +57,7 @@ class helper_plugin_move_handler {
 
         if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
 
-        $old = str_replace('/', ':', $old);
+        if($conf['useslash']) $old = str_replace('/', ':', $old);
         $old = resolve_id($this->origNS, $old, false);
 
         if($type == 'page') {
@@ -94,8 +94,6 @@ class helper_plugin_move_handler {
         global $conf;
         if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
 
-        $relold = str_replace('/', ':', $relold);
-
         // first check if the old link still resolves
         $exists = false;
         $old    = $relold;
@@ -108,8 +106,10 @@ class helper_plugin_move_handler {
             return $relold; // old link still resolves, keep as is
         }
 
+        if($conf['useslash']) $relold = str_replace('/', ':', $relold);
+
         // check if the link was relative
-        if(strpos($relold, ':') === false || $relold{0} == '.' || substr($relold, -1) == ':') {
+        if(strpos($relold, ':') === false ||$relold{0} == '.' || substr($relold, -1) == ':') {
             $wasrel = true;
         } else {
             $wasrel = false;

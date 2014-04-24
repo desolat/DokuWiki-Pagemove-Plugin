@@ -167,8 +167,8 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public function rewritePage($id, $text = null) {
         $meta = $this->getMoveMeta($id);
         if(is_null($text)) $text = rawWiki($id);
-        if($meta['pages'] || $meta['media']) {
 
+        if($meta['pages'] || $meta['media']) {
             $old_text = $text;
             $text     = $this->rewrite($id, $text);
 

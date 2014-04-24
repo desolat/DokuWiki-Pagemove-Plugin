@@ -127,6 +127,8 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
 
         // ft_backlinks() is not used here, as it does a hidden page and acl check but we really need all pages
         $affected_pages = idx_get_indexer()->lookupKey('relation_references', $src);
+        $affected_pages[] = $dst; // the current page is always affected, because all relative links may have changed
+        $affected_pages = array_unique($affected_pages);
 
         $src_ns   = getNS($src);
         $src_name = noNS($src);

@@ -25,6 +25,7 @@ class plugin_move_pagemove_test  extends DokuWikiTest {
         $this->pluginsEnabled[] = 'move';
         global $ID;
         global $INFO;
+        global $conf;
 
         $ID = $this->movedId;
 
@@ -168,6 +169,9 @@ EOT;
         idx_get_indexer()->addMetaKeys($this->subNsPage, 'relation_references', $references);
 
         parent::setUp();
+
+        // we test under useslash conditions
+        $conf['useslash'] = 1;
     }
 
 
@@ -201,11 +205,11 @@ EOT;
 
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
-[[.:current_ns:new_page|$this->movedId]]
-[[.:current_ns:new_page|:$this->movedId]]
-[[.:current_ns:new_page|.current_ns:test_page]]
-[[.:current_ns:new_page|.:current_ns:test_page]]
-[[.:current_ns:new_page|..parent_ns:current_ns:test_page]]
+[[parent_ns:current_ns:new_page|$this->movedId]]
+[[parent_ns:current_ns:new_page|:$this->movedId]]
+[[.current_ns:new_page|.current_ns:test_page]]
+[[.current_ns:new_page|.:current_ns:test_page]]
+[[.current_ns:new_page|..parent_ns:current_ns:test_page]]
 [[test_page|test_page]]
 [[new_page|new_page]]
 [[ftp://somewhere.com|ftp://somewhere.com]]
@@ -228,8 +232,8 @@ EOT;
 
 	    $newContent = rawWiki($this->currentNsBacklinkingId);
 	    $expectedContent = <<<EOT
-[[new_page|$this->movedId]]
-[[new_page|:$this->movedId]]
+[[parent_ns:current_ns:new_page|$this->movedId]]
+[[parent_ns:current_ns:new_page|:$this->movedId]]
 [[new_page|..current_ns:test_page]]
 [[new_page|..:current_ns:test_page]]
 [[new_page|test_page]]
@@ -298,9 +302,9 @@ EOT;
 
         $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
-[[parent_ns:current_ns:start|start]]
-[[parent_ns:current_ns:parallel_page|parallel_page]]
-[[parent_ns:current_ns:|.:]]
+[[..current_ns:start|start]]
+[[..current_ns:parallel_page|parallel_page]]
+[[..current_ns:|.:]]
 [[..current_ns:|..current_ns:]]
 [[..:current_ns:|..:current_ns:]]
 [[..parallel_ns:|..parallel_ns:]]
@@ -315,11 +319,11 @@ EOT;
 
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
-[[.:parallel_ns:new_page|$this->movedId]]
-[[.:parallel_ns:new_page|:$this->movedId]]
-[[.:parallel_ns:new_page|.current_ns:test_page]]
-[[.:parallel_ns:new_page|.:current_ns:test_page]]
-[[.:parallel_ns:new_page|..parent_ns:current_ns:test_page]]
+[[parent_ns:parallel_ns:new_page|$this->movedId]]
+[[parent_ns:parallel_ns:new_page|:$this->movedId]]
+[[.parallel_ns:new_page|.current_ns:test_page]]
+[[.parallel_ns:new_page|.:current_ns:test_page]]
+[[.parallel_ns:new_page|..parent_ns:current_ns:test_page]]
 [[test_page|test_page]]
 [[new_page|new_page]]
 [[ftp://somewhere.com|ftp://somewhere.com]]
@@ -344,11 +348,11 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:parallel_ns:new_page|$this->movedId]]
 [[$newId|:$this->movedId]]
-[[parent_ns:parallel_ns:new_page|..current_ns:test_page]]
-[[parent_ns:parallel_ns:new_page|..:current_ns:test_page]]
-[[parent_ns:parallel_ns:new_page|test_page]]
-[[parent_ns:parallel_ns:new_page|.test_page]]
-[[parent_ns:parallel_ns:new_page|.:test_page]]
+[[..parallel_ns:new_page|..current_ns:test_page]]
+[[..parallel_ns:new_page|..:current_ns:test_page]]
+[[..parallel_ns:new_page|test_page]]
+[[..parallel_ns:new_page|.test_page]]
+[[..parallel_ns:new_page|.:test_page]]
 [[..test_page|..test_page]]
 [[..:test_page|..:test_page]]
 [[.:..:test_page|.:..:test_page]]
@@ -408,20 +412,20 @@ EOT;
         /** @var helper_plugin_move_op $MoveOp */
         $MoveOp = plugin_load('helper', 'move_op');
 
-        $result = $MoveOp->movePage($ID, $newId);
+        $result = $MoveOp->movePage($ID, $newId); //parent_ns:current_ns:test_page ->  parent_ns:new_page
         $this->assertTrue($result);
 
         $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
-[[parent_ns:current_ns:start|start]]
-[[parent_ns:current_ns:parallel_page|parallel_page]]
-[[parent_ns:current_ns:|.:]]
-[[parent_ns:current_ns:|..current_ns:]]
-[[parent_ns:current_ns:|..:current_ns:]]
-[[parent_ns:parallel_ns:|..parallel_ns:]]
-[[parent_ns:parallel_ns:|..:parallel_ns:]]
+[[.current_ns:start|start]]
+[[.current_ns:parallel_page|parallel_page]]
+[[.current_ns:|.:]]
+[[.current_ns:|..current_ns:]]
+[[.current_ns:|..:current_ns:]]
+[[.parallel_ns:|..parallel_ns:]]
+[[.parallel_ns:|..:parallel_ns:]]
 [[:|..:..:]]
-[[start|..:..:parent_ns:]]
+[[..:..:parent_ns:|..:..:parent_ns:]]
 [[parent_ns:new_page|parent_ns:new_page]]
 [[parent_ns/new_page|parent_ns/new_page]]
 [[/start|/start]]
@@ -431,8 +435,8 @@ EOT;
 	    // page is moved to same NS as backlinking page (parent_ns)
 	    $newContent = rawWiki($this->parentBacklinkingId);
 	    $expectedContent = <<<EOT
-[[new_page|$this->movedId]]
-[[new_page|:$this->movedId]]
+[[parent_ns:new_page|$this->movedId]]
+[[parent_ns:new_page|:$this->movedId]]
 [[new_page|.current_ns:test_page]]
 [[new_page|.:current_ns:test_page]]
 [[new_page|..parent_ns:current_ns:test_page]]
@@ -460,11 +464,11 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:new_page|$this->movedId]]
 [[$newId|:$this->movedId]]
-[[parent_ns:new_page|..current_ns:test_page]]
-[[parent_ns:new_page|..:current_ns:test_page]]
-[[parent_ns:new_page|test_page]]
-[[parent_ns:new_page|.test_page]]
-[[parent_ns:new_page|.:test_page]]
+[[..new_page|..current_ns:test_page]]
+[[..new_page|..:current_ns:test_page]]
+[[..new_page|test_page]]
+[[..new_page|.test_page]]
+[[..new_page|.:test_page]]
 [[..test_page|..test_page]]
 [[..:test_page|..:test_page]]
 [[.:..:test_page|.:..:test_page]]
