@@ -26,6 +26,9 @@ class plugin_move_handler_test extends DokuWikiTest {
         foreach($tests as $new => $rel) {
             $this->assertEquals($rel, $handler->relativeLink('foo', $new));
         }
+
+        $this->assertEquals('.deeper:', $handler->relativeLink('deep:namespace:deeper:', 'deep:namespace:deeper:start'));
+        $this->assertEquals('.:', $handler->relativeLink('deep:namespace:', 'deep:namespace:start'));
     }
 
     public function test_resolveMoves() {

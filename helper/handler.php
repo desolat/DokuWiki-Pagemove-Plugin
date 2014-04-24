@@ -89,8 +89,12 @@ class helper_plugin_move_handler {
      * @return string
      */
     public function relativeLink($relold, $new) {
+        global $conf;
+
+        $relold = str_replace('/', ':', $relold);
+
         // check if the link was relative
-        if(strpos($relold, ':') === false || $relold{0} == '.') {
+        if(strpos($relold, ':') === false || $relold{0} == '.' || substr($relold, -1) == ':') {
             $wasrel = true;
         } else {
             $wasrel = false;
@@ -115,6 +119,16 @@ class helper_plugin_move_handler {
         $newrel = join(':', $upper) . ':' . join(':', $remainder) . ':' . noNS($new);
         $newrel = str_replace('::', ':', trim($newrel, ':'));
         if($newrel{0} != '.' && $this->ns && getNS($newrel)) $newrel = '.' . $newrel;
+
+        // if the old link ended with a colon and the new one is a start page, adjust
+        if(substr($relold, -1) == ':') {
+            $len = strlen($conf['start']);
+            if($newrel == $conf['start']) {
+                $newrel = '.:';
+            } else if(substr($newrel, -1 * ($len + 1)) == ':' . $conf['start']) {
+                $newrel = substr($newrel, 0, -1 * $len);
+            }
+        }
 
         // don't use relative paths if it is ridicoulus:
         if(strlen($newrel) > strlen($new)) {
