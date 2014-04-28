@@ -83,7 +83,6 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
 
         $meta = $this->getMoveMeta($id);
         if(!isset($meta[$type])) $meta[$type] = array();
-        // FIXME resolve here?
         $meta[$type][] = array($src, $dst);
 
         p_set_metadata($id, array(self::METAKEY => $meta), false, true);
