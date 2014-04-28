@@ -56,6 +56,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         'pages' => array(),
         'media' => array(),
         'ns'    => array(),
+        'miss'  => array(),
     );
 
     /**
@@ -72,7 +73,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'pagelist'   => $conf['metadir'] . '/__move_pagelist',
             'medialist'  => $conf['metadir'] . '/__move_medialist',
             'affected'   => $conf['metadir'] . '/__move_affected',
-            'namespaces' => $conf['metadir'] . '/__move_namespaces'
+            'namespaces' => $conf['metadir'] . '/__move_namespaces',
+            'missing'    => $conf['metadir'] . '/__move_missing'
         );
 
         $this->loadOptions();
@@ -318,6 +320,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     //       page namespace moves, but subscriptions work for both, but what when only one of
                     //       them is moved? Should it be copied then? Complicated. This is good enough for now
                     $this->addToDocumentList($move['src'], $move['dst'], self::CLASS_NS);
+
+                    $this->findMissingPages($move['src'], $move['dst']);
                 }
             }
             // store what pages are affected by this move
@@ -648,6 +652,34 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
+     * Find missing pages in the $src namespace
+     *
+     * @param $src
+     * @param $dst
+     */
+    protected function findMissingPages($src, $dst) {
+        static $pages = null;
+        if(is_null($pages)) {
+            $Indexer = idx_get_indexer();
+            $pages = $Indexer->getPages();
+        }
+
+        $len = strlen($src);
+        foreach($pages as $idx => $page) {
+            if(substr($page, 0, $len+1) != "$src:") continue;
+
+            // remember missing pages
+            if(!page_exists($page)) {
+                $newpage = $dst .':' .substr($page, $len+1);
+                $this->tmpstore['miss'][$page] = $newpage;
+            }
+
+            // we never need to look at this page again
+            unset($pages[$idx]);
+        }
+    }
+
+    /**
      * Store the aggregated document lists in the file system and reset the internal storage
      *
      * @throws Exception
@@ -657,7 +689,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'pages' => $this->files['pagelist'],
             'media' => $this->files['medialist'],
             'ns'    => $this->files['namespaces'],
-            'affpg' => $this->files['affected']
+            'affpg' => $this->files['affected'],
+            'miss'  => $this->files['missing']
         );
 
         foreach($lists as $store => $file) {
