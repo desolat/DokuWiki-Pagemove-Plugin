@@ -552,7 +552,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         foreach($affected as $page){
             $page = trim($page);
 
-            $Rewriter->setMoveMetas($page, $miss, 'page');
+            $Rewriter->setMoveMetas($page, $miss, 'pages');
         }
 
         unlink($this->files['missing']);
