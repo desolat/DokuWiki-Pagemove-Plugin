@@ -555,6 +555,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $Rewriter->setMoveMetas($page, $miss, 'page');
         }
 
+        unlink($this->files['missing']);
         return 0;
     }
 

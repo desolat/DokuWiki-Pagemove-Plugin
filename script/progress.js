@@ -5,7 +5,7 @@ jQuery('#plugin_move__progress').each(function () {
     var $progressbar = $this.find('.progress');
     $progressbar.html('');
     $progressbar.progressbar({
-        value: $progressbar.attr('data-progress')
+        value: $progressbar.data('progress')
     });
 
     /**
