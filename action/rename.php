@@ -103,7 +103,8 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
         if(!page_exists($id)) return false;
         if(auth_quickaclcheck($id) < AUTH_EDIT) return false;
         if(checklock($id) !== false || @file_exists(wikiLockFN($id))) return false;
-        if(!auth_isMember($this->getConf('allowrename'), $_SERVER['REMOTE_USER'], $USERINFO['grps'])) return false;
+        if(!isset($_SERVER['REMOTE_USER'])) return false;
+        if(!auth_isMember($this->getConf('allowrename'), $_SERVER['REMOTE_USER'], (array) $USERINFO['grps'])) return false;
 
         return true;
     }
