@@ -78,12 +78,26 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      * @throws Exception on wrong argument
      */
     public function setMoveMeta($id, $src, $dst, $type) {
+        $this->setMoveMetas($id, array($src => $dst), $type);
+    }
+
+    /**
+     * Add info about several moved documents to the metadata of an affected page
+     *
+     * @param string $id    affected page
+     * @param array  $moves list of moves (src is key, dst is value)
+     * @param string $type  'media' or 'page'
+     * @throws Exception
+     */
+    public function setMoveMetas($id, $moves, $type) {
         if($type != 'pages' && $type != 'media') throw new Exception('wrong type specified');
         if(!page_exists($id, '', false)) return;
 
         $meta = $this->getMoveMeta($id);
         if(!isset($meta[$type])) $meta[$type] = array();
-        $meta[$type][] = array($src, $dst);
+        foreach($moves as $src => $dst) {
+            $meta[$type][] = array($src, $dst);
+        }
 
         p_set_metadata($id, array(self::METAKEY => $meta), false, true);
     }

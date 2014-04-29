@@ -366,6 +366,12 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             return max($todo, 1); // force one more call
         }
 
+        if(@filesize($this->files['missing']) > 1 && @filesize($this->files['affected']) > 1) {
+            $todo = $this->stepThroughMissingPages();
+            if($todo === false) return $this->storeError();
+            return max($todo, 1); // force one more call
+        }
+
         if(@filesize($this->files['namespaces']) > 1) {
             $todo = $this->stepThroughNamespaces();
             if($todo === false) return $this->storeError();
@@ -516,6 +522,40 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         fclose($doclist);
         return $this->options['affpg_run'];
+    }
+
+    /**
+     * Step through all the links to missing pages that should be moved
+     *
+     * This simply adds the moved missing pages to all affected pages meta data. This will add
+     * the meta data to pages not linking to the affected pages but this should still be faster
+     * than figuring out which pages need this info.
+     *
+     * This does not step currently, but handles all pages in one step.
+     *
+     * @return int always 0
+     */
+    protected function stepThroughMissingPages() {
+        /** @var helper_plugin_move_rewrite $Rewriter */
+        $Rewriter = plugin_load('helper', 'move_rewrite');
+
+        $miss = array();
+        $missing = file($this->files['missing']);
+        foreach($missing as $line) {
+            $line = trim($line);
+            if($line == '') continue;
+            list($src, $dst) = explode("\t", $line);
+            $miss[$src] = $dst;
+        }
+
+        $affected = file($this->files['affected']);
+        foreach($affected as $page){
+            $page = trim($page);
+
+            $Rewriter->setMoveMetas($page, $miss, 'page');
+        }
+
+        return 0;
     }
 
     /**
