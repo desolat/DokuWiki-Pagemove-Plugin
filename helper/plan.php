@@ -700,8 +700,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     protected function findMissingPages($src, $dst) {
         static $pages = null;
         if(is_null($pages)) {
-            $Indexer = idx_get_indexer();
-            $pages = $Indexer->getPages();
+            global $conf;
+            // FIXME this duplicates Doku_Indexer::getIndex()
+            $fn = $conf['indexdir'].'/relation_references_w.idx';
+            if (!@file_exists($fn)){
+                $pages = array();
+            } else {
+                $pages = file($fn, FILE_IGNORE_NEW_LINES);
+            }
         }
 
         $len = strlen($src);
@@ -710,7 +716,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
             // remember missing pages
             if(!page_exists($page)) {
-                $newpage = $dst .':' .substr($page, $len+1);
+                $newpage = $dst . substr($page, $len+1);
                 $this->tmpstore['miss'][$page] = $newpage;
             }
 
