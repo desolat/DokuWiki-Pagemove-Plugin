@@ -36,8 +36,7 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
         if($event->data[3]) return;
 
         // only rewrite if not in move already
-        global $PLUGIN_MOVE_WORKING;
-        if(!empty($PLUGIN_MOVE_WORKING)) return;
+        if(helper_plugin_move_rewrite::isLocked()) return;
 
         $id = $event->data[2];
         if($event->data[1]) $id = $event->data[1] . ':' . $id;

@@ -59,6 +59,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         'miss'  => array(),
     );
 
+    /** @var array|null keeps reference list */
+    protected $referenceidx = null;
+
     /**
      * Constructor
      *
@@ -115,6 +118,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $options       = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
+
+        // reset index for next run (happens in tests only)
+        $this->referenceidx = null;
     }
 
     /**
@@ -354,6 +360,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         // execution has started
         if(!$this->options['started']) $this->options['started'] = time();
 
+        helper_plugin_move_rewrite::addLock();
+
         if(@filesize($this->files['pagelist']) > 1) {
             $todo = $this->stepThroughDocuments(self::TYPE_PAGES, $skip);
             if($todo === false) return $this->storeError();
@@ -377,6 +385,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
+
+        helper_plugin_move_rewrite::removeLock();
 
         if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
             $todo = $this->stepThroughAffectedPages();
@@ -699,20 +709,19 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param $dst
      */
     protected function findMissingPages($src, $dst) {
-        static $pages = null;
-        if(is_null($pages)) {
+        if(is_null($this->referenceidx)) {
             global $conf;
             // FIXME this duplicates Doku_Indexer::getIndex()
             $fn = $conf['indexdir'].'/relation_references_w.idx';
             if (!@file_exists($fn)){
-                $pages = array();
+                $this->referenceidx = array();
             } else {
-                $pages = file($fn, FILE_IGNORE_NEW_LINES);
+                $this->referenceidx = file($fn, FILE_IGNORE_NEW_LINES);
             }
         }
 
         $len = strlen($src);
-        foreach($pages as $idx => $page) {
+        foreach($this->referenceidx as $idx => $page) {
             if(substr($page, 0, $len+1) != "$src:") continue;
 
             // remember missing pages
@@ -722,7 +731,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             }
 
             // we never need to look at this page again
-            unset($pages[$idx]);
+            unset($this->referenceidx[$idx]);
         }
     }
 

@@ -119,6 +119,33 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     }
 
     /**
+     * Check if rewrites may be executed within this process right now
+     *
+     * @return bool
+     */
+    public static function isLocked() {
+        global $PLUGIN_MOVE_WORKING;
+        return (isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0);
+    }
+
+    /**
+     * Do not allow any rewrites in this process right now
+     */
+    public static function addLock() {
+        global $PLUGIN_MOVE_WORKING;
+        $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING + 1 : 1;
+    }
+
+    /**
+     * Allow rerites in this process again, unless some other lock exists
+     */
+    public static function removeLock() {
+        global $PLUGIN_MOVE_WORKING;
+        $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING - 1 : 0;
+    }
+
+
+    /**
      * Rewrite a text in order to fix the content after the given moves.
      *
      * @param string $id   The id of the wiki page, if the page itself was moved the old id

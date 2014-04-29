@@ -120,8 +120,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
         if(!$this->checkPage($src, $dst)) return false;
 
         // lock rewrites
-        global $PLUGIN_MOVE_WORKING;
-        $PLUGIN_MOVE_WORKING = true;
+        helper_plugin_move_rewrite::addLock();
 
         /** @var helper_plugin_move_rewrite $Rewriter */
         $Rewriter = plugin_load('helper', 'move_rewrite');
@@ -218,7 +217,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
         $this->affectedPages = $affected_pages;
 
         // unlock rewrites
-        $PLUGIN_MOVE_WORKING = false;
+        helper_plugin_move_rewrite::removeLock();
 
         return true;
     }
