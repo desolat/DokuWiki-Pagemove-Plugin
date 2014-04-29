@@ -35,6 +35,7 @@ $lang['linkchange']  = 'Links adapted because of a move operation';
 // progress view
 $lang['intro']        = 'The move operation has not been started, yet!';
 $lang['preview']      = 'Preview changes to be executed.';
+$lang['inexecution']  = 'A previous move was not completed - use the buttons below to continue or abort the execution.';
 $lang['btn_start']    = 'Start';
 $lang['btn_continue'] = 'Continue';
 $lang['btn_retry']    = 'Retry item';

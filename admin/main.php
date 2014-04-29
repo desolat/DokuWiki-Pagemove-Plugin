@@ -207,8 +207,6 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
             echo $this->plan->previewHTML();
             echo '</div>';
 
-        } else {
-            echo "continue plan";
         }
 
         echo '<div class="progress" data-progress="' . $progress . '">' . $progress . '%</div>';
@@ -216,6 +214,8 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         echo '<div class="output">';
         if($this->plan->getLastError()) {
             echo '<p><div class="error">' . $this->plan->getLastError() . '</div></p>';
+        } elseif ($this->plan->inProgress()) {
+            echo '<p><div class="info">' . $this->getLang('inexecution') . '</div></p>';
         }
         echo '</div>';
 
