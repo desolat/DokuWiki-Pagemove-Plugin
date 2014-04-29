@@ -19,7 +19,7 @@ var checkForMovement = function ($li) {
     var $all = $li.add($li.find('li.moved'));
     $all.each(function () {
         var $this = jQuery(this);
-        var oldid = $this.attr('data-id');
+        var oldid = $this.data('id');
         var newid = determineNewID($this);
 
         if (newid != oldid) {
@@ -49,7 +49,7 @@ var checkNameAllowed = function ($li, name) {
         if ($li.hasClass('type-d')) cname = 'type-d';
 
         var $this = jQuery(this);
-        if ($this.attr('data-name') == name && $this.hasClass(cname)) ok = false;
+        if ($this.data('name') == name && $this.hasClass(cname)) ok = false;
     });
     return ok;
 };
@@ -61,7 +61,7 @@ var checkNameAllowed = function ($li, name) {
  * @returns {string}
  */
 var determineNewID = function ($li) {
-    var myname = $li.attr('data-name');
+    var myname = $li.data('name');
 
     var $parent = $li.parent().closest('li');
     if ($parent.length) {
@@ -129,11 +129,11 @@ $GUI.find('ul.tree_list')
             e.stopPropagation();
             var $a = $clicky.parent().find('a');
 
-            var newname = window.prompt(LANG.plugins.move.renameitem, $li.attr('data-name'));
+            var newname = window.prompt(LANG.plugins.move.renameitem, $li.data('name'));
             newname = cleanID(newname);
             if (newname) {
                 if (checkNameAllowed($li, newname)) {
-                    $li.attr('data-name', newname);
+                    $li.data('name', newname);
                     $a.text(newname);
                     checkForMovement($li);
                 } else {
@@ -147,9 +147,9 @@ $GUI.find('ul.tree_list')
     .find('ul').sortable({
         items: 'li',
         stop: function (e, ui) {
-            if (!checkNameAllowed(ui.item, ui.item.attr('data-name'))) {
+            if (!checkNameAllowed(ui.item, ui.item.data('name'))) {
                 jQuery(this).sortable('cancel');
-                alert(LANG.plugins.move.duplicate.replace('%s', ui.item.attr('data-name')));
+                alert(LANG.plugins.move.duplicate.replace('%s', ui.item.data('name')));
             }
 
             checkForMovement(ui.item);
@@ -173,7 +173,7 @@ jQuery('#plugin_move__tree_execute').submit(function (e) {
         data[data.length] = {
             class: $el.hasClass('type-d') ? 'ns' : 'doc',
             type: 'page',
-            src: $el.attr('data-id'),
+            src: $el.data('id'),
             dst: newid
         };
     });
@@ -184,7 +184,7 @@ jQuery('#plugin_move__tree_execute').submit(function (e) {
         data[data.length] = {
             class: $el.hasClass('type-d') ? 'ns' : 'doc',
             type: 'media',
-            src: $el.attr('data-id'),
+            src: $el.data('id'),
             dst: newid
         };
     });
