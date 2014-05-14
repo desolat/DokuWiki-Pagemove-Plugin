@@ -171,7 +171,7 @@ jQuery('#plugin_move__tree_execute').submit(function (e) {
         var newid = determineNewID($el);
 
         data[data.length] = {
-            class: $el.hasClass('type-d') ? 'ns' : 'doc',
+            'class': $el.hasClass('type-d') ? 'ns' : 'doc',
             type: 'page',
             src: $el.data('id'),
             dst: newid
@@ -182,7 +182,7 @@ jQuery('#plugin_move__tree_execute').submit(function (e) {
         var newid = determineNewID($el);
 
         data[data.length] = {
-            class: $el.hasClass('type-d') ? 'ns' : 'doc',
+            'class': $el.hasClass('type-d') ? 'ns' : 'doc',
             type: 'media',
             src: $el.data('id'),
             dst: newid
