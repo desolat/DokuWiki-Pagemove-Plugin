@@ -864,7 +864,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $MSG;
 
         $optime = $this->options['started'];
-        $file   = $conf['cachedir'] . '/move-' . $optime . '.log';
+        $file   = $conf['cachedir'] . '/move/' . strftime('%Y%m%d-%H%M%S', $optime) . '.log';
         $now    = time();
         $date   = date('Y-m-d H:i:s', $now); // for human readability
 
