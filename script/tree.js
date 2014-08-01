@@ -40,7 +40,7 @@ var checkForMovement = function ($li) {
  * @returns {boolean}
  */
 var checkNameAllowed = function ($li, name) {
-    $parent = $li.parent();
+    var $parent = $li.parent();
 
     var ok = true;
     $parent.children('li').each(function () {
