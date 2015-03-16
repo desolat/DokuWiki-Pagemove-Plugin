@@ -79,6 +79,27 @@ class helper_plugin_move_handler {
     }
 
     /**
+     * if the old link ended with a colon and the new one is a start page, adjust
+     *
+     * @param $relold the old, possibly relative ID
+     * @param $new    the new, full qualified ID
+     * @param $type   'media' or 'page'
+     * @return string
+     */
+    protected function _nsStartCheck($relold, $new, $type) {
+        global $conf;
+        if($type == 'page' && substr($relold, -1) == ':') {
+            $len = strlen($conf['start']);
+            if($new == $conf['start']) {
+                $new = '.:';
+            } else if(substr($new, -1 * ($len + 1)) == ':' . $conf['start']) {
+                $new = substr($new, 0, -1 * $len);
+            }
+        }
+        return $new;
+    }
+
+    /**
      * Construct a new ID relative to the current page's location
      *
      * Uses a relative link only if the original was relative, too. This function is for
@@ -109,13 +130,17 @@ class helper_plugin_move_handler {
         if($conf['useslash']) $relold = str_replace('/', ':', $relold);
 
         // check if the link was relative
-        if(strpos($relold, ':') === false ||$relold{0} == '.' || substr($relold, -1) == ':') {
+        if(strpos($relold, ':') === false ||$relold{0} == '.') {
             $wasrel = true;
         } else {
             $wasrel = false;
         }
+
         // if it wasn't relative then, leave it absolute now, too
-        if(!$wasrel) return $new;
+        if(!$wasrel) {
+            $new = $this->_nsStartCheck($relold, $new, $type);
+            return $new;
+        }
 
         // split the paths and see how much common parts there are
         $selfpath = explode(':', $this->ns);
@@ -138,19 +163,13 @@ class helper_plugin_move_handler {
         if($newrel{0} != '.' && $this->ns && getNS($newrel)) $newrel = '.' . $newrel;
 
         // if the old link ended with a colon and the new one is a start page, adjust
-        if($type == 'page' && substr($relold, -1) == ':') {
-            $len = strlen($conf['start']);
-            if($newrel == $conf['start']) {
-                $newrel = '.:';
-            } else if(substr($newrel, -1 * ($len + 1)) == ':' . $conf['start']) {
-                $newrel = substr($newrel, 0, -1 * $len);
-            }
-        }
+        $newrel = $this->_nsStartCheck($relold,$newrel,$type);
 
         // don't use relative paths if it is ridicoulus:
         if(strlen($newrel) > strlen($new)) {
             $newrel = $new;
             if($this->ns && !getNS($new)) $newrel = ':' . $newrel;
+            $newrel = $this->_nsStartCheck($relold,$newrel,$type);
         }
 
         return $newrel;

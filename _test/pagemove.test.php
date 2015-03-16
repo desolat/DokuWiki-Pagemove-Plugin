@@ -536,6 +536,22 @@ EOT;
         $this->assertEquals('[[wiki:foo2:]]', rawWiki('wiki:bar:test'));
     }
 
+    /**
+     * If the relative part would be too large, create an absolute link instead.
+     * If the original link ended with a colon and the new link also points to a namespace's startpage: keep the colon.
+     */
+    function test_move_no_long_rel_links_keep_colon() {
+        saveWikiText('wiki:foo:start', '[[..:..:one_ns_up:]]', 'Test setup');
+        idx_addPage('wiki:foo:start');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+
+        $this->assertTrue($move->movePage('wiki:foo:start', 'wiki:foo:bar:start'));
+        $this->assertEquals('[[one_ns_up:]]', rawWiki('wiki:foo:bar:start'));
+
+    }
+
 
 	function test_move_ns_in_same_ns() {
 
