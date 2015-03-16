@@ -518,6 +518,24 @@ EOT;
 	    $this->assertEquals($expectedContent, $newContent);
 	}
 
+    /**
+     * Ensure that absolute links stay absolute. See https://github.com/michitux/dokuwiki-plugin-move/pull/6#discussion_r15698440
+     */
+    function test_move_startpage_of_ns() {
+        saveWikiText('wiki:bar:test',
+                     '[[wiki:foo:]]', 'Test setup');
+        idx_addPage('wiki:bar:test');
+        saveWikiText('wiki:foo:start',
+                     'bar', 'Test setup');
+        idx_addPage('wiki:foo:start');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+        $this->assertTrue($move->movePage('wiki:foo:start', 'wiki:foo2:start'));
+
+        $this->assertEquals('[[wiki:foo2:]]', rawWiki('wiki:bar:test'));
+    }
+
 
 	function test_move_ns_in_same_ns() {
 
