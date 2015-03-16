@@ -153,7 +153,7 @@ class helper_plugin_move_handler {
         // we now have the non-common part and a number of uppers
         $ups       = max(count($selfpath) - $common, 0);
         $remainder = array_slice($goalpath, $common);
-        $upper     = $ups ? array_fill(0, $ups, '..') : array();
+        $upper     = $ups ? array_fill(0, $ups, '..:') : array();
 
         // build the new relative path
         $newrel = join(':', $upper);

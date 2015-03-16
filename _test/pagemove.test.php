@@ -22,6 +22,7 @@ class plugin_move_pagemove_test  extends DokuWikiTest {
     // @todo Check backlinks of a sub-namespace page (moving same, up, down, different)
 
     function setUp() {
+        parent::setUpBeforeClass();
         $this->pluginsEnabled[] = 'move';
         global $ID;
         global $INFO;
@@ -302,9 +303,9 @@ EOT;
 
         $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
-[[..current_ns:start|start]]
-[[..current_ns:parallel_page|parallel_page]]
-[[..current_ns:|.:]]
+[[..:current_ns:start|start]]
+[[..:current_ns:parallel_page|parallel_page]]
+[[..:current_ns:|.:]]
 [[..current_ns:|..current_ns:]]
 [[..:current_ns:|..:current_ns:]]
 [[..parallel_ns:|..parallel_ns:]]
@@ -348,11 +349,11 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:parallel_ns:new_page|$this->movedId]]
 [[$newId|:$this->movedId]]
-[[..parallel_ns:new_page|..current_ns:test_page]]
-[[..parallel_ns:new_page|..:current_ns:test_page]]
-[[..parallel_ns:new_page|test_page]]
-[[..parallel_ns:new_page|.test_page]]
-[[..parallel_ns:new_page|.:test_page]]
+[[..:parallel_ns:new_page|..current_ns:test_page]]
+[[..:parallel_ns:new_page|..:current_ns:test_page]]
+[[..:parallel_ns:new_page|test_page]]
+[[..:parallel_ns:new_page|.test_page]]
+[[..:parallel_ns:new_page|.:test_page]]
 [[..test_page|..test_page]]
 [[..:test_page|..:test_page]]
 [[.:..:test_page|.:..:test_page]]
@@ -464,11 +465,11 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:new_page|$this->movedId]]
 [[$newId|:$this->movedId]]
-[[..new_page|..current_ns:test_page]]
-[[..new_page|..:current_ns:test_page]]
-[[..new_page|test_page]]
-[[..new_page|.test_page]]
-[[..new_page|.:test_page]]
+[[..:new_page|..current_ns:test_page]]
+[[..:new_page|..:current_ns:test_page]]
+[[..:new_page|test_page]]
+[[..:new_page|.test_page]]
+[[..:new_page|.:test_page]]
 [[..test_page|..test_page]]
 [[..:test_page|..:test_page]]
 [[.:..:test_page|.:..:test_page]]
