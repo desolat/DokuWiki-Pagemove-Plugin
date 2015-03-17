@@ -52,9 +52,15 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         */
 
         $meta = isset($all_meta[self::METAKEY]) ? $all_meta[self::METAKEY] : array();
-        if(!isset($meta['origin'])) $meta['origin'] = '';
-        if(!isset($meta['pages'])) $meta['pages'] = array();
-        if(!isset($meta['media'])) $meta['media'] = array();
+        if(!isset($meta['origin'])) {
+            $meta['origin'] = '';
+        }
+        if(!isset($meta['pages'])) {
+            $meta['pages'] = array();
+        }
+        if(!isset($meta['media'])) {
+            $meta['media'] = array();
+        }
 
         return $meta;
     }
@@ -90,8 +96,12 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      * @throws Exception
      */
     public function setMoveMetas($id, $moves, $type) {
-        if($type != 'pages' && $type != 'media') throw new Exception('wrong type specified');
-        if(!page_exists($id, '', false)) return;
+        if($type != 'pages' && $type != 'media') {
+            throw new Exception('wrong type specified');
+        }
+        if(!page_exists($id, '', false)) {
+            return;
+        }
 
         $meta = $this->getMoveMeta($id);
         foreach($moves as $src => $dst) {
@@ -111,7 +121,9 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public function setSelfMoveMeta($id) {
         $meta = $this->getMoveMeta($id);
         // was this page moved multiple times? keep the orignal name til rewriting occured
-        if(isset($meta['origin']) && $meta['origin'] !== '') return;
+        if(isset($meta['origin']) && $meta['origin'] !== '') {
+            return;
+        }
         $meta['origin'] = $id;
 
         p_set_metadata($id, array(self::METAKEY => $meta), false, true);
@@ -205,7 +217,9 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public function rewritePage($id, $text = null) {
         $meta = $this->getMoveMeta($id);
-        if(is_null($text)) $text = rawWiki($id);
+        if(is_null($text)) {
+            $text = rawWiki($id);
+        }
 
         if($meta['pages'] || $meta['media']) {
             $old_text = $text;
