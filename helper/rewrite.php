@@ -94,7 +94,6 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         if(!page_exists($id, '', false)) return;
 
         $meta = $this->getMoveMeta($id);
-        if(!isset($meta[$type])) $meta[$type] = array();
         foreach($moves as $src => $dst) {
             $meta[$type][] = array($src, $dst);
         }
