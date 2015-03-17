@@ -553,6 +553,21 @@ EOT;
 
     }
 
+    /**
+     * @covers helper_plugin_move_handler::_nsStartCheck
+     */
+    function test_move_to_thisns_start(){
+        saveWikiText('wiki:foo:test_page', '[[..:..:bar:]]', 'Test setup');
+        idx_addPage('wiki:foo:test_page');
+        saveWikiText('bar:start', 'foo', 'Test setup');
+        idx_addPage('bar:start');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+
+        $this->assertTrue($move->movePage('bar:start', 'wiki:foo:start'));
+        $this->assertEquals('[[.:]]', rawWiki('wiki:foo:test_page'));
+    }
 
 	function test_move_ns_in_same_ns() {
 
