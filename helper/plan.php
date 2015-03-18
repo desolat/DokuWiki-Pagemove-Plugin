@@ -271,6 +271,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
         $this->plan = array();
         $this->loadOptions();
+        if (file_exists(DOKU_INC . "data/locks/move.lock")) {
+            unlink(DOKU_INC . "data/locks/move.lock");
+        }
     }
 
     /**

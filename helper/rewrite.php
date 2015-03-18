@@ -137,6 +137,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public static function isLocked() {
         global $PLUGIN_MOVE_WORKING;
         return (isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0);
+        //return ((isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0) || file_exists(DOKU_INC . 'data/locks/move.lock'));
     }
 
     /**
@@ -144,7 +145,17 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public static function addLock() {
         global $PLUGIN_MOVE_WORKING;
+        dbglog("addLock: PLUGIN_MOVE_WORKING: " . $PLUGIN_MOVE_WORKING . "\n");
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING + 1 : 1;
+        $lockfile = DOKU_INC . 'data/locks/move.lock';
+        if (!file_exists($lockfile)) {
+            file_put_contents($lockfile, "1\n");
+        } else {
+            $stack = intval(file_get_contents($lockfile));
+            dbglog("addLock: " . $stack . "\n");
+            ++$stack;
+            file_put_contents($lockfile, strval($stack));
+        }
     }
 
     /**
@@ -152,7 +163,21 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public static function removeLock() {
         global $PLUGIN_MOVE_WORKING;
+        dbglog("removeLock: PLUGIN_MOVE_WORKING: " . $PLUGIN_MOVE_WORKING . "\n");
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING - 1 : 0;
+        $lockfile = DOKU_INC . 'data/locks/move.lock';
+        if (!file_exists($lockfile)) {
+            throw new Exception("removeLock failed: lockfile missing");
+        } else {
+            $stack = intval(file_get_contents($lockfile));
+            dbglog("removeLock: " . $stack . "\n");
+            if($stack === 1) {
+                unlink($lockfile);
+            } else {
+                --$stack;
+                file_put_contents($lockfile, strval($stack));
+            }
+        }
     }
 
 
