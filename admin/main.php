@@ -62,6 +62,7 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
 
         // handle workflow button presses
         if($this->plan->isCommited()) {
+            helper_plugin_move_rewrite::addLock(); //todo: right place?
             switch($INPUT->str('ctl')) {
                 case 'continue':
                     $this->plan->nextStep();
@@ -252,7 +253,7 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         if($control == 'start') $control = 'continue';
         if($control == 'retry') {
             $control = 'continue';
-            $skip    = 1;
+            $skip    = 0; //todo: this should be 0 for retry and 1 for skip
         }
 
         $class = 'move__control ctlfrm-' . $id;
