@@ -146,8 +146,9 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public static function addLock() {
         global $PLUGIN_MOVE_WORKING;
         dbglog("addLock: PLUGIN_MOVE_WORKING: " . $PLUGIN_MOVE_WORKING . "\n");
+        global $conf;
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING + 1 : 1;
-        $lockfile = DOKU_INC . 'data/locks/move.lock';
+        $lockfile = $conf['lockdir'] . 'move.lock';
         if (!file_exists($lockfile)) {
             file_put_contents($lockfile, "1\n");
         } else {
@@ -164,8 +165,9 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public static function removeLock() {
         global $PLUGIN_MOVE_WORKING;
         dbglog("removeLock: PLUGIN_MOVE_WORKING: " . $PLUGIN_MOVE_WORKING . "\n");
+        global $conf;
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING - 1 : 0;
-        $lockfile = DOKU_INC . 'data/locks/move.lock';
+        $lockfile = $conf['lockdir'] . 'move.lock';
         if (!file_exists($lockfile)) {
             throw new Exception("removeLock failed: lockfile missing");
         } else {

@@ -271,9 +271,13 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
         $this->plan = array();
         $this->loadOptions();
-        if (file_exists(DOKU_INC . "data/locks/move.lock")) {
-            unlink(DOKU_INC . "data/locks/move.lock");
+        global $conf;
+        $lockfile = $conf['lockdir'] . 'move.lock';
+        if (file_exists($lockfile)) {
+            unlink($lockfile);
         }
+        global $PLUGIN_MOVE_WORKING;
+        $PLUGIN_MOVE_WORKING = 0;
     }
 
     /**
@@ -289,6 +293,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $conf;
 
         if($this->options['commited']) throw new Exception('plan is commited already, can not be commited again');
+
+        helper_plugin_move_rewrite::addLock();
+
 
         usort($this->plan, array($this, 'planSorter'));
 
@@ -366,24 +373,28 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         helper_plugin_move_rewrite::addLock();
 
         if(@filesize($this->files['pagelist']) > 1) {
+            print_r("pagelist\n");
             $todo = $this->stepThroughDocuments(self::TYPE_PAGES, $skip);
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['medialist']) > 1) {
+            print_r("medialist\n");
             $todo = $this->stepThroughDocuments(self::TYPE_MEDIA, $skip);
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['missing']) > 1 && @filesize($this->files['affected']) > 1) {
+            print_r("missing\n");
             $todo = $this->stepThroughMissingPages();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['namespaces']) > 1) {
+            print_r("namespaces\n");
             $todo = $this->stepThroughNamespaces();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
@@ -392,6 +403,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         helper_plugin_move_rewrite::removeLock();
 
         if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
+            print_r("rewrite pages\n");
             $todo = $this->stepThroughAffectedPages();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
