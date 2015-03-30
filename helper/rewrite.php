@@ -136,8 +136,9 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public static function isLocked() {
         global $PLUGIN_MOVE_WORKING;
-        return (isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0);
-        //return ((isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0) || file_exists(DOKU_INC . 'data/locks/move.lock'));
+        global $conf;
+        $lockfile = $conf['lockdir'] . 'move.lock';
+        return ((isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0) || file_exists($lockfile));
     }
 
     /**
@@ -145,7 +146,6 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public static function addLock() {
         global $PLUGIN_MOVE_WORKING;
-        dbglog("addLock: PLUGIN_MOVE_WORKING: " . $PLUGIN_MOVE_WORKING . "\n");
         global $conf;
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING + 1 : 1;
         $lockfile = $conf['lockdir'] . 'move.lock';
@@ -153,7 +153,6 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
             file_put_contents($lockfile, "1\n");
         } else {
             $stack = intval(file_get_contents($lockfile));
-            dbglog("addLock: " . $stack . "\n");
             ++$stack;
             file_put_contents($lockfile, strval($stack));
         }
@@ -164,7 +163,6 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public static function removeLock() {
         global $PLUGIN_MOVE_WORKING;
-        dbglog("removeLock: PLUGIN_MOVE_WORKING: " . $PLUGIN_MOVE_WORKING . "\n");
         global $conf;
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING - 1 : 0;
         $lockfile = $conf['lockdir'] . 'move.lock';
@@ -172,7 +170,6 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
             throw new Exception("removeLock failed: lockfile missing");
         } else {
             $stack = intval(file_get_contents($lockfile));
-            dbglog("removeLock: " . $stack . "\n");
             if($stack === 1) {
                 unlink($lockfile);
             } else {
