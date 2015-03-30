@@ -276,8 +276,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         if (file_exists($lockfile)) {
             unlink($lockfile);
         }
-        global $PLUGIN_MOVE_WORKING;
-        $PLUGIN_MOVE_WORKING = 0;
+        unset($GLOBALS['PLUGIN_MOVE_WORKING']);
     }
 
     /**
