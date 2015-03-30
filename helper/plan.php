@@ -340,7 +340,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                 }
             }
             // store what pages are affected by this move
-            $this->findAffectedPages($move['src'], $move['class'], $move['type']);
+            $this->findAffectedPages($move['src'], $move['dst'], $move['class'], $move['type']);
         }
 
         $this->storeDocumentLists();
@@ -695,22 +695,31 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * Calls addToAffectedPagesList() directly to store the result
      *
-     * @param string $src
+     * @param string $src source namespace
+     * @param string $dst destination namespace
      * @param int    $class
      * @param int    $type
      */
-    protected function findAffectedPages($src, $class, $type) {
+    protected function findAffectedPages($src, $dst, $class, $type) {
         $idx = idx_get_indexer();
 
         if($class == self::CLASS_NS) {
-            $src = "$src:*"; // use wildcard lookup for namespaces
+            $src_ = "$src:*"; // use wildcard lookup for namespaces
         }
 
         $pages = array();
         if($type == self::TYPE_PAGES) {
-            $pages = $idx->lookupKey('relation_references', $src);
+            $pages = $idx->lookupKey('relation_references', $src_);
+            $len = strlen($src);
+            foreach($pages as &$page) {
+                if (substr($page, 0, $len + 1) === "$src:") {
+                    $page = $dst . substr($page, $len + 1);
+                }
+            }
+            unset($page);
         } else if($type == self::TYPE_MEDIA) {
-            $pages = $idx->lookupKey('relation_media', $src);
+            $pages = $idx->lookupKey('relation_media', $src_);
+            //todo: we may have to rewrite src -> dst here as well. tests needed
         }
 
         $this->addToAffectedPagesList($pages);
