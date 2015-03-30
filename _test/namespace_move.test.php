@@ -16,6 +16,10 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         parent::setUp();
     }
 
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     */
     public function test_move_wiki_namespace() {
         global $AUTH_ACL;
 
@@ -46,6 +50,10 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertFileExists(mediaFN('foo:dokuwiki-128.png'));
     }
 
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     */
     public function test_move_missing() {
         saveWikiText('oldspace:page', '[[missing]]', 'setup');
         idx_addPage('oldspace:page');
@@ -71,6 +79,10 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertEquals('[[missing]]', rawWiki('newspace:page'));
     }
 
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     */
     function test_move_large_ns(){
         global $conf;
 
