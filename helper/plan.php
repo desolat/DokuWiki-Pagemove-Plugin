@@ -372,28 +372,24 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         helper_plugin_move_rewrite::addLock();
 
         if(@filesize($this->files['pagelist']) > 1) {
-            print_r("pagelist\n");
             $todo = $this->stepThroughDocuments(self::TYPE_PAGES, $skip);
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['medialist']) > 1) {
-            print_r("medialist\n");
             $todo = $this->stepThroughDocuments(self::TYPE_MEDIA, $skip);
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['missing']) > 1 && @filesize($this->files['affected']) > 1) {
-            print_r("missing\n");
             $todo = $this->stepThroughMissingPages();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
         if(@filesize($this->files['namespaces']) > 1) {
-            print_r("namespaces\n");
             $todo = $this->stepThroughNamespaces();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
@@ -402,7 +398,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         helper_plugin_move_rewrite::removeLock();
 
         if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
-            print_r("rewrite pages\n");
             $todo = $this->stepThroughAffectedPages();
             if($todo === false) return $this->storeError();
             return max($todo, 1); // force one more call
