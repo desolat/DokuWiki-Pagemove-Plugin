@@ -239,7 +239,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      * @param string|null $text Old content of the page. When null is given the content is loaded from disk
      * @return string|bool The rewritten content, false on error
      */
-    public function rewritePage($id, $text = null) {
+    public function rewritePage($id, $text = null, $save = true) {
         $meta = $this->getMoveMeta($id);
         if(is_null($text)) {
             $text = rawWiki($id);
@@ -251,19 +251,21 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
 
             $changed = ($old_text != $text);
             $file    = wikiFN($id, '', false);
-            if(is_writable($file) || !$changed) {
-                if($changed) {
-                    // Wait a second when the page has just been rewritten
-                    $oldRev = filemtime(wikiFN($id));
-                    if($oldRev == time()) sleep(1);
+            if ($save === true) {
+                if(is_writable($file) || !$changed) {
+                    if($changed) {
+                        // Wait a second when the page has just been rewritten
+                        $oldRev = filemtime(wikiFN($id));
+                        if($oldRev == time()) sleep(1);
 
-                    saveWikiText($id, $text, $this->symbol . ' ' . $this->getLang('linkchange'), $this->getConf('minor'));
+                        saveWikiText($id, $text, $this->symbol . ' ' . $this->getLang('linkchange'), $this->getConf('minor'));
+                    }
+                    $this->unsetMoveMeta($id);
+                } else {
+                    // FIXME: print error here or fail silently?
+                    msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
+                    return false;
                 }
-                $this->unsetMoveMeta($id);
-            } else {
-                // FIXME: print error here or fail silently?
-                msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
-                return false;
             }
         }
 

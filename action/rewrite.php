@@ -36,7 +36,10 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
         if($event->data[3]) return;
 
         // only rewrite if not in move already
-        if(helper_plugin_move_rewrite::isLocked()) return;
+        $save = true;
+        if(helper_plugin_move_rewrite::isLocked()) {
+            $save = false;
+        }
 
         $id = $event->data[2];
         if($event->data[1]) $id = $event->data[1] . ':' . $id;
@@ -67,7 +70,7 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
         $helper = plugin_load('helper', 'move_rewrite', true);
         if(!is_null($helper)) {
             $stack[$id]    = true;
-            $event->result = $helper->rewritePage($id, $event->result);
+            $event->result = $helper->rewritePage($id, $event->result, $save);
             unset($stack[$id]);
         }
     }
