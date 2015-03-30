@@ -177,49 +177,34 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $plan->commit();
         global $conf;
         $lockfile = $conf['lockdir'] . 'move.lock';
-        file_exists($lockfile) ? print_r(file($lockfile)) :print_r('lockfile not found' . "\n");
 
-        print_r("\n" . "\n");
-        $this->assertSame(10, $plan->nextStep(),"After processing first chunk of pages, 10 stepsshould be left");
-        print_r(':start ' . rawWiki(':start') . "\n");
-        $start_file = file(TMP_DIR . '/data/pages/start.txt');
-        print_r($start_file[0]);
+        $this->assertSame(10, $plan->nextStep(),"After processing first chunk of pages, 10 steps should be left");
 
-        print_r("\n" . "\n");
-        $this->assertSame(1, $plan->nextStep(),"pages2");
-        print_r(':start ' . rawWiki(':start') . "\n");
-        $start_file = file(TMP_DIR . '/data/pages/start.txt');
-        print_r($start_file[0]);
+        $request = new TestRequest();
+        $response = $request->get();
+        $actual_response = $response->getContent();
+        //clean away clutter
+        $actual_response = substr($actual_response,strpos($actual_response,"<!-- wikipage start -->") + 23);
+        $actual_response = substr($actual_response,0,strpos($actual_response,"<!-- wikipage stop -->"));
+        $actual_response = trim($actual_response);
+        $actual_response = ltrim($actual_response,"<p>");
+        $actual_response = rtrim($actual_response,"</p>");
+        $actual_response = trim($actual_response);
 
-        print_r("\n" . "\n");
-        $this->assertSame(1, $plan->nextStep(),"pages3");
-        print_r(':start ' . rawWiki(':start') . "\n");
-        $start_file = file(TMP_DIR . '/data/pages/start.txt');
-        print_r($start_file[0]);
+        $expected_response = '<a href="/./doku.php?id=foo:testns:start" class="wikilink1" title="foo:testns:start">testns</a> <a href="/./doku.php?id=testns:test_page17" class="wikilink1" title="testns:test_page17">test_page17</a>';
+        $this->assertSame($expected_response,$actual_response);
 
-        $this->assertSame(0, $plan->nextStep());
-        print_r("\n" . "\n" . "done?\n");
+        $expected_file_contents = '[[testns:start]] [[testns:test_page17]]';
         $start_file = file(TMP_DIR . '/data/pages/start.txt');
-        print_r($start_file[0] . "\n");
-        print_r(':start ' . rawWiki(':start') . "\n");
-        $start_file = file(TMP_DIR . '/data/pages/start.txt');
-        print_r($start_file[0] . "\n". "\n");
+        $actual_file_contents = $start_file[0];
+        $this->assertSame($expected_file_contents,$actual_file_contents);
 
-        /*$this->assertFileNotExists(wikiFN('testns:start'));
-        $this->assertFileExists(wikiFN('foo:testns:start'));
-        $this->assertFileExists(wikiFN('testns:test_page17'))*/;
-        print_r(':start ' . rawWiki(':start') . "\n");
-        print_r('testns:start ' . rawWiki('testns:start') . "\n");
-        print_r('foo:testns:start ' . rawWiki('foo:testns:start') . "\n");
-        print_r('testns:test_page17 ' . rawWiki('testns:test_page17') . "\n");
-        $start_file = file(TMP_DIR . '/data/pages/start.txt');
-        print_r($start_file[0]);
-        file_exists($lockfile) ? print_r(file($lockfile)) :print_r('lockfile not found' . "\n");
-
+        /** @var helper_plugin_move_rewrite $rewrite */
         $rewrite = plugin_load('helper', 'move_rewrite');
-        print_r($rewrite->getMoveMeta(':start')); //todo: ':start' still has metadata, 'start' does not -- why?
-        print_r(':start ' . rawWiki(':start') . "\n");
-
+        $expected_move_meta = array('origin'=> 'testns:start', 'pages' => array(array('testns:start','foo:testns:start')),'media' => array());
+        $actual_move_media = $rewrite->getMoveMeta('foo:testns:start');
+        $this->assertSame($expected_move_meta,$actual_move_media);
+        $this->assertFileExists($lockfile);
 
     }
 
