@@ -17,6 +17,16 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
     }
 
     /**
+     * @coversNothing
+     */
+    public function tearDown() {
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
+        $plan->abort();
+        parent::tearDown();
+    }
+
+    /**
      * This is an integration test, which checks the correct working of an entire namespace move.
      * Hence it is not an unittest, hence it @coversNothing
      */
@@ -77,6 +87,28 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertFileNotExists(wikiFN('oldspace:page'));
 
         $this->assertEquals('[[missing]]', rawWiki('newspace:page'));
+    }
+
+    /**
+     * @covers helper_plugin_move_plan::findAffectedPages
+     * @uses Doku_Indexer
+     */
+    public function test_move_affected() {
+        saveWikiText('oldaffectedspace:page', '[[missing]]', 'setup');
+        idx_addPage('oldaffectedspace:page');
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
+
+        $this->assertFalse($plan->inProgress());
+
+        $plan->addPageNamespaceMove('oldaffectedspace', 'newaffectedspace');
+
+        $plan->commit();
+
+        $affected_file = file(TMP_DIR . '/data/meta/__move_affected');
+        $this->assertSame('newaffectedspace:page',trim($affected_file[0]));
+
+
     }
 
     /**
