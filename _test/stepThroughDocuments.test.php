@@ -56,7 +56,9 @@ class helper_plugin_move_op_mock extends helper_plugin_move_op {
  * Test cases for namespace move functionality of the move plugin
  *
  * @group plugin_move
+ * @group plugin_move_unittests
  * @group plugins
+ * @group unittests
  */
 class plugin_move_stepThroughDocuments_test extends DokuWikiTest {
 
@@ -122,6 +124,10 @@ class plugin_move_stepThroughDocuments_test extends DokuWikiTest {
         $expected_log = array('P','oldns:page09','newns:page09',true);
         $this->assertSame($expected_log,$mock->moveLog[9]);
         $this->assertTrue(!isset($mock->moveLog[10]));
+
+        $opts_file = dirname(DOKU_CONF) . '/data/meta/__move_opts';
+        $actual_options = unserialize(io_readFile($opts_file));
+        $this->assertSame($expected_pages_run,$actual_options['pages_run'],'saved options are wrong');
     }
 
     /**
@@ -155,6 +161,10 @@ class plugin_move_stepThroughDocuments_test extends DokuWikiTest {
         $expected_log = array('P','oldns:page09','newns:page09',true);
         $this->assertSame($expected_log,$mock->moveLog[8]);
         $this->assertTrue(!isset($mock->moveLog[9]));
+
+        $opts_file = dirname(DOKU_CONF) . '/data/meta/__move_opts';
+        $actual_options = unserialize(io_readFile($opts_file));
+        $this->assertSame($expected_pages_run,$actual_options['pages_run'],'saved options are wrong');
     }
 
     /**
@@ -164,8 +174,9 @@ class plugin_move_stepThroughDocuments_test extends DokuWikiTest {
 
         $file_path = dirname(DOKU_CONF) . '/data/meta/__move_pagelist';
         $mock = new helper_plugin_move_plan_mock();
+        $fail_at_item = 5;
         $actual_move_Operator = $mock->getMoveOperator();
-        $actual_move_Operator->fail = 5;
+        $actual_move_Operator->fail = $fail_at_item;
         $mock->setMoveOperator($actual_move_Operator);
         $actual_return = $mock->stepThroughDocumentsCall();
         $actual_file = file_get_contents($file_path);
@@ -195,6 +206,10 @@ class plugin_move_stepThroughDocuments_test extends DokuWikiTest {
         $expected_log = array('P','oldns:page13','newns:page13',false);
         $this->assertSame($expected_log,$mock->moveLog[5]);
         $this->assertTrue(!isset($mock->moveLog[6]));
+
+        $opts_file = dirname(DOKU_CONF) . '/data/meta/__move_opts';
+        $actual_options = unserialize(io_readFile($opts_file));
+        $this->assertSame(-$fail_at_item,$actual_options['pages_run'],'saved options are wrong');
     }
 
 
@@ -246,6 +261,10 @@ class plugin_move_stepThroughDocuments_test extends DokuWikiTest {
         $this->assertSame($expected_log,$mock->moveLog[9]);
 
         $this->assertTrue(!isset($mock->moveLog[10]), "The number of logged items is incorrect");
+
+        $opts_file = dirname(DOKU_CONF) . '/data/meta/__move_opts';
+        $actual_options = unserialize(io_readFile($opts_file));
+        $this->assertSame($expected_pages_run,$actual_options['pages_run'],'saved options are wrong');
     }
 
 
