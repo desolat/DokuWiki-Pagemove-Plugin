@@ -501,7 +501,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     if(!$this->options['autoskip']) {
                         // ...otherwise abort the operation
                         fclose($doclist);
-                        return false;
+                        $return_items_run = false;
+                        break;
                     }
                 } else {
                     $this->log($mark, $src, $dst, true); // SUCCESS!
@@ -519,7 +520,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $return_items_run = $this->options[$items_run_counter];
         }
 
-        fclose($doclist);
+        if ($return_items_run !== false) {
+            fclose($doclist);
+        }
         return $return_items_run;
     }
 
