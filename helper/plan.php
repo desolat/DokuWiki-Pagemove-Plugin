@@ -516,9 +516,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
             ftruncate($doclist, ftell($doclist));
             $this->options[$items_run_counter]--;
-            $this->saveOptions();
             $return_items_run = $this->options[$items_run_counter];
         }
+        $this->saveOptions();
 
         if ($return_items_run !== false) {
             fclose($doclist);
