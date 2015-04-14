@@ -473,12 +473,12 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $file    = $this->files['pagelist'];
             $mark    = 'P';
             $call    = 'movePage';
-            $counter = 'pages_run';
+            $items_run_counter = 'pages_run';
         } else {
             $file    = $this->files['medialist'];
             $mark    = 'M';
             $call    = 'moveMedia';
-            $counter = 'media_run';
+            $items_run_counter = 'media_run';
         }
 
         $doclist = fopen($file, 'a+');
@@ -514,12 +514,13 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
              */
 
             ftruncate($doclist, ftell($doclist));
-            $this->options[$counter]--;
+            $this->options[$items_run_counter]--;
             $this->saveOptions();
+            $return_items_run = $this->options[$items_run_counter];
         }
 
         fclose($doclist);
-        return $this->options[$counter];
+        return $return_items_run;
     }
 
     /**
