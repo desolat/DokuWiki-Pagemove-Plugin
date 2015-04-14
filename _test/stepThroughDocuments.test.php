@@ -24,9 +24,10 @@ class helper_plugin_move_plan_mock extends helper_plugin_move_plan {
         $this->MoveOperator = $newMoveOPerator;
     }
 
-    protected function log($type, $from, $to, $success) {
+    public function build_log_line($type, $from, $to, $success) {
         $logEntry = array($type,$from,$to,$success);
         array_push($this->moveLog,$logEntry);
+        return parent::build_log_line($type, $from, $to, $success);
     }
 
 
@@ -53,7 +54,7 @@ class helper_plugin_move_op_mock extends helper_plugin_move_op {
 
 
 /**
- * Test cases for namespace move functionality of the move plugin
+ * Test cases for helper_plugin_move_plan::stepThroughDocuments function of the move plugin
  *
  * @group plugin_move
  * @group plugin_move_unittests

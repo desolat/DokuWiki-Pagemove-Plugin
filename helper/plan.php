@@ -482,6 +482,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         $doclist = fopen($file, 'a+');
+        $log = "";
         for($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
             $line = $this->getLastLine($doclist);
             if($line === false) {
@@ -495,7 +496,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             } else {
             // move the page
                 if(!$this->MoveOperator->$call($src, $dst)) {
-                    $this->log($mark, $src, $dst, false); // FAILURE!
+                    $log .= $this->build_log_line($mark, $src, $dst, false); // FAILURE!
 
                     // automatically skip this item only if wanted...
                     if(!$this->options['autoskip']) {
@@ -505,7 +506,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                         break;
                     }
                 } else {
-                    $this->log($mark, $src, $dst, true); // SUCCESS!
+                    $log .= $this->build_log_line($mark, $src, $dst, true); // SUCCESS!
                 }
             }
 
@@ -518,6 +519,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $this->options[$items_run_counter]--;
             $return_items_run = $this->options[$items_run_counter];
         }
+        $this->write_log($log);
         $this->saveOptions();
 
         if ($return_items_run !== false) {
@@ -880,23 +882,23 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
-     * Log result of an operation
+     * Create line to log result of an operation
      *
      * @param string $type
      * @param string $from
      * @param string $to
      * @param bool   $success
+     *
+     * @return string
+     *
      * @author Andreas Gohr <gohr@cosmocode.de>
+     * @author Michael Große <grosse@cosmocode.de>
      */
-    protected function log($type, $from, $to, $success) {
-        global $conf;
+    public function build_log_line ($type, $from, $to, $success) {
         global $MSG;
 
-        $optime = $this->options['started'];
-        $file   = $conf['cachedir'] . '/move/' . strftime('%Y%m%d-%H%M%S', $optime) . '.log';
-        $now    = time();
+        $now = time();
         $date   = date('Y-m-d H:i:s', $now); // for human readability
-
         if($success) {
             $ok  = 'success';
             $msg = '';
@@ -906,6 +908,19 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         $log = "$now\t$date\t$type\t$from\t$to\t$ok\t$msg\n";
+        return $log;
+    }
+
+    /**
+     * write log to file
+     *
+     * @param $log
+     */
+    protected function write_log ($log) {
+        global $conf;
+        $optime = $this->options['started'];
+        $file   = $conf['cachedir'] . '/move/' . strftime('%Y%m%d-%H%M%S', $optime) . '.log';
         io_saveFile($file, $log, true);
     }
+
 }
