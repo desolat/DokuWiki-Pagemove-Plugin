@@ -62,6 +62,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /** @var array|null keeps reference list */
     protected $referenceidx = null;
 
+    /** @var helper_plugin_move_op $MoveOperator */
+    protected $MoveOperator = null;
+
     /**
      * Constructor
      *
@@ -79,6 +82,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'namespaces' => $conf['metadir'] . '/__move_namespaces',
             'missing'    => $conf['metadir'] . '/__move_missing'
         );
+
+        $this->MoveOperator = plugin_load('helper', 'move_op');
 
         $this->loadOptions();
     }
@@ -462,9 +467,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param bool $skip should the first item be skipped?
      * @return bool|int false on error, otherwise the number of remaining documents
      */
-    protected function stepThroughDocuments($type = self::TYPE_PAGES, &$skip = false) {
-        /** @var helper_plugin_move_op $MoveOperator */
-        $MoveOperator = plugin_load('helper', 'move_op');
+    protected function stepThroughDocuments($type = self::TYPE_PAGES, $skip = false) {
 
         if($type == self::TYPE_PAGES) {
             $file    = $this->files['pagelist'];
@@ -485,14 +488,18 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             list($src, $dst) = explode("\t", trim($line));
 
             // should this item be skipped?
-            if($skip) goto FINISH;
+            if($skip) {
+                goto FINISH;
+            }
 
             // move the page
-            if(!$MoveOperator->$call($src, $dst)) {
+            if(!$this->MoveOperator->$call($src, $dst)) {
                 $this->log($mark, $src, $dst, false); // FAILURE!
 
                 // automatically skip this item if wanted...
-                if($this->options['autoskip']) goto FINISH;
+                if($this->options['autoskip']) {
+                    goto FINISH;
+                }
                 // ...otherwise abort the operation
                 fclose($doclist);
                 return false;
