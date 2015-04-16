@@ -581,6 +581,7 @@ EOT;
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
 
 	    //$this->move->_pm_move_recursive($opts);
+        $this->markTestIncomplete('Test must yet be implemented.');
 
 	}
 
