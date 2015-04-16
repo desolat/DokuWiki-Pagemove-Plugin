@@ -179,6 +179,20 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         }
     }
 
+    /**
+     * Allow rewrites in this process again.
+     *
+     * @author Michael Große <grosse@cosmocode.de>
+     */
+    public static function removeAllLocks() {
+        global $conf;
+        $lockfile = $conf['lockdir'] . 'move.lock';
+        if (file_exists($lockfile)) {
+            unlink($lockfile);
+        }
+        unset($GLOBALS['PLUGIN_MOVE_WORKING']);
+    }
+
 
     /**
      * Rewrite a text in order to fix the content after the given moves.

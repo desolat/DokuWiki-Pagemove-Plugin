@@ -276,12 +276,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
         $this->plan = array();
         $this->loadOptions();
-        global $conf;
-        $lockfile = $conf['lockdir'] . 'move.lock';
-        if (file_exists($lockfile)) {
-            unlink($lockfile);
-        }
-        unset($GLOBALS['PLUGIN_MOVE_WORKING']);
+        helper_plugin_move_rewrite::removeAllLocks();
     }
 
     /**
@@ -400,7 +395,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             return max($todo, 1); // force one more call
         }
 
-        helper_plugin_move_rewrite::removeLock();
+        helper_plugin_move_rewrite::removeAllLocks();
 
         if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
             $todo = $this->stepThroughAffectedPages();
