@@ -611,6 +611,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * @return int always 0
      * @todo maybe add an event so plugins can move more stuff?
+     * @todo fixed that $src and $dst are seperated by tab, not newline. This method has no tests?
      */
     protected function stepThroughNamespaces() {
         /** @var helper_plugin_move_file $FileMover */
@@ -620,7 +621,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $lines = explode("\n", $lines);
 
         foreach($lines as $line) {
-            list($src, $dst) = explode("\n", trim($line));
+            list($src, $dst) = explode("\t", trim($line));
             $FileMover->moveNamespaceSubscription($src, $dst);
         }
 
