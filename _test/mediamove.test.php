@@ -16,6 +16,9 @@ class plugin_move_mediamove_test extends DokuWikiTest {
         parent::setUp();
     }
 
+    /**
+     * @group slow
+     */
     public function test_movePageWithRelativeMedia() {
         $src = 'mediareltest:foo';
         saveWikiText($src,
@@ -35,6 +38,9 @@ class plugin_move_mediamove_test extends DokuWikiTest {
 [[doku>wiki:foo|{{mediareltest:foo.gif?200x3000}}]]', rawWiki('foo'));
     }
 
+    /**
+     * @group slow
+     */
     public function test_moveSingleMedia() {
         global $AUTH_ACL;
         $AUTH_ACL[] = "wiki:*\t@ALL\t16";

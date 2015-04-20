@@ -175,8 +175,10 @@ EOT;
         $conf['useslash'] = 1;
     }
 
-
-	function test_move_page_in_same_ns() {
+    /**
+     * @group slow
+     */
+    function test_move_page_in_same_ns() {
 	    global $ID;
         $newId = getNS($ID).':new_page';
         $this->movedToId = $newId;
@@ -289,8 +291,10 @@ EOT;
 	    $this->assertEquals($expectedContent, $newContent);
 	}
 
-
-	function test_move_page_to_parallel_ns() {
+    /**
+     * @group slow
+     */
+    function test_move_page_to_parallel_ns() {
 	    global $ID;
         $newId = 'parent_ns:parallel_ns:new_page';
         $this->movedToId = $newId;
@@ -403,8 +407,10 @@ EOT;
 	    $this->assertEquals($expectedContent, $newContent);
 	}
 
-
-	function test_move_page_to_parent_ns() {
+    /**
+     * @group slow
+     */
+    function test_move_page_to_parent_ns() {
 	    global $ID;
 
         $newId = 'parent_ns:new_page';
@@ -521,6 +527,8 @@ EOT;
 
     /**
      * Ensure that absolute links stay absolute. See https://github.com/michitux/dokuwiki-plugin-move/pull/6#discussion_r15698440
+     *
+     * @group slow
      */
     function test_move_startpage_of_ns() {
         saveWikiText('wiki:bar:test',
@@ -540,6 +548,8 @@ EOT;
     /**
      * If the relative part would be too large, create an absolute link instead.
      * If the original link ended with a colon and the new link also points to a namespace's startpage: keep the colon.
+     *
+     * @group slow
      */
     function test_move_no_long_rel_links_keep_colon() {
         saveWikiText('wiki:foo:start', '[[..:..:one_ns_up:]]', 'Test setup');
@@ -555,6 +565,7 @@ EOT;
 
     /**
      * @covers helper_plugin_move_handler::_nsStartCheck
+     * @group slow
      */
     function test_move_to_thisns_start(){
         saveWikiText('wiki:foo:test_page', '[[..:..:bar:]]', 'Test setup');
