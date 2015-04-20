@@ -23,6 +23,10 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         /** @var helper_plugin_move_plan $plan  */
         $plan = plugin_load('helper', 'move_plan');
         $plan->abort();
+
+        io_rmdir(DOKU_TMP_DATA."pages/newns",true);
+        io_rmdir(DOKU_TMP_DATA."media/newns",true);
+
         parent::tearDown();
     }
 
@@ -50,12 +54,13 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
 
         $plan->commit();
 
-        $this->assertSame(1, $plan->nextStep()); // pages
-        $this->assertSame(1, $plan->nextStep()); // media
-        $this->assertSame(1, $plan->nextStep()); // missing
-        $this->assertSame(1, $plan->nextStep()); // links
-        $this->assertSame(1, $plan->nextStep()); // namepaces
-        $this->assertSame(0, $plan->nextStep()); // done
+        $this->assertSame(1, $plan->nextStep(),'pages');
+        $this->assertSame(1, $plan->nextStep(),'media');
+        $this->assertSame(1, $plan->nextStep(),'missing');
+        $this->assertSame(1, $plan->nextStep(),'missing_media');
+        $this->assertSame(1, $plan->nextStep(),'namespace');
+        $this->assertSame(1, $plan->nextStep(),'autorewrite');
+        $this->assertSame(0, $plan->nextStep(),'done');
 
         $this->assertFileExists(wikiFN('foo:dokuwiki'));
         $this->assertFileNotExists(wikiFN('wiki:syntax'));
@@ -81,11 +86,11 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
 
         $plan->commit();
 
-        $this->assertSame(1, $plan->nextStep()); // pages
-        $this->assertSame(1, $plan->nextStep()); // missing
-        $this->assertSame(1, $plan->nextStep()); // links
-        $this->assertSame(1, $plan->nextStep()); // namepaces
-        $this->assertSame(0, $plan->nextStep()); // done
+        $this->assertSame(1, $plan->nextStep(),'page');
+        $this->assertSame(1, $plan->nextStep(),'missing');
+        $this->assertSame(1, $plan->nextStep(),'namespace');
+        $this->assertSame(1, $plan->nextStep(),'autorewrite');
+        $this->assertSame(0, $plan->nextStep(),'done');
 
         $this->assertFileExists(wikiFN('newspace:page'));
         $this->assertFileNotExists(wikiFN('oldspace:page'));
@@ -285,19 +290,61 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
 
         $plan->commit();
 
-        $this->assertSame(1, $plan->nextStep(), 'pages'); // pages
-        $this->assertSame(1, $plan->nextStep(), 'media'); // media
-//        $this->assertSame(1, $plan->nextStep(), 'missing'); // missing
-//        $this->assertSame(1, $plan->nextStep(), 'links'); // links
-//        $this->assertSame(1, $plan->nextStep(), 'autorewrite'); // autorewrite
-        $this->assertSame(0, $plan->nextStep(), 'done'); // done
+        $this->assertSame(1, $plan->nextStep(), 'media');
+        $this->assertSame(1, $plan->nextStep(), 'missing_media');
+        $this->assertSame(1, $plan->nextStep(), 'autorewrite');
+        $this->assertSame(0, $plan->nextStep(), 'done');
 
         $this->assertFileExists(mediaFN('newns:oldnsimage.png'));
         $this->assertFileNotExists(mediaFN('oldns:oldnsimage.png'));
 
         $this->assertSame('{{newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{oldnsimage_missing.png}}',rawWiki('start'));
+    }
 
-        $this->markTestIncomplete('It is not yet clear, which nextSteps should actually be taken and hence be tested for.');
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     *
+     * @group slow
+     */
+    public function test_move_small_namespace_combi() {
+        global $AUTH_ACL;
+
+        $AUTH_ACL[] = "oldns:*\t@ALL\t16";
+        $AUTH_ACL[] = "newns:*\t@ALL\t16";
+
+        $filepath = DOKU_TMP_DATA.'media/oldns/oldnsimage.png';
+        io_makeFileDir($filepath);
+        io_saveFile($filepath,'');
+        saveWikiText('start', "[[oldns:start]] [[oldns:page]] [[oldns:missing]]\n{{oldns:oldnsimage.png}} {{oldns:oldnsimage_missing.png}} {{oldnsimage_missing.png}}", 'setup');
+        idx_addPage('start');
+        saveWikiText('oldns:start', '[[oldns:start]] [[oldns:page]] [[oldns:missing]] [[missing]] [[page]]', 'setup');
+        idx_addPage('oldns:start');
+        saveWikiText('oldns:page', '[[oldns:start]] [[oldns:page]] [[oldns:missing]] [[missing]] [[start]]', 'setup');
+        idx_addPage('oldns:page');
+
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
+
+        $this->assertFalse($plan->inProgress());
+
+        $plan->addMediaNamespaceMove('oldns', 'newns');
+        $plan->addPageNamespaceMove('oldns', 'newns');
+
+        $plan->commit();
+
+        $this->assertSame(1, $plan->nextStep(), 'pages');
+        $this->assertSame(1, $plan->nextStep(), 'media');
+        $this->assertSame(1, $plan->nextStep(), 'missing');
+        $this->assertSame(1, $plan->nextStep(), 'missing_media');
+        $this->assertSame(1, $plan->nextStep(), 'namespaces');
+        $this->assertSame(1, $plan->nextStep(), 'autorewrite');
+        $this->assertSame(0, $plan->nextStep(), 'done');
+
+        $this->assertFileExists(mediaFN('newns:oldnsimage.png'));
+        $this->assertFileNotExists(mediaFN('oldns:oldnsimage.png'));
+
+        $this->assertSame("[[newns:start]] [[newns:page]] [[newns:missing]]\n{{newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{oldnsimage_missing.png}}",rawWiki('start'));
     }
 
 }
