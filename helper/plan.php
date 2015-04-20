@@ -57,10 +57,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         'media' => array(),
         'ns'    => array(),
         'miss'  => array(),
+        'miss_media'  => array(),
     );
-
-    /** @var array|null keeps reference list */
-    protected $referenceidx = null;
 
     /** @var helper_plugin_move_op $MoveOperator */
     protected $MoveOperator = null;
@@ -80,7 +78,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'medialist'  => $conf['metadir'] . '/__move_medialist',
             'affected'   => $conf['metadir'] . '/__move_affected',
             'namespaces' => $conf['metadir'] . '/__move_namespaces',
-            'missing'    => $conf['metadir'] . '/__move_missing'
+            'missing'    => $conf['metadir'] . '/__move_missing',
+            'missing_media'    => $conf['metadir'] . '/__move_missing_media',
         );
 
         $this->MoveOperator = plugin_load('helper', 'move_op');
@@ -123,9 +122,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $options       = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
-
-        // reset index for next run (happens in tests only)
-        $this->referenceidx = null;
     }
 
     /**
@@ -335,9 +331,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     //       page namespace moves, but subscriptions work for both, but what when only one of
                     //       them is moved? Should it be copied then? Complicated. This is good enough for now
                     $this->addToDocumentList($move['src'], $move['dst'], self::CLASS_NS);
-
-                    $this->findMissingPages($move['src'], $move['dst']);
                 }
+                $this->findMissingDocuments($move['src'], $move['dst'],$move['type']);
             }
             // store what pages are affected by this move
             $this->findAffectedPages($move['src'], $move['dst'], $move['class'], $move['type']);
@@ -384,8 +379,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         if(@filesize($this->files['missing']) > 1 && @filesize($this->files['affected']) > 1) {
-            $todo = $this->stepThroughMissingPages();
+            $todo = $this->stepThroughMissingDocuments(self::TYPE_PAGES);
             if($todo === false) return $this->storeError();
+            return max($todo, 1); // force one more call
+        }
+
+        if(@filesize($this->files['missing_media']) > 1 && @filesize($this->files['affected']) > 1) {
+            $todo = $this->stepThroughMissingDocuments(self::TYPE_MEDIA);
+            if($todo === false)return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
@@ -560,14 +561,25 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * This does not step currently, but handles all pages in one step.
      *
+     * @param int $type
+     *
      * @return int always 0
+     * @throws Exception
      */
-    protected function stepThroughMissingPages() {
+    protected function stepThroughMissingDocuments($type = self::TYPE_PAGES) {
+        if($type != self::TYPE_PAGES && $type != self::TYPE_MEDIA) {
+            throw new Exception('wrong type specified');
+        }
         /** @var helper_plugin_move_rewrite $Rewriter */
         $Rewriter = plugin_load('helper', 'move_rewrite');
 
         $miss = array();
-        $missing = file($this->files['missing']);
+        if ($type == self::TYPE_PAGES) {
+            $missing_fn = $this->files['missing'];
+        } else {
+            $missing_fn = $this->files['missing_media'];
+        }
+        $missing = file($missing_fn);
         foreach($missing as $line) {
             $line = trim($line);
             if($line == '') continue;
@@ -579,10 +591,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         foreach($affected as $page){
             $page = trim($page);
 
-            $Rewriter->setMoveMetas($page, $miss, 'pages');
+            if ($type == self::TYPE_PAGES) {
+                $Rewriter->setMoveMetas($page, $miss, 'pages');
+            } else {
+                $Rewriter->setMoveMetas($page, $miss, 'media');
+            }
         }
 
-        unlink($this->files['missing']);
+        unlink($missing_fn);
         return 0;
     }
 
@@ -738,33 +754,39 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Find missing pages in the $src namespace
      *
-     * @param $src
-     * @param $dst
+     * @param string $src source namespace
+     * @param string $dst destination namespace
+     * @param int    $type either self::TYPE_PAGES or self::TYPE_MEDIA
      */
-    protected function findMissingPages($src, $dst) {
-        if(is_null($this->referenceidx)) {
-            global $conf;
-            // FIXME this duplicates Doku_Indexer::getIndex()
-            $fn = $conf['indexdir'].'/relation_references_w.idx';
-            if (!@file_exists($fn)){
-                $this->referenceidx = array();
-            } else {
-                $this->referenceidx = file($fn, FILE_IGNORE_NEW_LINES);
-            }
+    protected function findMissingDocuments($src, $dst, $type = self::TYPE_PAGES) { //FIXME: expects $src without colon, but $dst with colon
+        global $conf;
+
+        // FIXME this duplicates Doku_Indexer::getIndex()
+        if ($type == self::TYPE_PAGES) {
+            $fn = $conf['indexdir'] . '/relation_references_w.idx';
+        } else {
+            $fn = $conf['indexdir'] . '/relation_media_w.idx';
+        }
+        if (!@file_exists($fn)){
+            $referenceidx = array();
+        } else {
+            $referenceidx = file($fn, FILE_IGNORE_NEW_LINES);
         }
 
         $len = strlen($src);
-        foreach($this->referenceidx as $idx => $page) {
+        foreach($referenceidx as $idx => $page) {
             if(substr($page, 0, $len+1) != "$src:") continue;
 
             // remember missing pages
             if(!page_exists($page)) {
                 $newpage = $dst . substr($page, $len+1);
-                $this->tmpstore['miss'][$page] = $newpage;
+                if ($type == self::TYPE_PAGES) {
+                    $this->tmpstore['miss'][$page] = $newpage;
+                } else {
+                    $this->tmpstore['miss_media'][$page] = $newpage;
+                }
             }
 
-            // we never need to look at this page again
-            unset($this->referenceidx[$idx]);
         }
     }
 
@@ -779,7 +801,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'media' => $this->files['medialist'],
             'ns'    => $this->files['namespaces'],
             'affpg' => $this->files['affected'],
-            'miss'  => $this->files['missing']
+            'miss'  => $this->files['missing'],
+            'miss_media'  => $this->files['missing_media'],
         );
 
         foreach($lists as $store => $file) {
