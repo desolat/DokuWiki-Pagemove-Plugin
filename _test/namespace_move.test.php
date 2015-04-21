@@ -26,6 +26,7 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
 
         io_rmdir(DOKU_TMP_DATA."pages/newns",true);
         io_rmdir(DOKU_TMP_DATA."media/newns",true);
+        io_rmdir(DOKU_TMP_DATA."meta/newns",true);
 
         parent::tearDown();
     }
