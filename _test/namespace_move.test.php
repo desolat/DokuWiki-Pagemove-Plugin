@@ -247,11 +247,11 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
 
         $plan->commit();
 
-        $this->assertSame(1, $plan->nextStep(), 'pages'); // pages
-        $this->assertSame(1, $plan->nextStep(), 'missing'); // missing
-        $this->assertSame(1, $plan->nextStep(), 'links'); // links
-        $this->assertSame(1, $plan->nextStep(), 'autorewrite'); // autorewrite
-        $this->assertSame(0, $plan->nextStep(), 'done'); // done
+        $this->assertSame(1, $plan->nextStep(), 'pages');
+        $this->assertSame(1, $plan->nextStep(), 'missing');
+        $this->assertSame(1, $plan->nextStep(), 'namespace');
+        $this->assertSame(1, $plan->nextStep(), 'autorewrite');
+        $this->assertSame(0, $plan->nextStep(), 'done');
 
         $this->assertFileExists(wikiFN('newns:start'));
         $this->assertFileExists(wikiFN('newns:page'));
@@ -287,7 +287,6 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertFalse($plan->inProgress());
 
         $plan->addMediaNamespaceMove('oldns', 'newns');
-        //todo: it apears that only existing mediafiles are checked, but there is no checking for links to missing media files in that namespace
 
         $plan->commit();
 
