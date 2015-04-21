@@ -348,4 +348,90 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertSame("[[newns:start]] [[newns:page]] [[newns:missing]]\n{{newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{oldnsimage_missing.png}}",rawWiki('start'));
     }
 
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     *
+     * @group slow
+     */
+    public function test_move_small_namespace_subscription_ns() {
+        global $AUTH_ACL;
+
+        $AUTH_ACL[] = "subns:*\t@ALL\t16";
+        $AUTH_ACL[] = "newns:*\t@ALL\t16";
+
+        saveWikiText('subns:start', 'Lorem Ipsum', 'setup');
+        idx_addPage('subns:start');
+
+        $oldfilepath = DOKU_TMP_DATA.'meta/subns/.mlist';
+        $subscription = 'doe every 1427984341';
+        io_makeFileDir($oldfilepath);
+        io_saveFile($oldfilepath,$subscription);
+        $newfilepath = DOKU_TMP_DATA.'meta/newns/.mlist';
+
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
+
+        $this->assertFalse($plan->inProgress());
+
+        $plan->addPageNamespaceMove('subns', 'newns');
+
+        $plan->commit();
+
+        $this->assertSame(1, $plan->nextStep(), 'pages');
+        $this->assertSame(1, $plan->nextStep(), 'namespace');
+        $this->assertSame(0, $plan->nextStep(), 'done');
+
+        $this->assertFileExists(wikiFN('newns:start'));
+        $this->assertFileExists($newfilepath);
+        $this->assertFileNotExists(wikiFN('subns:start'));
+        $this->assertFileNotExists($oldfilepath);
+
+        $this->assertSame($subscription,file_get_contents($newfilepath));
+
+    }
+
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     *
+     * @group slow
+     */
+    public function test_move_small_namespace_subscription_page() {
+        global $AUTH_ACL;
+
+        $AUTH_ACL[] = "subns:*\t@ALL\t16";
+        $AUTH_ACL[] = "newns:*\t@ALL\t16";
+
+        saveWikiText('subns:start', 'Lorem Ipsum', 'setup');
+        idx_addPage('subns:start');
+
+        $oldfilepath = DOKU_TMP_DATA.'meta/subns/start.mlist';
+        $subscription = 'doe every 1427984341';
+        io_makeFileDir($oldfilepath);
+        io_saveFile($oldfilepath,$subscription);
+        $newfilepath = DOKU_TMP_DATA.'meta/newns/start.mlist';
+
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
+
+        $this->assertFalse($plan->inProgress());
+
+        $plan->addPageNamespaceMove('subns', 'newns');
+
+        $plan->commit();
+
+        $this->assertSame(1, $plan->nextStep(), 'pages');
+        $this->assertSame(1, $plan->nextStep(), 'namespace');
+        $this->assertSame(0, $plan->nextStep(), 'done');
+
+        $this->assertFileExists(wikiFN('newns:start'));
+        $this->assertFileExists($newfilepath);
+        $this->assertFileNotExists(wikiFN('subns:start'));
+        $this->assertFileNotExists($oldfilepath);
+
+        $this->assertSame($subscription,file_get_contents($newfilepath));
+
+    }
+
 }
