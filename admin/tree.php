@@ -20,7 +20,7 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
      * @return bool false
      */
     function forAdminOnly() {
-        return !($this->getConf('allowmanagerstree'));
+        return false;
     }
 
     /**
