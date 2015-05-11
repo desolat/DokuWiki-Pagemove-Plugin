@@ -725,6 +725,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         if($class == self::CLASS_NS) {
             $src_ = "$src:*"; // use wildcard lookup for namespaces
+        } else {
+            $src_ = $src;
         }
 
         $pages = array();
