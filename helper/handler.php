@@ -57,7 +57,13 @@ class helper_plugin_move_handler {
 
         if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
 
-        if($conf['useslash']) $old = str_replace('/', ':', $old);
+        if($conf['useslash']) {
+            $old = str_replace('/', ':', $old);
+            $delimiter = '/';
+        } else {
+            $delimiter = ':';
+        }
+
         $old = resolve_id($this->origNS, $old, false);
 
         if($type == 'page') {
@@ -72,8 +78,24 @@ class helper_plugin_move_handler {
             $moves = $this->media_moves;
         }
 
+        if (substr($old,0,1) !== $delimiter) {
+            $tempColon = true;
+            $old = $delimiter . $old;
+        }
+
         foreach($moves as $move) {
-            if($move[0] == $old) $old = $move[1];
+            if (substr($move[0],0,1) !== $delimiter) {
+                $move[0] = $delimiter . $move[0];
+            }
+            if($move[0] == $old) {
+                $old = $move[1];
+                if (substr($old,0,1) !== $delimiter) {
+                    $old = $delimiter . $old;
+                }
+            }
+        }
+        if ($tempColon) {
+            $old = substr($old,1);
         }
         return $old; // this is now new
     }

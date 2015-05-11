@@ -60,4 +60,31 @@ class plugin_move_mediamove_test extends DokuWikiTest {
 
         $this->assertEquals('{{foobar:logo.png?200}}', rawWiki('wiki:movetest'));
     }
+
+    /**
+     * @group slow
+     */
+    public function test_moveSingleMedia_colonstart() {
+        global $AUTH_ACL;
+        $AUTH_ACL[] = "wiki:*\t@ALL\t16";
+        $AUTH_ACL[] = "foobar:*\t@ALL\t8";
+
+        $filepath = DOKU_TMP_DATA.'media/wiki/testimage.png';
+        io_makeFileDir($filepath);
+        io_saveFile($filepath,'');
+
+        saveWikiText('wiki:movetest', '{{:wiki:testimage.png?200}}', 'Test initialized');
+        idx_addPage('wiki:movetest');
+
+        $src = 'wiki:testimage.png';
+        $dst = 'foobar:logo_2.png';
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+        $this->assertTrue($move->moveMedia($src, $dst));
+
+        $this->assertTrue(@file_exists(mediaFn('foobar:logo_2.png')));
+
+        $this->assertEquals('{{:foobar:logo_2.png?200}}', rawWiki('wiki:movetest'));
+    }
 }
