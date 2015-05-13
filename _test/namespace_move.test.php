@@ -278,7 +278,7 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $filepath = DOKU_TMP_DATA.'media/oldns/oldnsimage.png';
         io_makeFileDir($filepath);
         io_saveFile($filepath,'');
-        saveWikiText('start', '{{oldns:oldnsimage.png}} {{oldns:oldnsimage_missing.png}} {{oldnsimage_missing.png}}', 'setup');
+        saveWikiText('start', '{{oldns:oldnsimage.png}} {{oldns:oldnsimage_missing.png}} {{image_missing.png}}', 'setup');
         idx_addPage('start');
 
         /** @var helper_plugin_move_plan $plan  */
@@ -298,7 +298,45 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertFileExists(mediaFN('newns:oldnsimage.png'));
         $this->assertFileNotExists(mediaFN('oldns:oldnsimage.png'));
 
-        $this->assertSame('{{newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{oldnsimage_missing.png}}',rawWiki('start'));
+        $this->assertSame('{{newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{image_missing.png}}',rawWiki('start'));
+    }
+
+    /**
+     * This is an integration test, which checks the correct working of an entire namespace move.
+     * Hence it is not an unittest, hence it @coversNothing
+     *
+     * @group slow
+     */
+    public function test_move_small_namespace_media_affected() {
+        global $AUTH_ACL;
+
+        $AUTH_ACL[] = "oldns:*\t@ALL\t16";
+        $AUTH_ACL[] = "newns:*\t@ALL\t16";
+
+        $filepath = DOKU_TMP_DATA.'media/oldns/oldnsimage.png';
+        io_makeFileDir($filepath);
+        io_saveFile($filepath,'');
+        saveWikiText('oldns:start', '{{:oldns:oldnsimage.png}} {{oldns:oldnsimage_missing.png}} {{oldnsimage_missing.png}} {{oldnsimage.png}}', 'setup');
+        idx_addPage('oldns:start');
+
+        /** @var helper_plugin_move_plan $plan  */
+        $plan = plugin_load('helper', 'move_plan');
+
+        $this->assertFalse($plan->inProgress());
+
+        $plan->addMediaNamespaceMove('oldns', 'newns');
+
+        $plan->commit();
+
+        $this->assertSame(1, $plan->nextStep(), 'media');
+        $this->assertSame(1, $plan->nextStep(), 'missing_media');
+        $this->assertSame(1, $plan->nextStep(), 'autorewrite');
+        $this->assertSame(0, $plan->nextStep(), 'done');
+
+        $this->assertFileExists(mediaFN('newns:oldnsimage.png'));
+        $this->assertFileNotExists(mediaFN('oldns:oldnsimage.png'));
+
+        $this->assertSame('{{:newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{oldnsimage_missing.png}} {{newns:oldnsimage.png}}',rawWiki('oldns:start'));
     }
 
     /**
