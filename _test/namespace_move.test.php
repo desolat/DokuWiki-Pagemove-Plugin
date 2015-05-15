@@ -58,7 +58,6 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertSame(1, $plan->nextStep(),'pages');
         $this->assertSame(1, $plan->nextStep(),'media');
         $this->assertSame(1, $plan->nextStep(),'missing');
-        $this->assertSame(1, $plan->nextStep(),'missing_media');
         $this->assertSame(1, $plan->nextStep(),'namespace');
         $this->assertSame(1, $plan->nextStep(),'autorewrite');
         $this->assertSame(0, $plan->nextStep(),'done');

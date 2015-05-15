@@ -43,10 +43,10 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
      */
     public function tearDown() {
         global $conf;
-        $indexfn = $conf['indexdir'].'/relation_references_w.idx';
-        if(file_exists($indexfn)) {
-            unlink($indexfn);
-        }
+
+        io_rmdir($conf['indexdir'],true);
+        mkdir($conf['indexdir']);
+
         $this->plan->abort();
         parent::tearDown();
     }
@@ -96,5 +96,16 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
         $this->plan->findMissingDocuments('oldns','newns:',helper_plugin_move_plan::TYPE_MEDIA);
         $tmpstore = $this->plan->getTmpstore();
         $this->assertSame(array('oldns:missing.png' => 'newns:missing.png',),$tmpstore['miss_media']);
+    }
+
+    function test_findMissingDocuments_nonMissingMedia () {
+        $filepath = DOKU_TMP_DATA.'media/oldns/oldnsimage.png';
+        io_makeFileDir($filepath);
+        io_saveFile($filepath,'');
+        saveWikiText('start','{{oldns:oldnsimage.png}}','test edit');
+        idx_addPage('start');
+        $this->plan->findMissingDocuments('oldns','newns:',helper_plugin_move_plan::TYPE_MEDIA);
+        $tmpstore = $this->plan->getTmpstore();
+        $this->assertSame(array(),$tmpstore['miss_media']);
     }
 }

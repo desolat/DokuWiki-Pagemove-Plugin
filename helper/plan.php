@@ -773,15 +773,17 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             if(substr($page, 0, $len+1) != "$src:") continue;
 
             // remember missing pages
-            if(!page_exists($page)) {
-                $newpage = $dst . substr($page, $len+1);
-                if ($type == self::TYPE_PAGES) {
+            if ($type == self::TYPE_PAGES) {
+                if(!page_exists($page)) {
+                    $newpage = $dst . substr($page, $len+1);
                     $this->tmpstore['miss'][$page] = $newpage;
-                } else {
+                }
+            } else {
+                if(!file_exists(mediaFN($page))){
+                    $newpage = $dst . substr($page, $len+1);
                     $this->tmpstore['miss_media'][$page] = $newpage;
                 }
             }
-
         }
     }
 
