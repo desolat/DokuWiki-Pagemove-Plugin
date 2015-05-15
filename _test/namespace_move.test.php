@@ -336,7 +336,7 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $this->assertFileExists(mediaFN('newns:oldnsimage.png'));
         $this->assertFileNotExists(mediaFN('oldns:oldnsimage.png'));
 
-        $this->assertSame('{{:newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{oldnsimage_missing.png}} {{newns:oldnsimage.png}}',rawWiki('oldns:start'));
+        $this->assertSame('{{:newns:oldnsimage.png}} {{newns:oldnsimage_missing.png}} {{newns:oldnsimage_missing.png}} {{newns:oldnsimage.png}}',rawWiki('oldns:start'));
     }
 
     /**

@@ -741,14 +741,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             unset($page);
         } else if($type == self::TYPE_MEDIA) {
             $pages = $idx->lookupKey('relation_media', $src_);
-            $len = strlen($src);
-            foreach($pages as &$page) {
-                if (substr($page, 0, $len + 1) === "$src:") {
-                    $page = $dst . substr($page, $len + 1);
-                }
-            }
-            unset($page);
-            //todo: we may have to rewrite src -> dst here as well. tests needed
         }
 
         $this->addToAffectedPagesList($pages);

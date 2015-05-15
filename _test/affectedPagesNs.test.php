@@ -51,7 +51,7 @@ class plugin_move_affectedPagesNS_test extends DokuWikiTest {
 
         $affected_file = file(TMP_DIR . '/data/meta/__move_affected');
 
-        $this->assertSame('newns:start',trim($affected_file[0]));
+        $this->assertSame('oldns:start',trim($affected_file[0]));
 
     }
 
