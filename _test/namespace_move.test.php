@@ -195,13 +195,13 @@ class plugin_move_namespace_move_test extends DokuWikiTest {
         $actual_response = $response->getContent();
         //clean away clutter
         $actual_response = substr($actual_response,strpos($actual_response,"<!-- wikipage start -->") + 23);
+        $actual_response = substr($actual_response,strpos($actual_response, 'doku.php'));
         $actual_response = substr($actual_response,0,strpos($actual_response,"<!-- wikipage stop -->"));
         $actual_response = trim($actual_response);
-        $actual_response = ltrim($actual_response,"<p>");
         $actual_response = rtrim($actual_response,"</p>");
         $actual_response = trim($actual_response);
 
-        $expected_response = '<a href="/./doku.php?id=foo:testns:start" class="wikilink1" title="foo:testns:start">testns</a> <a href="/./doku.php?id=testns:test_page17" class="wikilink1" title="testns:test_page17">test_page17</a>';
+        $expected_response = 'doku.php?id=foo:testns:start" class="wikilink1" title="foo:testns:start">testns</a> <a href="/./doku.php?id=testns:test_page17" class="wikilink1" title="testns:test_page17">test_page17</a>';
         $this->assertSame($expected_response,$actual_response); // todo: this assert fails occaisionally, but not reproduciably. It then has the following oputput: <a href="/./doku.php?id=testns:start" class="wikilink2" title="testns:start" rel="nofollow">testns</a> <a href="/./doku.php?id=testns:test_page17" class="wikilink1" title="testns:test_page17">test_page17</a>
 
         $expected_file_contents = '[[testns:start]] [[testns:test_page17]]';
