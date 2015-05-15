@@ -44,9 +44,11 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
     public function tearDown() {
         global $conf;
 
-        io_rmdir($conf['indexdir'],true);
-        mkdir($conf['indexdir']);
-
+        $dirs = array('indexdir','datadir','metadir', 'mediadir');
+        foreach ($dirs as $dir) {
+            io_rmdir($conf[$dir],true);
+            mkdir($conf[$dir]);
+        }
         $this->plan->abort();
         parent::tearDown();
     }
