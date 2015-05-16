@@ -57,10 +57,11 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         'media' => array(),
         'ns'    => array(),
         'miss'  => array(),
+        'miss_media'  => array(),
     );
 
-    /** @var array|null keeps reference list */
-    protected $referenceidx = null;
+    /** @var helper_plugin_move_op $MoveOperator */
+    protected $MoveOperator = null;
 
     /**
      * Constructor
@@ -77,8 +78,11 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'medialist'  => $conf['metadir'] . '/__move_medialist',
             'affected'   => $conf['metadir'] . '/__move_affected',
             'namespaces' => $conf['metadir'] . '/__move_namespaces',
-            'missing'    => $conf['metadir'] . '/__move_missing'
+            'missing'    => $conf['metadir'] . '/__move_missing',
+            'missing_media'    => $conf['metadir'] . '/__move_missing_media',
         );
+
+        $this->MoveOperator = plugin_load('helper', 'move_op');
 
         $this->loadOptions();
     }
@@ -118,9 +122,6 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             $options       = unserialize(io_readFile($file, false));
             $this->options = array_merge($this->options, $options);
         }
-
-        // reset index for next run (happens in tests only)
-        $this->referenceidx = null;
     }
 
     /**
@@ -271,6 +272,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
         $this->plan = array();
         $this->loadOptions();
+        helper_plugin_move_rewrite::removeAllLocks();
     }
 
     /**
@@ -286,6 +288,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         global $conf;
 
         if($this->options['commited']) throw new Exception('plan is commited already, can not be commited again');
+
+        helper_plugin_move_rewrite::addLock();
+
 
         usort($this->plan, array($this, 'planSorter'));
 
@@ -326,12 +331,11 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     //       page namespace moves, but subscriptions work for both, but what when only one of
                     //       them is moved? Should it be copied then? Complicated. This is good enough for now
                     $this->addToDocumentList($move['src'], $move['dst'], self::CLASS_NS);
-
-                    $this->findMissingPages($move['src'], $move['dst']);
                 }
+                $this->findMissingDocuments($move['src'] . ':', $move['dst'],$move['type']);
             }
             // store what pages are affected by this move
-            $this->findAffectedPages($move['src'], $move['class'], $move['type']);
+            $this->findAffectedPages($move['src'], $move['dst'], $move['class'], $move['type']);
         }
 
         $this->storeDocumentLists();
@@ -375,8 +379,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         if(@filesize($this->files['missing']) > 1 && @filesize($this->files['affected']) > 1) {
-            $todo = $this->stepThroughMissingPages();
+            $todo = $this->stepThroughMissingDocuments(self::TYPE_PAGES);
             if($todo === false) return $this->storeError();
+            return max($todo, 1); // force one more call
+        }
+
+        if(@filesize($this->files['missing_media']) > 1 && @filesize($this->files['affected']) > 1) {
+            $todo = $this->stepThroughMissingDocuments(self::TYPE_MEDIA);
+            if($todo === false)return $this->storeError();
             return max($todo, 1); // force one more call
         }
 
@@ -386,7 +396,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             return max($todo, 1); // force one more call
         }
 
-        helper_plugin_move_rewrite::removeLock();
+        helper_plugin_move_rewrite::removeAllLocks();
 
         if($this->options['autorewrite'] && @filesize($this->files['affected']) > 1) {
             $todo = $this->stepThroughAffectedPages();
@@ -453,57 +463,66 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param bool $skip should the first item be skipped?
      * @return bool|int false on error, otherwise the number of remaining documents
      */
-    protected function stepThroughDocuments($type = self::TYPE_PAGES, &$skip = false) {
-        /** @var helper_plugin_move_op $MoveOperator */
-        $MoveOperator = plugin_load('helper', 'move_op');
+    protected function stepThroughDocuments($type = self::TYPE_PAGES, $skip = false) {
 
         if($type == self::TYPE_PAGES) {
             $file    = $this->files['pagelist'];
             $mark    = 'P';
             $call    = 'movePage';
-            $counter = 'pages_run';
+            $items_run_counter = 'pages_run';
         } else {
             $file    = $this->files['medialist'];
             $mark    = 'M';
             $call    = 'moveMedia';
-            $counter = 'media_run';
+            $items_run_counter = 'media_run';
         }
 
         $doclist = fopen($file, 'a+');
+
         for($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
+            $log = "";
             $line = $this->getLastLine($doclist);
-            if($line === false) break;
+            if($line === false) {
+                break;
+            }
             list($src, $dst) = explode("\t", trim($line));
 
             // should this item be skipped?
-            if($skip) goto FINISH;
-
-            // move the page
-            if(!$MoveOperator->$call($src, $dst)) {
-                $this->log($mark, $src, $dst, false); // FAILURE!
-
-                // automatically skip this item if wanted...
-                if($this->options['autoskip']) goto FINISH;
-                // ...otherwise abort the operation
-                fclose($doclist);
-                return false;
+            if($skip === true) {
+                $skip = false;
             } else {
-                $this->log($mark, $src, $dst, true); // SUCCESS!
+            // move the page
+                if(!$this->MoveOperator->$call($src, $dst)) {
+                    $log .= $this->build_log_line($mark, $src, $dst, false); // FAILURE!
+
+                    // automatically skip this item only if wanted...
+                    if(!$this->options['autoskip']) {
+                        // ...otherwise abort the operation
+                        fclose($doclist);
+                        $return_items_run = false;
+                        break;
+                    }
+                } else {
+                    $log .= $this->build_log_line($mark, $src, $dst, true); // SUCCESS!
+                }
             }
 
             /*
              * This adjusts counters and truncates the document list correctly
              * It is used to finalize a successful or skipped move
              */
-            FINISH:
-            $skip = false;
+
             ftruncate($doclist, ftell($doclist));
-            $this->options[$counter]--;
+            $this->options[$items_run_counter]--;
+            $return_items_run = $this->options[$items_run_counter];
+            $this->write_log($log);
             $this->saveOptions();
         }
 
-        fclose($doclist);
-        return $this->options[$counter];
+        if ($return_items_run !== false) {
+            fclose($doclist);
+        }
+        return $return_items_run;
     }
 
     /**
@@ -543,14 +562,25 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * This does not step currently, but handles all pages in one step.
      *
+     * @param int $type
+     *
      * @return int always 0
+     * @throws Exception
      */
-    protected function stepThroughMissingPages() {
+    protected function stepThroughMissingDocuments($type = self::TYPE_PAGES) {
+        if($type != self::TYPE_PAGES && $type != self::TYPE_MEDIA) {
+            throw new Exception('wrong type specified');
+        }
         /** @var helper_plugin_move_rewrite $Rewriter */
         $Rewriter = plugin_load('helper', 'move_rewrite');
 
         $miss = array();
-        $missing = file($this->files['missing']);
+        if ($type == self::TYPE_PAGES) {
+            $missing_fn = $this->files['missing'];
+        } else {
+            $missing_fn = $this->files['missing_media'];
+        }
+        $missing = file($missing_fn);
         foreach($missing as $line) {
             $line = trim($line);
             if($line == '') continue;
@@ -562,10 +592,14 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         foreach($affected as $page){
             $page = trim($page);
 
-            $Rewriter->setMoveMetas($page, $miss, 'pages');
+            if ($type == self::TYPE_PAGES) {
+                $Rewriter->setMoveMetas($page, $miss, 'pages');
+            } else {
+                $Rewriter->setMoveMetas($page, $miss, 'media');
+            }
         }
 
-        unlink($this->files['missing']);
+        unlink($missing_fn);
         return 0;
     }
 
@@ -578,6 +612,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * @return int always 0
      * @todo maybe add an event so plugins can move more stuff?
+     * @todo fixed that $src and $dst are seperated by tab, not newline. This method has no tests?
      */
     protected function stepThroughNamespaces() {
         /** @var helper_plugin_move_file $FileMover */
@@ -587,7 +622,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $lines = explode("\n", $lines);
 
         foreach($lines as $line) {
-            list($src, $dst) = explode("\n", trim($line));
+            list($src, $dst) = explode("\t", trim($line));
             $FileMover->moveNamespaceSubscription($src, $dst);
         }
 
@@ -681,22 +716,32 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      *
      * Calls addToAffectedPagesList() directly to store the result
      *
-     * @param string $src
+     * @param string $src source namespace
+     * @param string $dst destination namespace
      * @param int    $class
      * @param int    $type
      */
-    protected function findAffectedPages($src, $class, $type) {
+    protected function findAffectedPages($src, $dst, $class, $type) {
         $idx = idx_get_indexer();
 
         if($class == self::CLASS_NS) {
-            $src = "$src:*"; // use wildcard lookup for namespaces
+            $src_ = "$src:*"; // use wildcard lookup for namespaces
+        } else {
+            $src_ = $src;
         }
 
         $pages = array();
         if($type == self::TYPE_PAGES) {
-            $pages = $idx->lookupKey('relation_references', $src);
+            $pages = $idx->lookupKey('relation_references', $src_);
+            $len = strlen($src);
+            foreach($pages as &$page) {
+                if (substr($page, 0, $len + 1) === "$src:") {
+                    $page = $dst . substr($page, $len + 1);
+                }
+            }
+            unset($page);
         } else if($type == self::TYPE_MEDIA) {
-            $pages = $idx->lookupKey('relation_media', $src);
+            $pages = $idx->lookupKey('relation_media', $src_);
         }
 
         $this->addToAffectedPagesList($pages);
@@ -705,33 +750,41 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     /**
      * Find missing pages in the $src namespace
      *
-     * @param $src
-     * @param $dst
+     * @param string $src source namespace
+     * @param string $dst destination namespace
+     * @param int    $type either self::TYPE_PAGES or self::TYPE_MEDIA
      */
-    protected function findMissingPages($src, $dst) {
-        if(is_null($this->referenceidx)) {
-            global $conf;
-            // FIXME this duplicates Doku_Indexer::getIndex()
-            $fn = $conf['indexdir'].'/relation_references_w.idx';
-            if (!@file_exists($fn)){
-                $this->referenceidx = array();
-            } else {
-                $this->referenceidx = file($fn, FILE_IGNORE_NEW_LINES);
-            }
+    protected function findMissingDocuments($src, $dst, $type = self::TYPE_PAGES) {
+        global $conf;
+
+        // FIXME this duplicates Doku_Indexer::getIndex()
+        if ($type == self::TYPE_PAGES) {
+            $fn = $conf['indexdir'] . '/relation_references_w.idx';
+        } else {
+            $fn = $conf['indexdir'] . '/relation_media_w.idx';
+        }
+        if (!@file_exists($fn)){
+            $referenceidx = array();
+        } else {
+            $referenceidx = file($fn, FILE_IGNORE_NEW_LINES);
         }
 
         $len = strlen($src);
-        foreach($this->referenceidx as $idx => $page) {
-            if(substr($page, 0, $len+1) != "$src:") continue;
+        foreach($referenceidx as $idx => $page) {
+            if(substr($page, 0, $len) != "$src") continue;
 
             // remember missing pages
-            if(!page_exists($page)) {
-                $newpage = $dst . substr($page, $len+1);
-                $this->tmpstore['miss'][$page] = $newpage;
+            if ($type == self::TYPE_PAGES) {
+                if(!page_exists($page)) {
+                    $newpage = $dst . substr($page, $len);
+                    $this->tmpstore['miss'][$page] = $newpage;
+                }
+            } else {
+                if(!file_exists(mediaFN($page))){
+                    $newpage = $dst . substr($page, $len);
+                    $this->tmpstore['miss_media'][$page] = $newpage;
+                }
             }
-
-            // we never need to look at this page again
-            unset($this->referenceidx[$idx]);
         }
     }
 
@@ -746,7 +799,8 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             'media' => $this->files['medialist'],
             'ns'    => $this->files['namespaces'],
             'affpg' => $this->files['affected'],
-            'miss'  => $this->files['missing']
+            'miss'  => $this->files['missing'],
+            'miss_media'  => $this->files['missing_media'],
         );
 
         foreach($lists as $store => $file) {
@@ -851,23 +905,23 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
     }
 
     /**
-     * Log result of an operation
+     * Create line to log result of an operation
      *
      * @param string $type
      * @param string $from
      * @param string $to
      * @param bool   $success
+     *
+     * @return string
+     *
      * @author Andreas Gohr <gohr@cosmocode.de>
+     * @author Michael Große <grosse@cosmocode.de>
      */
-    protected function log($type, $from, $to, $success) {
-        global $conf;
+    public function build_log_line ($type, $from, $to, $success) {
         global $MSG;
 
-        $optime = $this->options['started'];
-        $file   = $conf['cachedir'] . '/move/' . strftime('%Y%m%d-%H%M%S', $optime) . '.log';
-        $now    = time();
+        $now = time();
         $date   = date('Y-m-d H:i:s', $now); // for human readability
-
         if($success) {
             $ok  = 'success';
             $msg = '';
@@ -877,6 +931,19 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         $log = "$now\t$date\t$type\t$from\t$to\t$ok\t$msg\n";
+        return $log;
+    }
+
+    /**
+     * write log to file
+     *
+     * @param $log
+     */
+    protected function write_log ($log) {
+        global $conf;
+        $optime = $this->options['started'];
+        $file   = $conf['cachedir'] . '/move/' . strftime('%Y%m%d-%H%M%S', $optime) . '.log';
         io_saveFile($file, $log, true);
     }
+
 }

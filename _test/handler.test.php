@@ -17,11 +17,11 @@ class plugin_move_handler_test extends DokuWikiTest {
 
         $tests = array(
             'deep:namespace:new1' => 'new1',
-            'deep:new2'  => '..new2',
+            'deep:new2'  => '..:new2',
             'new3'   => ':new3', // absolute is shorter than relative
             'deep:namespace:deeper:new4' => '.deeper:new4',
             'deep:namespace:deeper:deepest:new5' => '.deeper:deepest:new5',
-            'deep:foobar:new6'  => '..foobar:new6',
+            'deep:foobar:new6'  => '..:foobar:new6',
         );
 
         foreach($tests as $new => $rel) {

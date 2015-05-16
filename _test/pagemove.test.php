@@ -22,6 +22,7 @@ class plugin_move_pagemove_test  extends DokuWikiTest {
     // @todo Check backlinks of a sub-namespace page (moving same, up, down, different)
 
     function setUp() {
+        parent::setUpBeforeClass();
         $this->pluginsEnabled[] = 'move';
         global $ID;
         global $INFO;
@@ -174,8 +175,10 @@ EOT;
         $conf['useslash'] = 1;
     }
 
-
-	function test_move_page_in_same_ns() {
+    /**
+     * @group slow
+     */
+    function test_move_page_in_same_ns() {
 	    global $ID;
         $newId = getNS($ID).':new_page';
         $this->movedToId = $newId;
@@ -288,8 +291,10 @@ EOT;
 	    $this->assertEquals($expectedContent, $newContent);
 	}
 
-
-	function test_move_page_to_parallel_ns() {
+    /**
+     * @group slow
+     */
+    function test_move_page_to_parallel_ns() {
 	    global $ID;
         $newId = 'parent_ns:parallel_ns:new_page';
         $this->movedToId = $newId;
@@ -302,9 +307,9 @@ EOT;
 
         $newContent = rawWiki($this->movedToId);
 	    $expectedContent = <<<EOT
-[[..current_ns:start|start]]
-[[..current_ns:parallel_page|parallel_page]]
-[[..current_ns:|.:]]
+[[..:current_ns:start|start]]
+[[..:current_ns:parallel_page|parallel_page]]
+[[..:current_ns:|.:]]
 [[..current_ns:|..current_ns:]]
 [[..:current_ns:|..:current_ns:]]
 [[..parallel_ns:|..parallel_ns:]]
@@ -348,11 +353,11 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:parallel_ns:new_page|$this->movedId]]
 [[$newId|:$this->movedId]]
-[[..parallel_ns:new_page|..current_ns:test_page]]
-[[..parallel_ns:new_page|..:current_ns:test_page]]
-[[..parallel_ns:new_page|test_page]]
-[[..parallel_ns:new_page|.test_page]]
-[[..parallel_ns:new_page|.:test_page]]
+[[..:parallel_ns:new_page|..current_ns:test_page]]
+[[..:parallel_ns:new_page|..:current_ns:test_page]]
+[[..:parallel_ns:new_page|test_page]]
+[[..:parallel_ns:new_page|.test_page]]
+[[..:parallel_ns:new_page|.:test_page]]
 [[..test_page|..test_page]]
 [[..:test_page|..:test_page]]
 [[.:..:test_page|.:..:test_page]]
@@ -402,8 +407,10 @@ EOT;
 	    $this->assertEquals($expectedContent, $newContent);
 	}
 
-
-	function test_move_page_to_parent_ns() {
+    /**
+     * @group slow
+     */
+    function test_move_page_to_parent_ns() {
 	    global $ID;
 
         $newId = 'parent_ns:new_page';
@@ -464,11 +471,11 @@ EOT;
 	    $expectedContent = <<<EOT
 [[parent_ns:new_page|$this->movedId]]
 [[$newId|:$this->movedId]]
-[[..new_page|..current_ns:test_page]]
-[[..new_page|..:current_ns:test_page]]
-[[..new_page|test_page]]
-[[..new_page|.test_page]]
-[[..new_page|.:test_page]]
+[[..:new_page|..current_ns:test_page]]
+[[..:new_page|..:current_ns:test_page]]
+[[..:new_page|test_page]]
+[[..:new_page|.test_page]]
+[[..:new_page|.:test_page]]
 [[..test_page|..test_page]]
 [[..:test_page|..:test_page]]
 [[.:..:test_page|.:..:test_page]]
@@ -518,6 +525,60 @@ EOT;
 	    $this->assertEquals($expectedContent, $newContent);
 	}
 
+    /**
+     * Ensure that absolute links stay absolute. See https://github.com/michitux/dokuwiki-plugin-move/pull/6#discussion_r15698440
+     *
+     * @group slow
+     */
+    function test_move_startpage_of_ns() {
+        saveWikiText('wiki:bar:test',
+                     '[[wiki:foo:]]', 'Test setup');
+        idx_addPage('wiki:bar:test');
+        saveWikiText('wiki:foo:start',
+                     'bar', 'Test setup');
+        idx_addPage('wiki:foo:start');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+        $this->assertTrue($move->movePage('wiki:foo:start', 'wiki:foo2:start'));
+
+        $this->assertEquals('[[wiki:foo2:]]', rawWiki('wiki:bar:test'));
+    }
+
+    /**
+     * If the relative part would be too large, create an absolute link instead.
+     * If the original link ended with a colon and the new link also points to a namespace's startpage: keep the colon.
+     *
+     * @group slow
+     */
+    function test_move_no_long_rel_links_keep_colon() {
+        saveWikiText('wiki:foo:start', '[[..:..:one_ns_up:]]', 'Test setup');
+        idx_addPage('wiki:foo:start');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+
+        $this->assertTrue($move->movePage('wiki:foo:start', 'wiki:foo:bar:start'));
+        $this->assertEquals('[[one_ns_up:]]', rawWiki('wiki:foo:bar:start'));
+
+    }
+
+    /**
+     * @covers helper_plugin_move_handler::_nsStartCheck
+     * @group slow
+     */
+    function test_move_to_thisns_start(){
+        saveWikiText('wiki:foo:test_page', '[[..:..:bar:]]', 'Test setup');
+        idx_addPage('wiki:foo:test_page');
+        saveWikiText('bar:start', 'foo', 'Test setup');
+        idx_addPage('bar:start');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+
+        $this->assertTrue($move->movePage('bar:start', 'wiki:foo:start'));
+        $this->assertEquals('[[.:]]', rawWiki('wiki:foo:test_page'));
+    }
 
 	function test_move_ns_in_same_ns() {
 
@@ -531,6 +592,7 @@ EOT;
 	    $this->movedToId = $opts['newns'].':'.$newPagename;
 
 	    //$this->move->_pm_move_recursive($opts);
+        $this->markTestIncomplete('Test must yet be implemented.');
 
 	}
 
