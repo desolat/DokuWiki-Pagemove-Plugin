@@ -63,7 +63,7 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
     function test_findMissingPages_missingPage_default () {
         saveWikiText('start','[[oldns:missing]]','test edit');
         idx_addPage('start');
-        $this->plan->findMissingDocuments('oldns','newns:');
+        $this->plan->findMissingDocuments('oldns:','newns:');
         $tmpstore = $this->plan->getTmpstore();
         $this->assertSame(array('oldns:missing' => 'newns:missing',),$tmpstore['miss']);
     }
@@ -71,7 +71,7 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
     function test_findMissingPages_missingPage_explicit () {
         saveWikiText('start','[[oldns:missing]]','test edit');
         idx_addPage('start');
-        $this->plan->findMissingDocuments('oldns','newns:',helper_plugin_move_plan::TYPE_PAGES);
+        $this->plan->findMissingDocuments('oldns:','newns:',helper_plugin_move_plan::TYPE_PAGES);
         $tmpstore = $this->plan->getTmpstore();
         $this->assertSame(array('oldns:missing' => 'newns:missing',),$tmpstore['miss']);
     }
@@ -95,7 +95,7 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
     function test_findMissingPages_missingMedia () {
         saveWikiText('start','{{oldns:missing.png}}','test edit');
         idx_addPage('start');
-        $this->plan->findMissingDocuments('oldns','newns:',helper_plugin_move_plan::TYPE_MEDIA);
+        $this->plan->findMissingDocuments('oldns:','newns:',helper_plugin_move_plan::TYPE_MEDIA);
         $tmpstore = $this->plan->getTmpstore();
         $this->assertSame(array('oldns:missing.png' => 'newns:missing.png',),$tmpstore['miss_media']);
     }
@@ -106,7 +106,7 @@ class plugin_move_findMissingPages_test extends DokuWikiTest {
         io_saveFile($filepath,'');
         saveWikiText('start','{{oldns:oldnsimage.png}}','test edit');
         idx_addPage('start');
-        $this->plan->findMissingDocuments('oldns','newns:',helper_plugin_move_plan::TYPE_MEDIA);
+        $this->plan->findMissingDocuments('oldns:','newns:',helper_plugin_move_plan::TYPE_MEDIA);
         $tmpstore = $this->plan->getTmpstore();
         $this->assertSame(array(),$tmpstore['miss_media']);
     }

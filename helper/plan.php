@@ -332,7 +332,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
                     //       them is moved? Should it be copied then? Complicated. This is good enough for now
                     $this->addToDocumentList($move['src'], $move['dst'], self::CLASS_NS);
                 }
-                $this->findMissingDocuments($move['src'], $move['dst'],$move['type']);
+                $this->findMissingDocuments($move['src'] . ':', $move['dst'],$move['type']);
             }
             // store what pages are affected by this move
             $this->findAffectedPages($move['src'], $move['dst'], $move['class'], $move['type']);
@@ -753,7 +753,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
      * @param string $dst destination namespace
      * @param int    $type either self::TYPE_PAGES or self::TYPE_MEDIA
      */
-    protected function findMissingDocuments($src, $dst, $type = self::TYPE_PAGES) { //FIXME: expects $src without colon, but $dst with colon
+    protected function findMissingDocuments($src, $dst, $type = self::TYPE_PAGES) {
         global $conf;
 
         // FIXME this duplicates Doku_Indexer::getIndex()
@@ -770,17 +770,17 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
 
         $len = strlen($src);
         foreach($referenceidx as $idx => $page) {
-            if(substr($page, 0, $len+1) != "$src:") continue;
+            if(substr($page, 0, $len) != "$src") continue;
 
             // remember missing pages
             if ($type == self::TYPE_PAGES) {
                 if(!page_exists($page)) {
-                    $newpage = $dst . substr($page, $len+1);
+                    $newpage = $dst . substr($page, $len);
                     $this->tmpstore['miss'][$page] = $newpage;
                 }
             } else {
                 if(!file_exists(mediaFN($page))){
-                    $newpage = $dst . substr($page, $len+1);
+                    $newpage = $dst . substr($page, $len);
                     $this->tmpstore['miss_media'][$page] = $newpage;
                 }
             }
