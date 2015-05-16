@@ -13,6 +13,16 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         return false; // do not show in Admin menu
     }
 
+
+    /**
+     * If this admin plugin is for admins only
+     *
+     * @return bool false
+     */
+    function forAdminOnly() {
+        return false;
+    }
+
     /**
      * no-op
      */
