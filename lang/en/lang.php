@@ -25,6 +25,14 @@ $lang['medianotchanged']    = 'No new destination given for page %s (location un
 $lang['mediaexists']        = 'Media %s can\'t be moved to %s, the target already exists.';
 $lang['nomediatargetperms'] = 'You don\'t have the permission to create the media file %s.';
 
+// system errors
+$lang['indexerror']          = 'Error while updating the search index %s';
+$lang['metamoveerror']       = 'The meta files of page %s couldn\'t be moved';
+$lang['atticmoveerror']      = 'The attic files of page %s couldn\'t be moved. Please move them manually.';
+$lang['mediametamoveerror']  = 'The meta files of the media file %s couldn\'t be moved';
+$lang['mediamoveerror']      = 'Moving the media file %s failed';
+$lang['mediaatticmoveerror'] = 'The attic files of media file %s couldn\'t be moved. Please move them manually.';
+
 // changelog summaries
 $lang['renamed']     = 'Page name changed from %s to %s';
 $lang['moved']       = 'Page moved from %s to %s';
