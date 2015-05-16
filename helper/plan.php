@@ -478,8 +478,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         }
 
         $doclist = fopen($file, 'a+');
-        $log = "";
+
         for($i = 0; $i < helper_plugin_move_plan::OPS_PER_RUN; $i++) {
+            $log = "";
             $line = $this->getLastLine($doclist);
             if($line === false) {
                 break;
@@ -514,9 +515,9 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
             ftruncate($doclist, ftell($doclist));
             $this->options[$items_run_counter]--;
             $return_items_run = $this->options[$items_run_counter];
+            $this->write_log($log);
+            $this->saveOptions();
         }
-        $this->write_log($log);
-        $this->saveOptions();
 
         if ($return_items_run !== false) {
             fclose($doclist);
