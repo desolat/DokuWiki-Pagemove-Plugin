@@ -253,7 +253,7 @@ class admin_plugin_move_main extends DokuWiki_Admin_Plugin {
         if($control == 'start') $control = 'continue';
         if($control == 'retry') {
             $control = 'continue';
-            $skip    = 0; //todo: this should be 0 for retry and 1 for skip
+            $skip    = 0;
         }
 
         $class = 'move__control ctlfrm-' . $id;
