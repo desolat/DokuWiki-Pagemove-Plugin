@@ -26,6 +26,11 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     const METAKEY = 'plugin_move';
 
     /**
+     * What is they filename of the lockfile
+     */
+    const LOCKFILENAME = '_plugin_move.lock';
+
+    /**
      * @var string symbol to make move operations easily recognizable in change log
      */
     public $symbol = '↷';
@@ -137,7 +142,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
     public static function isLocked() {
         global $PLUGIN_MOVE_WORKING;
         global $conf;
-        $lockfile = $conf['lockdir'] . 'move.lock';
+        $lockfile = $conf['lockdir'] . self::LOCKFILENAME;
         return ((isset($PLUGIN_MOVE_WORKING) && $PLUGIN_MOVE_WORKING > 0) || file_exists($lockfile));
     }
 
@@ -148,13 +153,13 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         global $PLUGIN_MOVE_WORKING;
         global $conf;
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING + 1 : 1;
-        $lockfile = $conf['lockdir'] . 'move.lock';
+        $lockfile = $conf['lockdir'] . self::LOCKFILENAME;
         if (!file_exists($lockfile)) {
-            file_put_contents($lockfile, "1\n");
+            io_savefile($lockfile, "1\n");
         } else {
             $stack = intval(file_get_contents($lockfile));
             ++$stack;
-            file_put_contents($lockfile, strval($stack));
+            io_savefile($lockfile, strval($stack));
         }
     }
 
@@ -165,7 +170,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         global $PLUGIN_MOVE_WORKING;
         global $conf;
         $PLUGIN_MOVE_WORKING = $PLUGIN_MOVE_WORKING ? $PLUGIN_MOVE_WORKING - 1 : 0;
-        $lockfile = $conf['lockdir'] . 'move.lock';
+        $lockfile = $conf['lockdir'] . self::LOCKFILENAME;
         if (!file_exists($lockfile)) {
             throw new Exception("removeLock failed: lockfile missing");
         } else {
@@ -174,7 +179,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
                 unlink($lockfile);
             } else {
                 --$stack;
-                file_put_contents($lockfile, strval($stack));
+                io_savefile($lockfile, strval($stack));
             }
         }
     }
@@ -186,7 +191,7 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
      */
     public static function removeAllLocks() {
         global $conf;
-        $lockfile = $conf['lockdir'] . 'move.lock';
+        $lockfile = $conf['lockdir'] . self::LOCKFILENAME;
         if (file_exists($lockfile)) {
             unlink($lockfile);
         }
