@@ -1,31 +1,47 @@
 <?php
+
 /**
- * french language file
- *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Gary Owen <>
- * @translator Clement Hermann (nodens) <clement.hermann@free.fr>
+ * 
+ * @author Gary Owen
+ * @author Nicolas Friedli <nicolas@theologique.ch>
  */
-
-// settings must be present and set appropriately for the language
-$lang['encoding']   = 'utf-8';
-$lang['direction']  = 'ltr';
-
-// for admin plugins, the menu prompt to be displayed in the admin menu
-// if set here, the plugin doesn't need to override the getMenuText() method
-$lang['menu'] = 'Déplacer/Renommer la page...';
-$lang['desc'] = 'Plugin de Déplacement/Renommage';
-
-$lang['notexist']   = 'Le sujet %s n\'existe pas encore';
-$lang['notwrite']   = 'Vous ne disposez pas des droits suffisants pour modifier cette page';
-$lang['badns']      = "Caractères invalides dans l'espace de nommage.";
-$lang['badname']    = 'Caractères invalides dans le nom de la page.';
-$lang['nochange']   = "Le nom du document et l'espace de nomage sont inchangés.";
-$lang['existing']  = 'Un document appelé %s existe déjà dans %s';
-$lang['root']       = '[Espace de nom racine]';
-$lang['current']    = '(Courant)';
-$lang['norights']   = 'Vos permissions sont insufisante pour éditer %s.';
-$lang['filelocked']  = 'Ce fichier est verrouillé - réessayez plus tard.';
-$lang['linkchange'] = 'Les liens vers %s ont été changés vers %s';
-$lang['newname']     = 'Nouveau nom du document :';
-$lang['targetns']    = 'Sélectionnez le nouvel espace de nommage :';
+$lang['menu']                  = 'Déplacer/Renommer la page...';
+$lang['inprogress']            = '(déplacement en attente)';
+$lang['notexist']              = 'Le sujet %s n\'existe pas encore';
+$lang['norights']              = 'Vos permissions sont insufisante pour éditer %s.';
+$lang['filelocked']            = 'Ce fichier est verrouillé - réessayez plus tard.';
+$lang['notchanged']            = 'Pas de nouvelle destination pour la page %s (emplacement inchangé).';
+$lang['exists']                = 'La page %s ne peut être déplacée vers %s, la cible existe déjà.';
+$lang['notargetperms']         = 'Pous n\'avez pas la permission de créer la page %s.';
+$lang['medianotexist']         = 'Le fichier média %s n\'existe pas.';
+$lang['nomediarights']         = 'Vous ne disposez pas des permissions suffisantes pour effacer %s.';
+$lang['medianotchanged']       = 'Pas de nouvelle destination pour la page %s (emplacement inchangé).';
+$lang['renamed']               = 'Nom de la page changé de %s à %s';
+$lang['moved']                 = 'Page déplacée de %s à %s';
+$lang['move_rename']           = 'Page déplacée et renommée de %s à %s';
+$lang['delete']                = 'Effacé par le plugin de déplacement';
+$lang['linkchange']            = 'Les liens vers %s ont été changés vers %s';
+$lang['btn_start']             = 'Départ';
+$lang['btn_continue']          = 'Continuer';
+$lang['btn_retry']             = 'Réessayer cette étape';
+$lang['btn_skip']              = 'Passer cette étape';
+$lang['btn_abort']             = 'Abandonner';
+$lang['legend']                = 'Déplacer la page ou l\'espace de nom courant';
+$lang['movepage']              = 'Déplacer la page';
+$lang['movens']                = 'Déplacer l\'espace de nom';
+$lang['dst']                   = 'Nouveau nom:';
+$lang['content_to_move']       = 'Contenu à déplacer:';
+$lang['move_pages']            = 'Pages';
+$lang['move_media']            = 'Fichiers média';
+$lang['move_media_and_pages']  = 'Pages et fichiers média';
+$lang['nodst']                 = 'Pas de nouveau nom donné';
+$lang['noaction']              = 'Pas de déplacement demandé';
+$lang['renamepage']            = 'Renommer la page';
+$lang['js']['rename']          = 'Renommer';
+$lang['js']['cancel']          = 'Annuler';
+$lang['js']['newname']         = 'Nouveau nom:';
+$lang['js']['complete']        = 'Déplacement effectué.';
+$lang['js']['renameitem']      = 'Renommer cet élément';
+$lang['root']                  = '[Espace de nom racine]';
+$lang['noscript']              = 'Cette fonction requiert JavaScript';
