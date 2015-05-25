@@ -1,0 +1,3 @@
+====== Gestionnaire déplacement =====
+
+Cette interface vous permet de réorganiser vos espaces de noms, pages et médias par glisser-déposer.
