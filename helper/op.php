@@ -167,11 +167,11 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             if(($idx_msg = $Indexer->renamePage($src, $dst)) !== true
                 || ($idx_msg = $Indexer->renameMetaValue('relation_references', $src, $dst)) !== true
             ) {
-                msg('Error while updating the search index ' . $idx_msg, -1);
+                msg(sprintf($this->getLang('indexerror'), $idx_msg), -1);
                 return false;
             }
             if(!$FileMover->movePageMeta($src_ns, $src_name, $dst_ns, $dst_name)) {
-                msg('The meta files of page ' . $src . ' couldn\'t be moved', -1);
+                msg(sprintf($this->getLang('metamoveerror'), $src), -1);
                 return false;
             }
 
@@ -201,7 +201,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             // Move the old revisions
             if(!$FileMover->movePageAttic($src_ns, $src_name, $dst_ns, $dst_name)) {
                 // it's too late to stop the move, so just display a message.
-                msg('The attic files of page ' . $src . ' couldn\'t be moved. Please move them manually.', -1);
+                msg(sprintf($this->getLang('atticmoveerror'), $src ), -1);
             }
 
             // Add meta data to all affected pages, so links get updated later
@@ -267,11 +267,11 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             // Move the Subscriptions & Indexes (new feature since Spring 2013 release)
             $Indexer = idx_get_indexer();
             if(($idx_msg = $Indexer->renameMetaValue('relation_media', $src, $dst)) !== true) {
-                msg('Error while updating the search index ' . $idx_msg, -1);
+                msg(sprintf($this->getLang('indexerror'), $idx_msg), -1);
                 return false;
             }
             if(!$FileMover->moveMediaMeta($src_ns, $src_name, $dst_ns, $dst_name)) {
-                msg('The meta files of the media file ' . $src . ' couldn\'t be moved', -1);
+                msg(sprintf($this->getLang('mediametamoveerror'), $src), -1);
                 return false;
             }
 
@@ -280,7 +280,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
 
             // move it FIXME this does not create a changelog entry!
             if(!io_rename(mediaFN($src), mediaFN($dst))) {
-                msg('Moving the media file ' . $src . ' failed', -1);
+                msg(sprintf($this->getLang('mediamoveerror'), $src), -1);
                 return false;
             }
 
@@ -290,7 +290,7 @@ class helper_plugin_move_op extends DokuWiki_Plugin {
             // Move the old revisions
             if(!$FileMover->moveMediaAttic($src_ns, $src_name, $dst_ns, $dst_name)) {
                 // it's too late to stop the move, so just display a message.
-                msg('The attic files of media file ' . $src . ' couldn\'t be moved. Please move them manually.', -1);
+                msg(sprintf($this->getLang('mediaatticmoveerror'), $src), -1);
             }
 
             // Add meta data to all affected pages, so links get updated later
