@@ -9,8 +9,8 @@
  */
 $lang['menu']                  = 'Déplacer/Renommer pages et catégories...';
 $lang['inprogress']            = '(déplacement en attente)';
-$lang['treelink']              = 'Au lieu de ce simple formulaire, vous pouvez effectuer des restructurations complexes de votre wiki en utilisant le <a href="%s">gestionnaire déplacements par arborescence</a>';
-$lang['notexist']              = 'Le sujet %s n\'existe pas encore';
+$lang['treelink']              = 'Au lieu de ce simple formulaire, vous pouvez effectuer des restructurations complexes de votre wiki en utilisant le <a href="%s">gestionnaire de déplacements par arborescence</a>';
+$lang['notexist']              = 'La page %s n\'existe pas encore';
 $lang['norights']              = 'Vos permissions sont insufisante pour éditer %s.';
 $lang['filelocked']            = 'La page %s est verrouillée - réessayez plus tard.';
 $lang['notchanged']            = 'Pas de nouvelle destination pour la page %s (emplacement inchangé).';
@@ -21,11 +21,17 @@ $lang['nomediarights']         = 'Vous ne disposez pas des permissions suffisant
 $lang['medianotchanged']       = 'Pas de nouvelle destination pour la page %s (emplacement inchangé).';
 $lang['mediaexists']           = 'Impossible de déplacer le média %s. la cible %s existe déjà.';
 $lang['nomediatargetperms']    = 'Vous n\'avez pas les permissions de créer le média %s';
+$lang['indexerror']            = 'Erreur lors de la mise à jour de l\'index de recherche %s.';
+$lang['metamoveerror']         = 'Impossible de déplacer les métafichiers de la page %s.';
+$lang['atticmoveerror']        = 'L\'historique (attic) de la page %s ne peut être déplacé. Veuillez déplacer les fichiers manuellement.';
+$lang['mediametamoveerror']    = 'Impossible de déplacer les métafichiers du media %s.';
+$lang['mediamoveerror']        = 'Échec du déplacement du média %s.';
+$lang['mediaatticmoveerror']   = 'L\'historique (attic) du média %s ne peut être déplacé. Veuillez déplacer les fichiers manuellement.';
 $lang['renamed']               = 'Nom de la page changé de %s à %s';
 $lang['moved']                 = 'Page déplacée de %s à %s';
 $lang['move_rename']           = 'Page déplacée et renommée de %s à %s';
 $lang['delete']                = 'Effacé par le plugin de déplacement';
-$lang['linkchange']            = 'Liens modifié en raison d\'un déplacement.';
+$lang['linkchange']            = 'Liens modifiés en raison d\'un déplacement.';
 $lang['intro']                 = 'L\'opération de déplacement n\'a pas encore commencé.';
 $lang['preview']               = 'Visualiser les changements à effectuer.';
 $lang['inexecution']           = 'Un déplacement n\'est pas arrivé à son terme - utilisez les boutons ci-dessous pour continuer ou abandonner son exécution.';
