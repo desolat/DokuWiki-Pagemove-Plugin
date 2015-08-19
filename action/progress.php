@@ -9,7 +9,7 @@
 if(!defined('DOKU_INC')) die();
 
 /**
- * Class action_plugin_move_rename
+ * Class action_plugin_move_progress
  */
 class action_plugin_move_progress extends DokuWiki_Action_Plugin {
 
