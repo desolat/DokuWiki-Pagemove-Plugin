@@ -160,6 +160,7 @@ class helper_plugin_move_handler {
 
         // if it wasn't relative then, leave it absolute now, too
         if(!$wasrel) {
+            if($this->ns && !getNS($new)) $new = ':' . $new;
             $new = $this->_nsStartCheck($relold, $new, $type);
             return $new;
         }
