@@ -94,7 +94,7 @@ class helper_plugin_move_handler {
                 }
             }
         }
-        if ($tempColon) {
+        if (isset($tempColon) && $tempColon) {
             $old = substr($old,1);
         }
         return $old; // this is now new
