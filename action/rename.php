@@ -45,6 +45,7 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
         switch($conf['template']) {
             case 'dokuwiki':
             case 'arago':
+            case 'bootstrap3':
 
                 $newitem = '<li class="plugin_move_page"><a href=""><span>' . $this->getLang('renamepage') . '</span></a></li>';
                 $offset = count($event->data['items']) - 1;
