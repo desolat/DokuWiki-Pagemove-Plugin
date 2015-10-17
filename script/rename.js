@@ -32,7 +32,7 @@ if(JSINFO.move_renameokay)
                     // redirect or display error
                     function (result) {
                         if(result.error){
-                            $dialog.html(result.error);
+                            $dialog.html(result.error.msg);
                         } else {
                             window.location.href = result.redirect_url;
                         }
