@@ -95,13 +95,17 @@ class action_plugin_move_rewrite extends DokuWiki_Action_Plugin {
             }
         }
         if($id) {
-            $meta = p_get_metadata($id, 'plugin_move', METADATA_DONT_RENDER);
-            if($meta && (isset($meta['moves']) || isset($meta['media_moves']))) {
-                $file = wikiFN($id, '', false);
-                if(is_writable($file))
-                    $cache->depends['purge'] = true;
-                else // FIXME: print error here or fail silently?
-                    msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
+            /** @var helper_plugin_move_rewrite $helper */
+            $helper = $this->loadHelper('move_rewrite');
+            if(!is_null($helper)) {
+                $meta = $helper->getMoveMeta($id);
+                if($meta && ($meta['pages'] || $meta['media'])) {
+                    $file = wikiFN($id, '', false);
+                    if(is_writable($file))
+                        $cache->depends['purge'] = true;
+                    else // FIXME: print error here or fail silently?
+                        msg('Error: Page ' . hsc($id) . ' needs to be rewritten because of page renames but is not writable.', -1);
+                }
             }
         }
     }
