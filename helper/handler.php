@@ -71,32 +71,20 @@ class helper_plugin_move_handler {
             // resolve_pageid does a lot more here, but we can't really assume this as the original pages might have been
             // deleted already
             if(substr($old, -1) === ':') $old .= $conf['start'];
-            $old = cleanID($old);
 
             $moves = $this->page_moves;
         } else {
             $moves = $this->media_moves;
         }
 
-        if (substr($old,0,1) !== $delimiter) {
-            $tempColon = true;
-            $old = $delimiter . $old;
-        }
+        $old = cleanID($old);
 
         foreach($moves as $move) {
-            if (substr($move[0],0,1) !== $delimiter) {
-                $move[0] = $delimiter . $move[0];
-            }
             if($move[0] == $old) {
                 $old = $move[1];
-                if (substr($old,0,1) !== $delimiter) {
-                    $old = $delimiter . $old;
-                }
             }
         }
-        if (isset($tempColon) && $tempColon) {
-            $old = substr($old,1);
-        }
+
         return $old; // this is now new
     }
 

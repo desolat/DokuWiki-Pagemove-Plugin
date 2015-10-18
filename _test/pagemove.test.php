@@ -612,5 +612,17 @@ EOT;
         $this->assertEquals('[[:start]]', rawWiki('foo:bugs:test'));
     }
 
+    function test_clean_id_move() {
+        saveWikiText('some_space:start', 'Space page', 'created');
+        idx_addPage('some_space:start');
+        saveWikiText('foo:bar:test', '[[some space:start]]', 'created');
+        idx_addPage('foo:bar:test');
+
+        /** @var helper_plugin_move_op $move */
+        $move = plugin_load('helper', 'move_op');
+
+        $this->assertTrue($move->movePage('some_space:start', 'spaceless:start'));
+        $this->assertEquals('[[spaceless:start]]', rawWiki('foo:bar:test'));
+    }
 }
 
