@@ -57,13 +57,6 @@ class helper_plugin_move_handler {
 
         if($type != 'media' && $type != 'page') throw new Exception('Not a valid type');
 
-        if($conf['useslash']) {
-            $old = str_replace('/', ':', $old);
-            $delimiter = '/';
-        } else {
-            $delimiter = ':';
-        }
-
         $old = resolve_id($this->origNS, $old, false);
 
         if($type == 'page') {
