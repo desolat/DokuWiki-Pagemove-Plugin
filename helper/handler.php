@@ -91,8 +91,8 @@ class helper_plugin_move_handler {
     /**
      * if the old link ended with a colon and the new one is a start page, adjust
      *
-     * @param $relold the old, possibly relative ID
-     * @param $new    the new, full qualified ID
+     * @param $relold string the old, possibly relative ID
+     * @param $new    string the new, full qualified ID
      * @param $type   'media' or 'page'
      * @return string
      */
