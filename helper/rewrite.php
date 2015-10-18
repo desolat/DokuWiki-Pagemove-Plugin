@@ -11,7 +11,7 @@
 if(!defined('DOKU_INC')) die();
 
 // load required handler class
-require_once(__DIR__ . '/handler.php');
+require_once(dirname(__FILE__) . '/handler.php');
 
 /**
  * Class helper_plugin_move_rewrite
