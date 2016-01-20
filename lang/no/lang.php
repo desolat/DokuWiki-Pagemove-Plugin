@@ -6,6 +6,7 @@
  * @author Daniel <daniel.raknes@hotmail.no>
  * @author Daniel Raknes <rada@jbv.no>
  * @author Christopher Schive <chschive@frisurf.no>
+ * @author Daniel Raknes <daniel.raknes@gmail.com>
  */
 $lang['menu']                  = 'Flytt sider og navnerom';
 $lang['inprogress']            = '(flytting avventer)';
@@ -25,7 +26,7 @@ $lang['indexerror']            = 'Feil ved oppdatering av søkeindeks %s';
 $lang['metamoveerror']         = 'Metafilene for siden %s kunne ikke flyttes.';
 $lang['atticmoveerror']        = 'Revisjonsfiler til siden %s kunne ikke flyttes. Vennligst flytt dem manuelt.';
 $lang['mediametamoveerror']    = 'Metafiler for mediafilen %s kunne ikke flyttes';
-$lang['mediamoveerror']        = 'Flytting av mediafilen %s feilet';
+$lang['mediamoveerror']        = 'Flytting av mediafilAktive automatisk link en %s feilet';
 $lang['mediaatticmoveerror']   = 'Revisjonsfiler til mediafilen %s kunne ikke flyttes. Vennligst flytt dem manuelt.';
 $lang['renamed']               = 'Sidenavn endret fra %s til %s';
 $lang['moved']                 = 'Siden ble flyttet fra %s til %s';
@@ -59,3 +60,8 @@ $lang['js']['cancel']          = 'Avbryt';
 $lang['js']['newname']         = 'Nytt navn:';
 $lang['js']['inprogress']      = 'endrer navn på side og justerer lenker...';
 $lang['js']['complete']        = 'Flytting avsluttet';
+$lang['js']['renameitem']      = 'Endre navn ';
+$lang['js']['duplicate']       = 'Beklager, "%s" finnes allerede i dette navnerommet.';
+$lang['root']                  = '[Rot navnerom]';
+$lang['noscript']              = 'Denne funksjonen krever Javascript';
+$lang['moveinprogress']        = 'En annen flyttingsjobb pågår for øyeblikket så denne funksjonen kan ikke brukes akkurat nå. ';
