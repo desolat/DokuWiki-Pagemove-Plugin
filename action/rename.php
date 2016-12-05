@@ -39,22 +39,17 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
      * @param Doku_Event $event
      */
     public function handle_pagetools(Doku_Event $event) {
-        global $conf;
         if($event->data['view'] != 'main') return;
-
-        switch($conf['template']) {
-            case 'dokuwiki':
-            case 'arago':
-            case 'bootstrap3':
-
-                $newitem = '<li class="plugin_move_page"><a href=""><span>' . $this->getLang('renamepage') . '</span></a></li>';
-                $offset = count($event->data['items']) - 1;
-                $event->data['items'] =
-                    array_slice($event->data['items'], 0, $offset, true) +
-                    array('plugin_move' => $newitem) +
-                    array_slice($event->data['items'], $offset, null, true);
-                break;
+        if (!$this->getConf('pagetools integration')) {
+            return;
         }
+
+        $newitem = '<li class="plugin_move_page"><a href=""><span>' . $this->getLang('renamepage') . '</span></a></li>';
+        $offset = count($event->data['items']) - 1;
+        $event->data['items'] =
+            array_slice($event->data['items'], 0, $offset, true) +
+            array('plugin_move' => $newitem) +
+            array_slice($event->data['items'], $offset, null, true);
     }
 
     /**
