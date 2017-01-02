@@ -40,7 +40,7 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
      */
     public function handle_pagetools(Doku_Event $event) {
         if($event->data['view'] != 'main') return;
-        if (!$this->getConf('pagetools integration')) {
+        if (!$this->getConf('pagetools_integration')) {
             return;
         }
 
