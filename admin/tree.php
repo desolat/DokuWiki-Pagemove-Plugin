@@ -108,12 +108,13 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
         $basedir = utf8_encodeFN(str_replace(':', '/', $base));
 
         $opts = array(
-            'pagesonly' => ($type == self::TYPE_PAGES),
-            'listdirs'  => true,
-            'listfiles' => true,
-            'sneakyacl' => $conf['sneaky_index'],
-            'showmsg'   => false,
-            'depth'     => 1
+            'pagesonly'  => ($type == self::TYPE_PAGES),
+            'listdirs'   => true,
+            'listfiles'  => true,
+            'sneakyacl'  => $conf['sneaky_index'],
+            'showmsg'    => false,
+            'depth'      => 1,
+            'showhidden' => true
         );
 
         $data = array();
