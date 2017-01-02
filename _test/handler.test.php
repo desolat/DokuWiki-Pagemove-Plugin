@@ -12,8 +12,15 @@ require_once(__DIR__ . '/../helper/handler.php');
  */
 class plugin_move_handler_test extends DokuWikiTest {
 
+    public function setUp() {
+        $this->pluginsEnabled[] = 'move';
+        parent::setUp();
+    }
+
     public function test_relativeLink() {
-        $handler = new helper_plugin_move_handler('deep:namespace:page', 'used:to:be:here', array(), array(), array());
+        /** @var $handler helper_plugin_move_handler */
+        $handler = plugin_load('helper', 'move_handler');
+        $handler->init('deep:namespace:page', 'used:to:be:here', array(), array(), array());
 
         $tests = array(
             'deep:namespace:new1' => 'new1',
@@ -33,7 +40,9 @@ class plugin_move_handler_test extends DokuWikiTest {
     }
 
     public function test_resolveMoves() {
-        $handler = new helper_plugin_move_handler(
+        /** @var $handler helper_plugin_move_handler */
+        $handler = plugin_load('helper', 'move_handler');
+        $handler->init(
             'deep:namespace:page',
             'used:to:be:here',
             array(

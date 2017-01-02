@@ -241,7 +241,9 @@ class helper_plugin_move_rewrite extends DokuWiki_Plugin {
         $Parser = new Doku_Parser();
 
         // Add the Handler
-        $Parser->Handler = new helper_plugin_move_handler($id, $origin, $pages, $media, $handlers);
+        /** @var $Parser->Handler helper_plugin_move_handler */
+        $Parser->Handler = $this->loadHelper('move_handler');
+        $Parser->Handler->init($id, $origin, $pages, $media, $handlers);
 
         //add modes to parser
         foreach($modes as $mode) {

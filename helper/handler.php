@@ -14,7 +14,7 @@ if(!defined('DOKU_INC')) die();
  *
  * Note: This is not actually a valid DokuWiki Helper plugin and can not be loaded via plugin_load()
  */
-class helper_plugin_move_handler {
+class helper_plugin_move_handler extends DokuWiki_Plugin {
     public $calls = '';
 
     protected $id;
@@ -26,7 +26,16 @@ class helper_plugin_move_handler {
     protected $handlers;
 
     /**
-     * Construct the move handler.
+     * Do not allow re-using instances.
+     *
+     * @return bool   false - the handler must not be re-used.
+     */
+    public function isSingleton() {
+        return false;
+    }
+
+    /**
+     * Initialize the move handler.
      *
      * @param string $id          The id of the text that is passed to the handler
      * @param string $original    The name of the original ID of this page. Same as $id if this page wasn't moved
@@ -34,7 +43,7 @@ class helper_plugin_move_handler {
      * @param array  $media_moves Moves of media files that shall be considered in the form $old => $new
      * @param array  $handlers    Handlers for plugin content in the form $plugin_name => $callback
      */
-    public function __construct($id, $original, $page_moves, $media_moves, $handlers) {
+    public function init($id, $original, $page_moves, $media_moves, $handlers) {
         $this->id          = $id;
         $this->ns          = getNS($id);
         $this->origID      = $original;
