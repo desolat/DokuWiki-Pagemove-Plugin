@@ -96,7 +96,10 @@ var initTree = function () {
     jQuery(this).find('li').draggable({
         revert: true,
         revertDuration: 0,
-        opacity: 0.5
+        opacity: 0.5,
+        stop : function(event, ui) {
+            ui.helper.css({height: "auto", width: "auto"});
+        }
     }).droppable({
         tolerance: 'pointer',
         greedy: true,
@@ -106,7 +109,6 @@ var initTree = function () {
         drop : function (event, ui) {
             var $dropped = ui.draggable;
             var $me = jQuery(this);
-            $dropped.css({height: "auto", width: "auto"});
 
             if ($dropped.children('div.li').children('input').prop('checked')) {
                 $dropped = $dropped.add(
@@ -159,7 +161,7 @@ $GUI.find('div.tree_root > ul.tree_list')
         var $clicky = jQuery(e.target);
         var $li = $clicky.parent().parent();
 
-        if ($clicky.attr('href')) {  // Click on folder - open and close via AJAX
+        if ($clicky[0].tagName == 'A' && $li.hasClass('type-d')) {  // Click on folder - open and close via AJAX
             e.stopPropagation();
             if ($li.hasClass('open')) {
                 $li
