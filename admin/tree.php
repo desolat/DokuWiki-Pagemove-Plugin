@@ -146,6 +146,10 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
 
         if($item['id'] == '*') $item['id'] = '';
 
+        if ($item['id']) {
+            $ret .= '<input type="checkbox" /> ';
+        }
+
         // namespace or page?
         if($item['type'] == 'd') {
             $ret .= '<a href="' . $item['id'] . '" class="idx_dir">';

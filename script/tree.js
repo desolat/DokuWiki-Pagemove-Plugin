@@ -108,17 +108,38 @@ var initTree = function () {
             var $me = jQuery(this);
             $dropped.css({height: "auto", width: "auto"});
 
-            if ($me == $dropped) {
+            if ($dropped.children('div.li').children('input').prop('checked')) {
+                $dropped = $dropped.add(
+                    jQuery(my_root)
+                    .find('input')
+                    .filter(function() {
+                        return jQuery(this).prop('checked');
+                    }).parent().parent()
+                );
+            }
+
+            if ($me.parents().addBack().is($dropped)) {
                 return;
             }
 
+            var allowed = true;
             if ($me.hasClass("type-f") || $me.hasClass("closed")) {
-                if (checkNameAllowed($dropped, $me.parent(), ui.draggable.data('name'))) {
+                $dropped.each(function () {
+                    var $this = jQuery(this);
+                    allowed &= checkNameAllowed($this, $me.parent(), $this.data('name'));
+                });
+                if (allowed) {
                     $dropped.insertAfter($me);
                 }
             } else {
                 var $new_parent = $me.children('ul');
-                if (checkNameAllowed($dropped, $new_parent, $dropped.data('name'))) {
+
+                $dropped.each(function () {
+                    var $this = jQuery(this);
+                    allowed &= checkNameAllowed($this, $new_parent, $this.data('name'));
+                });
+
+                if (allowed) {
                     $dropped.prependTo($new_parent);
                 }
             }
@@ -133,7 +154,7 @@ var initTree = function () {
 /**
  * Attach event listeners to the tree
  */
-$GUI.find('ul.tree_list')
+$GUI.find('div.tree_root > ul.tree_list')
     .click(function (e) {
         var $clicky = jQuery(e.target);
         var $li = $clicky.parent().parent();
@@ -167,6 +188,7 @@ $GUI.find('ul.tree_list')
                     );
                 }
             }
+            e.preventDefault();
         } else if ($clicky[0].tagName == 'IMG') { // Click on IMG - do rename
             e.stopPropagation();
             var $a = $clicky.parent().find('a');
@@ -182,8 +204,8 @@ $GUI.find('ul.tree_list')
                     alert(LANG.plugins.move.duplicate.replace('%s', newname));
                 }
             }
+            e.preventDefault();
         }
-        e.preventDefault();
     }).each(initTree);
 
 /**
