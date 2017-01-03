@@ -36,12 +36,11 @@ var checkForMovement = function ($li) {
  * Check if the given name is allowed in the given parent
  *
  * @param {jQuery} $li the edited or moved LI
+ * @param {jQuery} $parent the (new) parent of the edited or moved LI
  * @param {string} name the (new) name to check
  * @returns {boolean}
  */
-var checkNameAllowed = function ($li, name) {
-    var $parent = $li.parent();
-
+var checkNameAllowed = function ($li, $parent, name) {
     var ok = true;
     $parent.children('li').each(function () {
         if (this === $li[0]) return;
@@ -90,6 +89,48 @@ var cleanID = function (id) {
 };
 
 /**
+ * Initialize the drag & drop-tree starting at the given ul (must be this).
+ */
+var initTree = function () {
+    var my_root = jQuery(this).closest('.tree_root')[0];
+    jQuery(this).find('li').draggable({
+        revert: true,
+        revertDuration: 0,
+        opacity: 0.5
+    }).droppable({
+        tolerance: 'pointer',
+        greedy: true,
+        accept : function(draggable) {
+            return my_root == draggable.closest('.tree_root')[0];
+        },
+        drop : function (event, ui) {
+            var $dropped = ui.draggable;
+            var $me = jQuery(this);
+            $dropped.css({height: "auto", width: "auto"});
+
+            if ($me == $dropped) {
+                return;
+            }
+
+            if ($me.hasClass("type-f") || $me.hasClass("closed")) {
+                if (checkNameAllowed($dropped, $me.parent(), ui.draggable.data('name'))) {
+                    $dropped.insertAfter($me);
+                }
+            } else {
+                var $new_parent = $me.children('ul');
+                if (checkNameAllowed($dropped, $new_parent, $dropped.data('name'))) {
+                    $dropped.prependTo($new_parent);
+                }
+            }
+
+            checkForMovement($dropped);
+        }
+    })
+    // add title to rename icon
+    .find('img').attr('title', LANG.plugins.move.renameitem);
+};
+
+/**
  * Attach event listeners to the tree
  */
 $GUI.find('ul.tree_list')
@@ -121,6 +162,7 @@ $GUI.find('ul.tree_list')
                         },
                         function (data) {
                             $li.append(data);
+                            $li.children('ul').each(initTree);
                         }
                     );
                 }
@@ -132,7 +174,7 @@ $GUI.find('ul.tree_list')
             var newname = window.prompt(LANG.plugins.move.renameitem, $li.data('name'));
             newname = cleanID(newname);
             if (newname) {
-                if (checkNameAllowed($li, newname)) {
+                if (checkNameAllowed($li, $li.parent(), newname)) {
                     $li.data('name', newname);
                     $a.text(newname);
                     checkForMovement($li);
@@ -142,21 +184,7 @@ $GUI.find('ul.tree_list')
             }
         }
         e.preventDefault();
-    })
-    // initialize sortable
-    .find('ul').sortable({
-        items: 'li',
-        stop: function (e, ui) {
-            if (!checkNameAllowed(ui.item, ui.item.data('name'))) {
-                jQuery(this).sortable('cancel');
-                alert(LANG.plugins.move.duplicate.replace('%s', ui.item.data('name')));
-            }
-
-            checkForMovement(ui.item);
-        }
-    })
-    // add title to rename icon
-    .find('img').attr('title', LANG.plugins.move.renameitem);
+    }).each(initTree);
 
 /**
  * Gather all moves from the trees and put them as JSON into the form before submit
