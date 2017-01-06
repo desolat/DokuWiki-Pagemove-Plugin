@@ -78,4 +78,5 @@ $lang['root']             = '[Root namespace]';
 $lang['noscript']         = 'This feature requires JavaScript';
 $lang['moveinprogress']   = 'There is another move operation in progress currently, you can\'t use this tool right now.';
 $lang['js']['renameitem'] = 'Rename this item';
+$lang['js']['add']        = 'Create a new namespace';
 $lang['js']['duplicate']  = 'Sorry, "%s" already exists in this namespace.';

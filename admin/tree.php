@@ -161,7 +161,8 @@ class admin_plugin_move_tree extends DokuWiki_Admin_Plugin {
             $ret .= '</a>';
         }
 
-        if($item['id']) $ret .= '<img src="'. DOKU_BASE .'lib/plugins/move/images/rename.png" />';
+        if($item['id']) $ret .= '<img class="rename" src="'. DOKU_BASE .'lib/plugins/move/images/rename.png" />';
+        else $ret .= '<img class="add" src="' . DOKU_BASE . 'lib/plugins/move/images/folder_add.png" />';
 
         return $ret;
     }

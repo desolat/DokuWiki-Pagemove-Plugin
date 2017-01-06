@@ -22,7 +22,7 @@ var checkForMovement = function ($li) {
         var oldid = $this.data('id');
         var newid = determineNewID($this);
 
-        if (newid != oldid) {
+        if (newid != oldid && !$this.hasClass('created')) {
             $this.addClass('moved');
             $this.children('div').attr('title', oldid + ' -> ' + newid);
         } else {
@@ -89,11 +89,12 @@ var cleanID = function (id) {
 };
 
 /**
- * Initialize the drag & drop-tree starting at the given ul (must be this).
+ * Initialize the drag & drop-tree at the given li (must be this).
  */
 var initTree = function () {
-    var my_root = jQuery(this).closest('.tree_root')[0];
-    jQuery(this).find('li').draggable({
+    var $li = jQuery(this);
+    var my_root = $li.closest('.tree_root')[0];
+    $li.draggable({
         revert: true,
         revertDuration: 0,
         opacity: 0.5,
@@ -145,8 +146,12 @@ var initTree = function () {
         }
     })
     // add title to rename icon
-    .find('img').attr('title', LANG.plugins.move.renameitem);
+    .find('img.rename').attr('title', LANG.plugins.move.renameitem)
+    .end()
+    .find('img.add').attr('title', LANG.plugins.move.add);
 };
+
+var add_template = '<li class="type-d open created" data-name="%s" data-id="%s"><div class="li"><input type="checkbox"> <a href="%s" class="idx_dir">%s</a><img class="rename" src="' + DOKU_BASE + 'lib/plugins/move/images/rename.png"></div><ul class="tree_list"></ul></li>';
 
 /**
  * Attach event listeners to the tree
@@ -180,7 +185,7 @@ $GUI.find('div.tree_root > ul.tree_list')
                         },
                         function (data) {
                             $li.append(data);
-                            $li.children('ul').each(initTree);
+                            $li.find('li').each(initTree);
                         }
                     );
                 }
@@ -190,20 +195,35 @@ $GUI.find('div.tree_root > ul.tree_list')
             e.stopPropagation();
             var $a = $clicky.parent().find('a');
 
-            var newname = window.prompt(LANG.plugins.move.renameitem, $li.data('name'));
-            newname = cleanID(newname);
-            if (newname) {
-                if (checkNameAllowed($li, $li.parent(), newname)) {
-                    $li.data('name', newname);
-                    $a.text(newname);
-                    checkForMovement($li);
-                } else {
-                    alert(LANG.plugins.move.duplicate.replace('%s', newname));
+            if ($clicky.hasClass('rename')) {
+                var newname = window.prompt(LANG.plugins.move.renameitem, $li.data('name'));
+                newname = cleanID(newname);
+                if (newname) {
+                    if (checkNameAllowed($li, $li.parent(), newname)) {
+                        $li.data('name', newname);
+                        $a.text(newname);
+                        checkForMovement($li);
+                    } else {
+                        alert(LANG.plugins.move.duplicate.replace('%s', newname));
+                    }
+                }
+            } else {
+                var newname = window.prompt(LANG.plugins.move.add); 
+                newname = cleanID(newname);
+                if (newname) {
+                    if (checkNameAllowed($li, $li.children('ul'), newname)) {
+                        var $new_li = jQuery(add_template.replace(/%s/g, newname));
+                        $li.children('ul').prepend($new_li);
+
+                        $new_li.each(initTree);
+                    } else {
+                        alert(LANG.plugins.move.duplicate.replace('%s', newname));
+                    }
                 }
             }
             e.preventDefault();
         }
-    }).each(initTree);
+    }).find('li').each(initTree);
 
 /**
  * Gather all moves from the trees and put them as JSON into the form before submit
