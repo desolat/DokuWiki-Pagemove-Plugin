@@ -124,25 +124,20 @@ var initTree = function () {
                 return;
             }
 
+            var insert_child = !($me.hasClass("type-f") || $me.hasClass("closed"));
+            var $new_parent = insert_child ? $me.children('ul') : $me.parent();
             var allowed = true;
-            if ($me.hasClass("type-f") || $me.hasClass("closed")) {
-                $dropped.each(function () {
-                    var $this = jQuery(this);
-                    allowed &= checkNameAllowed($this, $me.parent(), $this.data('name'));
-                });
-                if (allowed) {
-                    $dropped.insertAfter($me);
-                }
-            } else {
-                var $new_parent = $me.children('ul');
 
-                $dropped.each(function () {
-                    var $this = jQuery(this);
-                    allowed &= checkNameAllowed($this, $new_parent, $this.data('name'));
-                });
+            $dropped.each(function () {
+                var $this = jQuery(this);
+                allowed &= checkNameAllowed($this, $new_parent, $this.data('name'));
+            });
 
-                if (allowed) {
+            if (allowed) {
+                if (insert_child) {
                     $dropped.prependTo($new_parent);
+                } else {
+                    $dropped.insertAfter($me);
                 }
             }
 
