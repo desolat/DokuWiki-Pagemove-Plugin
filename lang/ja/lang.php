@@ -2,7 +2,7 @@
 
 /**
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * 
+ *
  * @author Hideaki SAWADA <chuno@live.jp>
  */
 $lang['menu']                  = 'ページ・名前空間の移動';
@@ -58,6 +58,7 @@ $lang['js']['newname']         = '新ページ名： ';
 $lang['js']['inprogress']      = 'ページの名称変更・リンクの書き換え中…';
 $lang['js']['complete']        = '名称変更操作が完了しました。';
 $lang['js']['renameitem']      = 'この項目を名称変更します。';
+$lang['js']['add']             = '新しい名前空間の作成';
 $lang['js']['duplicate']       = '"%s" はこの名前空間内に既に存在します。';
 $lang['root']                  = '[ルート名前空間]';
 $lang['noscript']              = 'この機能には JavaScriptが必要です。';
