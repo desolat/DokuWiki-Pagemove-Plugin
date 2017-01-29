@@ -2,11 +2,12 @@
 
 /**
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * 
+ *
  * @author Daniel <daniel.raknes@hotmail.no>
  * @author Daniel Raknes <rada@jbv.no>
  * @author Christopher Schive <chschive@frisurf.no>
  * @author Daniel Raknes <daniel.raknes@gmail.com>
+ * @author Arne Hanssen <arne.hanssen@getmail.no>
  */
 $lang['menu']                  = 'Flytt sider og navnerom';
 $lang['inprogress']            = '(flytting avventer)';
@@ -61,6 +62,7 @@ $lang['js']['newname']         = 'Nytt navn:';
 $lang['js']['inprogress']      = 'endrer navn på side og justerer lenker...';
 $lang['js']['complete']        = 'Flytting avsluttet';
 $lang['js']['renameitem']      = 'Endre navn ';
+$lang['js']['add']             = 'Lag et nytt navnerom';
 $lang['js']['duplicate']       = 'Beklager, "%s" finnes allerede i dette navnerommet.';
 $lang['root']                  = '[Rot navnerom]';
 $lang['noscript']              = 'Denne funksjonen krever Javascript';
