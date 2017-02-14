@@ -2,7 +2,7 @@
 
 /**
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * 
+ *
  * @author Gary Owen
  * @author Nicolas Friedli <nicolas@theologique.ch>
  * @author Schplurtz le Déboulonné <Schplurtz@laposte.net>
@@ -60,6 +60,7 @@ $lang['js']['newname']         = 'Nouveau nom:';
 $lang['js']['inprogress']      = 'Renommage des pages et ajustement des pages en cours...';
 $lang['js']['complete']        = 'Déplacement effectué.';
 $lang['js']['renameitem']      = 'Renommer cet élément';
+$lang['js']['add']             = 'Créer une nouvelle catégorie';
 $lang['js']['duplicate']       = 'Désolé, "%s" existe dans cette catégorie.';
 $lang['root']                  = '[Catégorie racine]';
 $lang['noscript']              = 'Cette fonction requiert JavaScript';
