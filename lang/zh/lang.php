@@ -2,10 +2,11 @@
 
 /**
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * 
+ *
  * @author Gary Owen
  * @author TombCrow <http://wiki.gmly.cn>
  * @author Hanjia Zhuang <shzhuanghanjia@163.com>
+ * @author kuma <kuma000@qq.com>
  */
 $lang['menu']                  = '页面移动/重命名……';
 $lang['inprogress']            = '(待移动）';
@@ -21,6 +22,12 @@ $lang['nomediarights']         = '您没有权限删除%s.';
 $lang['medianotchanged']       = '未为页面%s指定新地址（位置未变）';
 $lang['mediaexists']           = '媒体文件%s无法被移动至%s，目标已存在。';
 $lang['nomediatargetperms']    = '您没有权限创建媒体文件%s。';
+$lang['indexerror']            = '当更新搜索索引 %s 时发生错误';
+$lang['metamoveerror']         = 'meta文件的页面 %s 无法移动';
+$lang['atticmoveerror']        = '页面文件 %s 的attic文件无法移动。请手动移动它们。';
+$lang['mediametamoveerror']    = '媒体文件 %s 的meta文件无法移动';
+$lang['mediamoveerror']        = '移动媒体文件 %s 失败';
+$lang['mediaatticmoveerror']   = '媒体文件 %s 的attic文件无法移动。请手动移动它们。';
 $lang['renamed']               = '页面名由%s改为%s';
 $lang['moved']                 = '页面%s被移动至%s';
 $lang['move_rename']           = '页面%s被移动并更名为%s';
@@ -54,6 +61,7 @@ $lang['js']['newname']         = '新名字：';
 $lang['js']['inprogress']      = '重命名页面并修正有关链接：';
 $lang['js']['complete']        = '移动操作完毕。';
 $lang['js']['renameitem']      = '重命名该项';
+$lang['js']['add']             = '创建一个新的名称空间';
 $lang['js']['duplicate']       = '抱歉，"%s"在该目录已存在';
 $lang['root']                  = '[跟目录]';
 $lang['noscript']              = '该功能需要JavaScript';
