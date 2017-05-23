@@ -10,3 +10,4 @@ $lang['minor']                 = 'Označiti prilagodbe poveznica kao manje znač
 $lang['autoskip']              = 'Omogući kao podrazumijevano automatsko preskakanje grešaka pri premještanju imenskog prostora.';
 $lang['autorewrite']           = 'Omogući kao podrazumijevano automatsku prilagodbu poveznica.
 ';
+$lang['pagetools_integration'] = 'Dodaj tipku za preimenovanje na alate stranice';
