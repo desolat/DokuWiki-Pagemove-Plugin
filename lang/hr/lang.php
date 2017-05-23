@@ -58,6 +58,7 @@ $lang['js']['newname']         = 'Novo ime:';
 $lang['js']['inprogress']      = 'preimenovanje stranice i prilagodba poveznica...';
 $lang['js']['complete']        = 'Operacija premještanja završila.';
 $lang['js']['renameitem']      = 'Preimenuj ovu stavku';
+$lang['js']['add']             = 'Kreiraj novi imenski prostor';
 $lang['js']['duplicate']       = 'Isprika ali "%s" već postoji u ovom imenskom prostoru';
 $lang['root']                  = '[Korijen imenskog prostora]';
 $lang['noscript']              = 'Ova osobina zahtijeva JavaScript';
