@@ -46,8 +46,8 @@ if(JSINFO.move_renameokay)
             var $dialog = jQuery(
                 '<div>' +
                     '<form>' +
-                    '<label>' + LANG.plugins.move.newname + ' ' +
-                    '<input type="text" name="id">' +
+                    '<label>' + LANG.plugins.move.newname + '<br>' +
+                    '<input type="text" name="id" style="width:100%">' +
                     '</label>' +
                     '</form>' +
                     '</div>'
@@ -58,7 +58,7 @@ if(JSINFO.move_renameokay)
             // set up the dialog
             $dialog.dialog({
                 title: LANG.plugins.move.rename+' '+JSINFO.id,
-                width: 340,
+                width: 800,
                 height: 180,
                 dialogClass: 'plugin_move_dialog',
                 modal: true,
