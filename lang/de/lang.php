@@ -5,8 +5,9 @@
  *
  * @author picsar
  * @author e-dschungel <github@e-dschungel.de>
+ * @author F. Mueller-Donath <j.felix@mueller-donath.de>
  */
-$lang['menu']                  = 'Seite/Namespace verschieben/umbenennen...';
+$lang['menu']                  = 'Seite/Namensraum verschieben/umbenennen...';
 $lang['inprogress']            = '(Verschiebung läuft gerade)';
 $lang['treelink']              = 'Alternativ zu dieser einfachen Form können komplexere Umstrukturierungen des Wikis mit dem <a href="%s">baumbasierten Move-Manager</a> durchgeführt werden.';
 $lang['notexist']              = 'Die Seite %s existiert nicht.';
@@ -33,13 +34,13 @@ $lang['delete']                = 'Gelöscht durch das move Plugin';
 $lang['linkchange']            = 'Links angepasst weil Seiten im Wiki verschoben wurden';
 $lang['intro']                 = 'Die Verschiebung wurde noch nicht gestartet!';
 $lang['preview']               = 'Vorschau der Änderungen, die ausgeführt werden sollen ';
-$lang['inexecution']           = 'Eine vorherige Verschiebung wurde nicht beendet - benutzen sie die Knöpfe unten um die Verschiebung fortzusetzen oder abzubrechen. ';
+$lang['inexecution']           = 'Eine vorherige Verschiebung wurde nicht beendet - benutzen Sie die Knöpfe unten um die Verschiebung fortzusetzen oder abzubrechen. ';
 $lang['btn_start']             = 'Start';
 $lang['btn_continue']          = 'Fortsetzen';
 $lang['btn_retry']             = 'Element wiederholen';
 $lang['btn_skip']              = 'Element überspringen';
 $lang['btn_abort']             = 'Abbrechen';
-$lang['legend']                = 'Aktuelle Seite oder aktueller Namesraum';
+$lang['legend']                = 'Aktuelle Seite oder aktueller Namensraum';
 $lang['movepage']              = 'Seite verschieben';
 $lang['movens']                = 'Namensraum verschieben';
 $lang['dst']                   = 'Neuer Name:';
@@ -59,7 +60,8 @@ $lang['js']['newname']         = 'Neuer Name:';
 $lang['js']['inprogress']      = 'Benenne Seite um und passe Links an...';
 $lang['js']['complete']        = 'Verschieben abgeschlossen.';
 $lang['js']['renameitem']      = 'Dieses Element umbenennen';
+$lang['js']['add']             = 'Neuen Namensraum erstellen';
 $lang['js']['duplicate']       = 'Entschuldigung, "%s" existiert in diesem Namensraum bereits. ';
-$lang['root']                  = '[Wurzel des Namensraumes / Root namespace]';
+$lang['root']                  = '[Oberster Namensraum]';
 $lang['noscript']              = 'Dieses Feature benötigt JavaScript.';
-$lang['moveinprogress']        = 'Eine andere Verschiebeoperation läuft gerade, Sie können dieses Tool gerade nicht benutzen.';
+$lang['moveinprogress']        = 'Eine andere Verschiebeoperation läuft momentan, Sie können dieses Tool gerade nicht benutzen.';

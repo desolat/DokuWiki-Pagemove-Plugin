@@ -1,6 +1,6 @@
-====== Seite/Namespace verschieben/umbenennen ======
+====== Seite/Namensraum verschieben/umbenennen ======
 
-Mit diesem Plugin kann die aktuelle Seite verschoben/umbenannt oder ein gesamter Namensraum verschoben/umbenannt werden. 
+Mit diesem Plugin kann die aktuelle Seite oder ein gesamter Namensraum verschoben oder umbenannt werden. 
 Folgende Einschränkungen/Bedingungen gelten:
 
   * Sie müssen die Bearbeiten-Rechte für die Seite/alle Seiten im aktuellen Namensraum haben.
