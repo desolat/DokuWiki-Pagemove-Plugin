@@ -1,3 +1,7 @@
 ====== Move Manager =====
 
 This interface allows you to rearrange your wiki's namespaces, pages and media files via Drag'n'Drop.
+
+In case you have to move many files to the same destination you can use the checkboxes as follows:
+  * check the namespaces, pages or media files you have to reorganize;
+  * move only one of the checked files to the desired destination.
