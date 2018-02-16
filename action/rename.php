@@ -20,7 +20,11 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
      */
     public function register(Doku_Event_Handler $controller) {
         $controller->register_hook('DOKUWIKI_STARTED', 'AFTER', $this, 'handle_init');
+
+        // TODO: DEPRECATED JAN 2018
         $controller->register_hook('TEMPLATE_PAGETOOLS_DISPLAY', 'BEFORE', $this, 'handle_pagetools');
+
+        $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'addsvgbutton', array());
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handle_ajax');
     }
 
@@ -36,6 +40,8 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
     /**
      * Adds a button to the default template
      *
+     * TODO: DEPRECATED JAN 2018
+     *
      * @param Doku_Event $event
      */
     public function handle_pagetools(Doku_Event $event) {
@@ -50,6 +56,26 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
             array_slice($event->data['items'], 0, $offset, true) +
             array('plugin_move' => $newitem) +
             array_slice($event->data['items'], $offset, null, true);
+    }
+
+    /**
+     * Add 'rename' button to page tools, new SVG based mechanism
+     *
+     * @param Doku_Event $event
+     */
+    public function addsvgbutton(Doku_Event $event) {
+        global $INFO, $JSINFO;
+        if(
+            $event->data['view'] !== 'page' ||
+            !$this->getConf('pagetools_integration') ||
+            !$JSINFO['move_renameokay']
+        ) {
+            return;
+        }
+        if(!$INFO['exists']) {
+            return;
+        }
+        array_splice($event->data['items'], -1, 0, array(new \dokuwiki\plugin\move\MenuItem()));
     }
 
     /**
