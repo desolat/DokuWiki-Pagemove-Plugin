@@ -75,7 +75,7 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
         if(!$INFO['exists']) {
             return;
         }
-        array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\move\MenuItem()]);
+        array_splice($event->data['items'], -1, 0, array(new \dokuwiki\plugin\move\MenuItem()));
     }
 
     /**
