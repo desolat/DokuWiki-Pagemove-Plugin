@@ -42,6 +42,8 @@ class helper_plugin_move_op_mock extends helper_plugin_move_op {
     public function movePage($src, $dst) {
         if ($this->fail !== false && count($this->movedPages) == $this->fail) {
             $this->fail=false;
+            // Store a msg as it is expected by the plugin
+            msg("Intentional failure in test case.", -1);
             return false;
         }
         $moveOperation = array($src => $dst);
