@@ -56,6 +56,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         'pages' => array(),
         'media' => array(),
         'ns'    => array(),
+        'affpg' => array(),
         'miss'  => array(),
         'miss_media'  => array(),
     );
