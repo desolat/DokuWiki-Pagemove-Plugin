@@ -3,7 +3,7 @@
 /**
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  *
- * @author Katerina Katapodi <extragold1234@hotmail.com>
+ * @author Katerina Katapodi <katerinakatapodi@gmail.com>
  */
 $lang['menu']                  = 'Μετακινείστε σελίδες και κενά ονομάτων';
 $lang['inprogress']            = '(μετακίνηση εκκρεμοτήτων)';
@@ -24,3 +24,12 @@ $lang['metamoveerror']         = '5Οι φάκελλοι meta της σελίδ�
 $lang['atticmoveerror']        = 'Οι φάκελλοι attic της σελίδας  %s δεν μπόρεσαν να μετακινηθούν. Παρακαλώ μετακινήστε τους με το χέρι.';
 $lang['mediametamoveerror']    = 'Οι φάκελλοι meta του φακέλλου μέσων ενημέρωσης %s δεν μπόρεσαν να μετακινηθούν';
 $lang['mediamoveerror']        = 'Η μετακίνηση του φακέλλου μέσων ενημέρωσης %s απέτυχε';
+$lang['js']['newname']         = 'Νέο όνομα :';
+$lang['js']['inprogress']      = 'μετονομασία της σελίδας και ρύθμιση συνδεόμενων ιστοσελίδων..';
+$lang['js']['complete']        = 'Η διαδικασία της μετακίνησης τελείωσε.';
+$lang['js']['renameitem']      = 'Μετονομάστε αυτό το τεμάχιο';
+$lang['js']['add']             = 'Δημιουργείστε ένα νέο όνομα αρχείου';
+$lang['js']['duplicate']       = 'Συγγνώμη, "%s" ήδη υπάρχει σε αυτό το όνομα..	';
+$lang['root']                  = '{Αρχικό όνομα}';
+$lang['noscript']              = 'Αυτό το χαρακτηριστικό απαιτεί JavaScript';
+$lang['moveinprogress']        = 'Υπάρχει μια άλλη διαδικασία μετακίνησης σε εξέλιξη τώρα, δεν μπορείτε να δείτε αυτό το εργαλείο μόλις τώρα.';
