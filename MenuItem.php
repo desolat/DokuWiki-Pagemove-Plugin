@@ -4,9 +4,9 @@ use dokuwiki\Menu\Item\AbstractItem;
 /**
  * Class MenuItem
  *
- * Implements the PDF export button for DokuWiki's menu system
+ * Implements the Rename button for DokuWiki's menu system
  *
- * @package dokuwiki\plugin\dw2pdf
+ * @package dokuwiki\plugin\move
  */
 class MenuItem extends AbstractItem {
 
