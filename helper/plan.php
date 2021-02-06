@@ -623,7 +623,7 @@ class helper_plugin_move_plan extends DokuWiki_Plugin {
         $lines = explode("\n", $lines);
 
         foreach($lines as $line) {
-            list($src, $dst) = explode("\t", trim($line));
+            list($src, $dst) = explode("\t", trim($line) . "\t");
             $FileMover->moveNamespaceSubscription($src, $dst);
         }
 
