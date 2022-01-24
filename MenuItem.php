@@ -13,6 +13,8 @@ class MenuItem extends AbstractItem {
     /** @var string icon file */
     protected $svg = __DIR__ . '/images/rename.svg';
 
+    protected $type = "plugin_move_page";
+
     public function getLinkAttributes($classprefix = 'menuitem ') {
         $attr = parent::getLinkAttributes($classprefix);
         if (empty($attr['class'])) {
