@@ -113,13 +113,15 @@
         });
 
     // attach handler to mobile menu entry
-    $mobileMenuOption = jQuery('form select[name=do] option[value=plugin_move_page]');
+    const $mobileMenuOption = jQuery('form select[name=do] option[value=plugin_move]');
     if ($mobileMenuOption.length === 1) {
         bindFirst($mobileMenuOption.form().find('select[name=do]'), 'change', function (e) {
-            if (jQuery(this).val() !== 'plugin_move_page') return;
+            const $select = jQuery(this);
+            if ($select.val() !== 'plugin_move') return;
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            $select.val('');
             showDialog();
         });
     }
