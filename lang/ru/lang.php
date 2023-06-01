@@ -1,39 +1,69 @@
 <?php
+
 /**
- * Russian language file 
+ * russian language file 
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     S'Adm*n <s-adm_n@mail.ru>
+ *
+ * @author Aleksandr Selivanov <alexgearbox@yandex.ru>
+ * @author S'Adm*n <s-adm_n@mail.ru>
+ * @author Chang Zhao <admin@zen-do.ru>
  */
- 
-// settings must be present and set appropriately for the language
-$lang['encoding']   = 'utf-8';
-$lang['direction']  = 'ltr';
- 
-// for admin plugins, the menu prompt to be displayed in the admin menu
-// if set here, the plugin doesn't need to override the getMenuText() method
-$lang['menu'] = 'Перемещение/переименование страницы...';
-$lang['desc'] = 'Page Move/Rename Plugin';
-
-$lang['pm_notexist']   = 'Эта страница еще не существует';
-$lang['pm_notstart']   = 'Недоступно для стартовой страницы';
-$lang['pm_notwrite']   = 'Ваши права доступа не позволяют Вам изменять эту страницу';
-$lang['pm_badns']      = 'В названии пространства имён присутствуют недопустимые символы.';
-$lang['pm_badname']    = 'Недопустимые символы в названии страниц.';
-$lang['pm_nochange']   = 'Параметры страницы не изменены.';
-$lang['pm_existing1']  = 'Страница с именем ';
-$lang['pm_existing2']  = ' уже существует в ';
-$lang['pm_root']       = '[Корневой каталог]';
-$lang['pm_current']    = '(Текущий)';
-$lang['pm_movedfrom']  = 'Документ перемещён из ';
-$lang['pm_movedto']    = 'Документ перемещён в ';
-$lang['pm_norights']   = 'У Вас нет прав на редактирование одной из страниц, ссылающихся на данный документ.';
-$lang['pm_tryagain']   = 'Попробуйте позже.';
-$lang['pm_filelocked']  = 'Изменение данного файла запрещено - ';
-$lang['pm_fileslocked'] = 'Изменение данных файлов запрещено - ';
-$lang['pm_linkchange1'] = 'Ссылки на страницу ';
-$lang['pm_linkchange2'] = ' изменены на ';
-$lang['pm_newname']     = 'Новое название документа :';
-$lang['pm_targetns']    = 'Переместить в пространство :';
-$lang['pm_submit']      = 'Применить';
-?>
+$lang['menu']                  = 'Перемещение страниц и пространств имён';
+$lang['inprogress']            = '(идёт перемещение)';
+$lang['treelink']              = 'Для сложной реструктуризации страниц вы можете использовать <a href="%s">древовидное управление перемещением</a>.';
+$lang['notexist']              = 'Страница %s не существует';
+$lang['norights']              = 'У вас нет прав редактировать %s.';
+$lang['filelocked']            = 'Изменение страницы %s сейчас заблокировано. Попробуйте позже.';
+$lang['notchanged']            = 'Не задано нового названия %s (адрес не изменён).';
+$lang['exists']                = 'Невозможно переместить %s, уже существует страница %s.';
+$lang['notargetperms']         = 'У вас недостаточно прав для создания страницы %s.';
+$lang['medianotexist']         = 'Медиафайла %s не существует';
+$lang['nomediarights']         = 'У вас недостаточно прав для удаления %s.';
+$lang['medianotchanged']       = 'Не задано нового названия %s (адрес не изменён).';
+$lang['mediaexists']           = 'Невозможно переместить %s - уже существует страница %s.';
+$lang['nomediatargetperms']    = 'У вас недостаточно прав для создания медиафайла %s.';
+$lang['indexerror']            = 'Ошибка при обновлении индексирования поиска %s';
+$lang['metamoveerror']         = 'Не удалось переместить медиафайлы страницы %s';
+$lang['atticmoveerror']        = 'Не удалось переместить архивы (attic) страницы %s. Переместите их вручную.';
+$lang['mediametamoveerror']    = 'Не удалось переместить мета-файлы страницы %s.';
+$lang['mediamoveerror']        = 'Не удалось переместить медиафайл %s.';
+$lang['mediaatticmoveerror']   = 'Не удалось переместить архивы (attic) медиафайла %s. Переместите их вручную.';
+$lang['renamed']               = 'Имя страницы %s изменено на %s';
+$lang['moved']                 = 'Страница перемещена из %s в %s';
+$lang['move_rename']           = 'Страница перемещена и переименована из %s в %s';
+$lang['delete']                = 'Удалено плагином Move (перемещения страниц)';
+$lang['linkchange']            = 'Операцией перемещения обновлены ссылки';
+$lang['intro']                 = 'Операция перемещения ещё не начата!';
+$lang['preview']               = 'Просмотреть ожидаемые изменения.';
+$lang['inexecution']           = 'Предыдущее перемещение не завершилось - кнопками внизу выберите завершение или отмену.';
+$lang['btn_start']             = 'Начать';
+$lang['btn_continue']          = 'Продолжить';
+$lang['btn_retry']             = 'Попытаться ещё';
+$lang['btn_skip']              = 'Пропустить';
+$lang['btn_abort']             = 'Отменить';
+$lang['legend']                = 'Переместить текущую страницу или папку';
+$lang['movepage']              = 'Переместить страницу';
+$lang['movens']                = 'Переместить папку';
+$lang['dst']                   = 'Новое название:';
+$lang['content_to_move']       = 'Переместить содержимое:';
+$lang['autoskip']              = 'Игнорировать ошибки, пропускать страницы и медиафайлы, которые не удаётся переместить';
+$lang['autorewrite']           = 'По окончании перемещения обновить ссылки.';
+$lang['move_pages']            = 'Страницы';
+$lang['move_media']            = 'Медиафайлы';
+$lang['move_media_and_pages']  = 'Страницы и медиафайлы';
+$lang['nodst']                 = 'Не задано новое имя';
+$lang['noaction']              = 'Не было задано перемещений';
+$lang['renamepage']            = 'Переименовать страницу';
+$lang['cantrename']            = 'Сейчас не удаётся переименовать страницу. Попробуйте позже.';
+$lang['js']['rename']          = 'Переименовать';
+$lang['js']['cancel']          = 'Отменить';
+$lang['js']['newname']         = 'Новое название:';
+$lang['js']['inprogress']      = 'переименование страницы и обновление ссылок...';
+$lang['js']['complete']        = 'Перемещение завершено.';
+$lang['js']['renameitem']      = 'Переименовать';
+$lang['js']['add']             = 'Создать новое пространство имён';
+$lang['js']['duplicate']       = 'Не получается: „%s“ уже существует в данной папке.';
+$lang['root']                  = '[Корневой каталог]';
+$lang['noscript']              = 'Для этого требуется включить JavaScript';
+$lang['moveinprogress']        = 'Сейчас происходит другая операция перемещения; пока она не закончена, данный инструмент не работает.';

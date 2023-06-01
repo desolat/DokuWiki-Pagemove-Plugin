@@ -1,39 +1,68 @@
 <?php
+
 /**
- * Nederlands (Dutch) language file
- *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Gary Owen <gary@isection.co.uk>
+ *
+ * @author Gerrit Uitslag <klapinklapin@gmail.com>
+ * @author Gary Owen <gary@isection.co.uk>
+ * @author Andre Dierick <ajmdierick@gmail.com>
+ * @author Peter van Diest <peter.van.diest@xs4all.nl>
  */
-
-// settings must be present and set appropriately for the language
-$lang['encoding']   = 'utf-8';
-$lang['direction']  = 'ltr';
-
-// for admin plugins, the menu prompt to be displayed in the admin menu
-// if set here, the plugin doesn't need to override the getMenuText() method
-$lang['menu'] = 'Pagina Verplaatsen/Hernoemen...';
-$lang['desc'] = 'Pagina Verplaatsen/Hernoemen Plugin';
-
-$lang['pm_notexist']   = 'Dit onderwerp bestaat nog niet';
-$lang['pm_notstart']   = 'De startpagina kan niet worden verplaatst of hernoemd';
-$lang['pm_notwrite']   = 'U heeft niet voldoende rechten om deze pagina te wijzigen';
-$lang['pm_badns']      = 'De namespace bevat een niet-toegestaan teken.';
-$lang['pm_badname']    = 'De paginanaam bevat een niet-toegestaan teken.';
-$lang['pm_nochange']   = 'De paginanaam en -namespace zijn ongewijzigd.';
-$lang['pm_existing1']  = 'Het document met naam ';
-$lang['pm_existing2']  = ' bestaat al in ';
-$lang['pm_root']       = '[Hoofdnamespace]';
-$lang['pm_current']    = '(Huidig)';
-$lang['pm_movedfrom']  = 'Document verplaatst van ';
-$lang['pm_movedto']    = 'Document verplaatst naar ';
-$lang['pm_norights']   = 'U heeft niet voldoende rechten om een of meerdere referenties aan te passen.';
-$lang['pm_tryagain']   = 'Probeer later opnieuw.';
-$lang['pm_filelocked']  = 'Deze file is geblokkeerd - ';
-$lang['pm_fileslocked'] = 'Deze files zijn geblokeerd - ';
-$lang['pm_linkchange1'] = 'Gelinkt aan ';
-$lang['pm_linkchange2'] = ' gewijzigd naar ';
-$lang['pm_newname']     = 'Nieuwe naam document:';
-$lang['pm_targetns']    = 'Selecteer namespace van het doel:';
-
-?>
+$lang['menu']                  = 'Pagina Verplaatsen/Hernoemen...';
+$lang['inprogress']            = '(verplaatsen verwacht)';
+$lang['treelink']              = 'Als alternatief voor dit eenvoudig formulier kun je complexere herstructurering aan met de <a href="%s">tree-based move manager</a>.';
+$lang['notexist']              = 'De pagina %s bestaat niet';
+$lang['norights']              = 'U hebt onvoldoende permissies om %s aan te passen';
+$lang['filelocked']            = 'Pagina %s is geblokkeerd. Probeer het later nog eens.';
+$lang['notchanged']            = 'Geen nieuwe bestemming gegeven voor pagina %s (locatie onveranderd).';
+$lang['exists']                = 'Pagina %s kan niet worden verplaatst naar %s, het doel bestaat al';
+$lang['notargetperms']         = 'U heeft niet voldoende permissies om pagina %s aan te maken';
+$lang['medianotexist']         = 'Het media bestand %s bestaat niet';
+$lang['nomediarights']         = 'U heeft niet voldoende permissies om pagina %s te verwijderen';
+$lang['medianotchanged']       = 'Geen nieuwe bestemming gegeven voor pagina %s (locatie onveranderd).';
+$lang['mediaexists']           = 'Media %s kan niet worden verplaatst naar %s, het doel bestaat al.';
+$lang['nomediatargetperms']    = 'U heeft niet voldoende permissies om het media bestand %s aan te maken ';
+$lang['indexerror']            = 'Fout bij updaten van zoekindex %s';
+$lang['metamoveerror']         = 'De metabestanden van pagina %s konden niet worden verplaatst';
+$lang['atticmoveerror']        = 'De atticbestanden van pagina %s konden niet worden verplaatst. Verplaats ze handmatig.';
+$lang['mediametamoveerror']    = 'De metabestanden van mediabestand %s konden niet worden verplaatst';
+$lang['mediamoveerror']        = 'Verplaatsen van het mediabestand %s is mislukt';
+$lang['mediaatticmoveerror']   = 'De atticbestanden van mediabestand %s konden niet worden verplaatst. Verplaats ze handmatig.';
+$lang['renamed']               = 'Pagina naam van %s gewijzigd in %s';
+$lang['moved']                 = 'Pagina verplaatst van %s naar %s';
+$lang['move_rename']           = 'Pagina verplaatst en hernoemd van %s naar %s';
+$lang['delete']                = 'Verwijderd door move plugin';
+$lang['linkchange']            = 'Links aangepast vanwege een verplaatsing';
+$lang['intro']                 = 'De verplaatsing is nog niet begonnen!';
+$lang['preview']               = 'Bekijk de wijzigingen die worden uitgevoerd.';
+$lang['inexecution']           = 'Een vorige verplaatsing was niet gereed - gebruik onderstaande knoppen om door te gaan of te stoppen.';
+$lang['btn_start']             = 'Start';
+$lang['btn_continue']          = 'Ga door';
+$lang['btn_retry']             = 'Probeer opnieuw voor dit item';
+$lang['btn_skip']              = 'Sla item over';
+$lang['btn_abort']             = 'Breek af';
+$lang['legend']                = 'Verplaats huidige pagina of namespace';
+$lang['movepage']              = 'Verplaats pagina';
+$lang['movens']                = 'Verplaats namespace';
+$lang['dst']                   = 'Nieuwe naam:';
+$lang['content_to_move']       = 'Te verplaatsen inhoud:';
+$lang['autoskip']              = 'Negeer fouten en sla pagina\'s of bestanden die niet kunnen worden verplaatst over.';
+$lang['autorewrite']           = 'Herschrijf links meteen nadat de verplaatsing gereed is';
+$lang['move_pages']            = 'Pagina\'s';
+$lang['move_media']            = 'Mediabestanden';
+$lang['move_media_and_pages']  = 'Pagina\'s en mediabestanden';
+$lang['nodst']                 = 'Geen nieuwe naam opgegeven';
+$lang['noaction']              = 'Er zijn geen verplaatsingen gedefinieerd';
+$lang['renamepage']            = 'Hernoem Pagina';
+$lang['cantrename']            = 'De pagina kan momenteel niet worden hernoemd. Probeer het later nog eens.';
+$lang['js']['rename']          = 'Hernoem';
+$lang['js']['cancel']          = 'Annuleren';
+$lang['js']['newname']         = 'Nieuwe naam:';
+$lang['js']['inprogress']      = 'pagina hernoemen en links aanpassen...';
+$lang['js']['complete']        = 'Verplaatsing compleet.';
+$lang['js']['renameitem']      = 'Hernoem dit item';
+$lang['js']['add']             = 'Maak een nieuwe namespace';
+$lang['js']['duplicate']       = 'Sorry, "%s" bestaat al in deze namespace.';
+$lang['root']                  = '[Hoofdnamespace]';
+$lang['noscript']              = 'Deze mogelijkheid vereist Javascript';
+$lang['moveinprogress']        = 'Er is een andere verplaatsingsactie gaande, gebruik van deze tool is momenteel niet mogelijk.';
