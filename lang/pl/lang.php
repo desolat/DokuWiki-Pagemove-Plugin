@@ -30,3 +30,9 @@ $lang['linkchange1'] = 'Linki do %s zmienione na %s';
 $lang['newname']     = 'Nowa nazwa dokumentu:';
 $lang['targetns']    = 'Nazwa docelowego katalogu:';
 $lang['submit']      = 'Zmień';
+
+// Media Manager
+$lang['errorOverwrite']         = 'Plik już istnieje!';
+$lang['errorPermissions']       = 'Niewystarczające uprawnienia by wykonać operację!';
+$lang['js']['moveButton']       = 'Przenieś/Zmień nazwę';
+$lang['js']['dialogIntro']      = 'Nowa nazwa pliku. Możesz zmienić katalog, ale nie rozszerzenie pliku.';

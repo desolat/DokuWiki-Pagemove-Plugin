@@ -80,3 +80,9 @@ $lang['moveinprogress']   = 'There is another move operation in progress current
 $lang['js']['renameitem'] = 'Rename this item';
 $lang['js']['add']        = 'Create a new namespace';
 $lang['js']['duplicate']  = 'Sorry, "%s" already exists in this namespace.';
+
+// Media Manager
+$lang['errorOverwrite'] = 'File already exists!';
+$lang['errorPermissions'] = 'You have no permissions to create files in the target namespace!';
+$lang['js']['moveButton'] = 'Move file';
+$lang['js']['dialogIntro'] = 'Enter new file destination. You may change the namespace but not the file extension.';

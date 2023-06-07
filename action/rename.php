@@ -26,6 +26,7 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
 
         $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'addsvgbutton', array());
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handle_ajax');
+        $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'handleAjaxMediaManager');
     }
 
     /**
@@ -109,6 +110,48 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
                 $error = $this->getLang('cantrename');
             }
             echo $JSON->encode(array('error' => $error));
+        }
+    }
+
+    /**
+     * Handle media renames in media manager
+     *
+     * @param Doku_Event $event
+     * @return void
+     */
+    public function handleAjaxMediaManager(Doku_Event $event)
+    {
+        if ($event->data !== 'plugin_move_rename_mediamanager') return;
+
+        $event->preventDefault();
+        $event->stopPropagation();
+
+        global $INPUT;
+
+        $src = cleanID($INPUT->str('src'));
+        $dst = cleanID($INPUT->str('dst'));
+
+        /** @var helper_plugin_move_op $MoveOperator */
+        $MoveOperator = plugin_load('helper', 'move_op');
+
+        if ($src && $dst) {
+            $response = [];
+            header('Content-Type: application/json');
+
+            if (file_exists(mediaFN($dst))) {
+                $response['error'][] = $this->getLang('errorOverwrite');
+            }
+            if (auth_quickaclcheck($dst) < AUTH_CREATE) {
+                $response['error'][] = $this->getLang('errorPermissions');
+            }
+
+            if (empty($response['error'])) {
+                $response['success'] = $MoveOperator->moveMedia($src, $dst);
+                $ns = getNS($dst);
+                $response['redirect_url'] = wl($dst, ['do' => 'media', 'ns' => $ns], true, '&');
+            }
+
+            echo json_encode($response);
         }
     }
 
