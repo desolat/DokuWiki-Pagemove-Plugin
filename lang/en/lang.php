@@ -24,6 +24,7 @@ $lang['nomediarights']      = 'You have insufficient permissions to delete %s.';
 $lang['medianotchanged']    = 'No new destination given for page %s (location unchanged).';
 $lang['mediaexists']        = 'Media %s can\'t be moved to %s, the target already exists.';
 $lang['nomediatargetperms'] = 'You don\'t have the permission to create the media file %s.';
+$lang['extensionchange']    = 'Extension of the new file is not the same as the original.';
 
 // system errors
 $lang['indexerror']          = 'Error while updating the search index %s';

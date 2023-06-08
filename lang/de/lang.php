@@ -21,6 +21,7 @@ $lang['nomediarights']         = 'Sie haben unzureichende Rechte, um die Mediend
 $lang['medianotchanged']       = 'Kein Ziel für Seite %s angegeben (Ort bleibt unverändert).';
 $lang['mediaexists']           = 'Mediendatei %s kann nicht nach %s verschoben werden, da das Ziel bereits existiert.';
 $lang['nomediatargetperms']    = 'Sie haben nicht die Berechtigung, die Mediendatei %s anzulegen.';
+$lang['extensionchange']       = 'Die Dateierweiterungen der alten und der neuen Datei sind unterschiedlich.';
 $lang['indexerror']            = 'Fehler während der Aktualisierung des Suchindexes %s';
 $lang['metamoveerror']         = 'Die Metadateien der Seite %s konnten nicht verschoben werden';
 $lang['atticmoveerror']        = 'Die Attic-Dateien der Seite %s konnten nicht verschoben werden. Bitte verschieben Sie sie manuell.';
