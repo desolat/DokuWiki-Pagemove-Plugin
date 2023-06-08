@@ -28,14 +28,17 @@ class MoveMediaManager {
             const link = mutation.target.querySelector('a.select.mediafile');
             if (!link) continue;
 
+            const actionList = mutation.target.querySelector('ul.actions');
+            if (actionList.querySelector('button.move-btn')) continue; // already added
+
+            const deleteButton = actionList.querySelector('form#mediamanager__btn_delete');
+            if (deleteButton === null) continue; // no delete permissions
+
             const uri = link.getAttribute('href');
 
             const [ , paramString ] = uri.split( '?' );
             const searchParams = new URLSearchParams(paramString);
             const src = searchParams.get('media');
-
-            const actionList = mutation.target.querySelector('ul.actions');
-            if (actionList.querySelector('button.move-btn')) continue; // already added
 
 
             const moveButton = document.createElement('button');
@@ -89,11 +92,18 @@ class MoveMediaManager {
         intro.innerText = LANG.plugins.move.dialogIntro;
         form.appendChild(intro);
 
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'move-error';
+        form.appendChild(errorContainer);
+
         const original = document.createElement('input');
         original.type = 'hidden';
         original.name = 'move-old-filename';
         original.value = src;
         form.appendChild(original);
+
+        const sectok = document.querySelector('form#mediamanager__btn_delete input[name=sectok]').cloneNode();
+        form.appendChild(sectok);
 
         // strip file extension and put it in a readonly field so it may not be modified
         const fileExt = document.createElement('input');
@@ -136,23 +146,24 @@ class MoveMediaManager {
         const src = form.querySelector('input[name="move-old-filename"]').value;
         const dst = form.querySelector('input[name="move-new-filename"]').value;
         const ext = form.querySelector('input[name="move-file-ext"]').value;
+        const sectok = form.querySelector('input[name="sectok"]').value;
+        const err = form.querySelector('div.move-error');
 
         jQuery.post(
             DOKU_BASE + 'lib/exe/ajax.php',
             {
                 call: 'plugin_move_rename_mediamanager',
                 src: src,
-                dst: dst + '.'  + ext
+                dst: dst + '.'  + ext,
+                sectok: sectok
             },
             // redirect or display error
             function (result) {
-                if (result.error) {
-                    const errorText = document.createElement('strong');
-                    errorText.innerText = result.error.join();
-                    errorText.style = 'color: red;';
-                    form.prepend(errorText);
-                } else {
+                if (result.success) {
                     window.location.href = result.redirect_url;
+                } else {
+                    err.classList.add('error');
+                    err.innerText = result.error;
                 }
             }
         );

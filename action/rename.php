@@ -123,32 +123,37 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
     {
         if ($event->data !== 'plugin_move_rename_mediamanager') return;
 
+        if (!checkSecurityToken()) return;
+
         $event->preventDefault();
         $event->stopPropagation();
 
         global $INPUT;
+        global $MSG;
 
         $src = cleanID($INPUT->str('src'));
         $dst = cleanID($INPUT->str('dst'));
 
-        /** @var helper_plugin_move_op $MoveOperator */
-        $MoveOperator = plugin_load('helper', 'move_op');
+        /** @var helper_plugin_move_op $moveOperator */
+        $moveOperator = plugin_load('helper', 'move_op');
 
         if ($src && $dst) {
-            $response = [];
             header('Content-Type: application/json');
 
-            if (file_exists(mediaFN($dst))) {
-                $response['error'][] = $this->getLang('errorOverwrite');
-            }
-            if (auth_quickaclcheck($dst) < AUTH_CREATE) {
-                $response['error'][] = $this->getLang('errorPermissions');
-            }
+            $response = [];
 
-            if (empty($response['error'])) {
-                $response['success'] = $MoveOperator->moveMedia($src, $dst);
+            $response['success'] = $moveOperator->moveMedia($src, $dst);
+
+            if ($response['success']) {
                 $ns = getNS($dst);
                 $response['redirect_url'] = wl($dst, ['do' => 'media', 'ns' => $ns], true, '&');
+            } else {
+                $response['error'] = sprintf($this->getLang('mediamoveerror'), $src);
+                if (isset($MSG)) {
+                    foreach ($MSG as $msg) {
+                        $response['error'] .= ' ' . $msg['msg'];
+                    }
+                }
             }
 
             echo json_encode($response);

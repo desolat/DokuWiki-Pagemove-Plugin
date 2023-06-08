@@ -65,7 +65,5 @@ $lang['noscript']              = 'Dieses Feature benötigt JavaScript.';
 $lang['moveinprogress']        = 'Eine andere Verschiebeoperation läuft momentan, du kannst dieses Tool gerade nicht benutzen.';
 
 // Media Manager
-$lang['errorOverwrite']         = 'Die Datei existiert bereits!';
-$lang['errorPermissions']       = 'Du hast unzureichende Rechte, um die Datei in den Zielnamensraum zu verschieben!';
 $lang['js']['moveButton']       = 'Datei verschieben / umbenennen';
 $lang['js']['dialogIntro']      = 'Neuer Dateiname. Du kannst den Namensraum ändern, aber nicht die Dateierweiterung.';
