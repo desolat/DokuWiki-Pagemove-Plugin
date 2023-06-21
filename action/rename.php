@@ -123,13 +123,16 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
     {
         if ($event->data !== 'plugin_move_rename_mediamanager') return;
 
-        if (!checkSecurityToken()) return;
+        if (!checkSecurityToken()) {
+            throw new \Exception('Security token did not match');
+        }
 
         $event->preventDefault();
         $event->stopPropagation();
 
         global $INPUT;
         global $MSG;
+        global $USERINFO;
 
         $src = cleanID($INPUT->str('src'));
         $dst = cleanID($INPUT->str('dst'));
@@ -141,6 +144,15 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
             header('Content-Type: application/json');
 
             $response = [];
+
+            // check user/group restrictions
+            if (
+                !auth_isMember($this->getConf('allowrename'), $INPUT->server->str('REMOTE_USER'), (array) $USERINFO['grps'])
+            ) {
+                $response['error'] = $this->getLang('notallowed');
+                echo json_encode($response);
+                return;
+            }
 
             $response['success'] = $moveOperator->moveMedia($src, $dst);
 

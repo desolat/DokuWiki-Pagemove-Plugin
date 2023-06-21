@@ -52,6 +52,7 @@ $lang['move_media_and_pages']  = 'Seiten und Mediendateien';
 $lang['nodst']                 = 'Kein neuer Name angegeben';
 $lang['noaction']              = 'Es wurden keine Verschiebungen angegeben';
 $lang['renamepage']            = 'Seite umbenennen';
+$lang['notallowed']            = 'Du hast unzureichende Rechte, um Seiten oder Medien umzubenennen.';
 $lang['cantrename']            = 'Auf die Seite kann zur Zeit nicht zugegriffen werden - bitte versuche es später noch einmal.';
 $lang['js']['rename']          = 'Umbenennen';
 $lang['js']['cancel']          = 'Abbrechen';

@@ -31,6 +31,7 @@ $lang['newname']     = 'Nowa nazwa dokumentu:';
 $lang['targetns']    = 'Nazwa docelowego katalogu:';
 $lang['submit']      = 'Zmień';
 
+$lang['notallowed']             = 'Brak uprawnień do wykonania zmiany.';
 $lang['extensionchange']        = 'Rozszerzenia plików nie są identyczne.';
 
 // Media Manager

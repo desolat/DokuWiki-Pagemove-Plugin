@@ -68,6 +68,7 @@ $lang['noaction']             = 'There were no moves defined';
 // Rename feature
 $lang['renamepage']       = 'Rename Page';
 $lang['cantrename']       = 'The page can\'t be renamed right now. Please try later.';
+$lang['notallowed']       = 'You are not allowed to rename pages or media.';
 $lang['js']['rename']     = 'Rename';
 $lang['js']['cancel']     = 'Cancel';
 $lang['js']['newname']    = 'New name:';
