@@ -5,20 +5,23 @@
 class MoveMediaManager {
 
     constructor() {
+        // user is not allowed to move anything
+        if (!JSINFO.move_allowrename) return;
+
         const filePanel = document.querySelector('#mediamanager__page .panel.file');
         if (filePanel) {
-            const observer = new MutationObserver(this.#addEditButton.bind(this));
+            const observer = new MutationObserver(this.#addMoveButton.bind(this));
             observer.observe(filePanel, {childList: true, subtree: true});
         }
     }
 
     /**
-     * Observer callback to add the edit button in the detail panel of the media manager
+     * Observer callback to add the move button in the detail panel of the media manager
      *
      * @param mutationsList
      * @param observer
      */
-    async #addEditButton(mutationsList, observer) {
+    async #addMoveButton(mutationsList, observer) {
         for (let mutation of mutationsList) {
             // div.file has been filled with new content?
             if (mutation.type !== 'childList') continue;

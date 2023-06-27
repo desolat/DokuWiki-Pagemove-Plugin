@@ -35,7 +35,11 @@ class action_plugin_move_rename extends DokuWiki_Action_Plugin {
     public function handle_init() {
         global $JSINFO;
         global $INFO;
+        global $INPUT;
+        global $USERINFO;
+
         $JSINFO['move_renameokay'] = $this->renameOkay($INFO['id']);
+        $JSINFO['move_allowrename'] = auth_isMember($this->getConf('allowrename'), $INPUT->server->str('REMOTE_USER'), (array) $USERINFO['grps']);
     }
 
     /**
