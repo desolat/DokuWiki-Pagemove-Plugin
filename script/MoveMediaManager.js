@@ -37,12 +37,7 @@ class MoveMediaManager {
             const deleteButton = actionList.querySelector('form#mediamanager__btn_delete');
             if (deleteButton === null) continue; // no delete permissions
 
-            const uri = link.getAttribute('href');
-
-            const [ , paramString ] = uri.split( '?' );
-            const searchParams = new URLSearchParams(paramString);
-            const src = searchParams.get('media');
-
+            const src = link.textContent;
 
             const moveButton = document.createElement('button');
             moveButton.classList.add('move-btn');
